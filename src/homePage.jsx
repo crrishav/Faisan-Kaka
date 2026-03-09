@@ -16,7 +16,7 @@ const HomePage = () => {
       {/* Product Sections */}
       <div className="w-full bg-white relative flex flex-col gap-16 pb-24">
         <ProductSection title="T-Shirts" />
-        <ProductSection title="Hoddies" />
+        <ProductSection title="Hoodies" />
         <ProductSection title="Pants" />
       </div>
     </div>

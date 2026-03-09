@@ -2,10 +2,6 @@
 
 Faisan Kaka is a premium Indian clothing brand dedicated to blending traditional craftsmanship with modern aesthetics. This website serves as the official digital storefront for the brand, showcasing our latest collections of T-shirts, hoodies, and pants.
 
-## 🇮🇳 Made in India
-
-Rooted in the rich textile heritage of India, Faisan Kaka brings high-quality, homegrown fashion to the world.
-
 ## ✨ Features
 
 - **Modern UI/UX**: A clean, minimalistic design that puts the spotlight on our products.

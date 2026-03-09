@@ -10,7 +10,7 @@ const HomePage = () => {
       {/* Hero Section (Empty for now) */}
       <div className="w-full h-screen flex items-center justify-center bg-white">
         {/* Placeholder for Hero content */}
-        <h1 className="text-2xl text-gray-400 font-light tracking-widest uppercase">Hero Section Placeholder</h1>
+        <h1 className="text-2xl text-gray-400 font-light tracking-widest uppercase">Video Here</h1>
       </div>
 
       {/* Product Sections */}

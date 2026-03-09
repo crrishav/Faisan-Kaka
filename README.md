@@ -1,16 +1,67 @@
-# React + Vite
+# Faisan Kaka
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Faisan Kaka is a premium Indian clothing brand dedicated to blending traditional craftsmanship with modern aesthetics. This website serves as the official digital storefront for the brand, showcasing our latest collections of T-shirts, hoodies, and pants.
 
-Currently, two official plugins are available:
+## 🇮🇳 Made in India
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Rooted in the rich textile heritage of India, Faisan Kaka brings high-quality, homegrown fashion to the world.
 
-## React Compiler
+## ✨ Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Modern UI/UX**: A clean, minimalistic design that puts the spotlight on our products.
+- **Fluid Animations**: Powered by GSAP and ScrollTrigger for a premium, high-end feel.
+- **Smooth Interaction**: Integrated with Lenis for globally smooth scrolling and seamless transitions.
+- **Responsive Design**: Optimized for a flawless experience across desktop, tablet, and mobile devices.
 
-## Expanding the ESLint configuration
+## 🛠️ Tech Stack
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- **React**: Modern frontend library for building dynamic user interfaces.
+- **Vite**: Ultra-fast build tool and development server.
+- **Tailwind CSS (v4)**: Utility-first CSS framework for rapid UI development and consistent styling.
+- **GSAP**: Industry-standard animation library for complex, high-performance web animations.
+- **Lenis**: Lightweight smooth scroll library to enhance navigation aesthetics.
+- **React Router**: Seamless page transitions and routing.
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js (v18 or higher recommended)
+- npm or yarn
+
+### Installation
+
+1. Clone the repository:
+   ```bash
+   git clone [repository-url]
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+### Development
+
+Start the development server:
+
+```bash
+npm run dev
+```
+
+### Build
+
+Generate a production-ready build:
+
+```bash
+npm run build
+```
+
+## 📂 Project Structure
+
+- `src/Components`: Reusable UI elements like Navbar, Product Cards, and Section wrappers.
+- `src/assets`: Static resources including brand imagery and logo assets.
+- `src/homePage.jsx`: The main landing page consolidating different product categories and brand messaging.
+
+---
+
+© 2026 Faisan Kaka. All rights reserved.

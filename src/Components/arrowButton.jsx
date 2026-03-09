@@ -4,7 +4,8 @@ const ArrowButton = ({ onClick, direction = 'right' }) => {
   return (
     <button 
       onClick={onClick}
-      className="w-12 h-12 rounded-full bg-[#797474] flex items-center justify-center hover:bg-[#666] transition-colors shadow-lg z-10"
+      className="w-12 h-12 rounded-full flex items-center justify-center hover:opacity-80 transition-opacity shadow-lg z-10"
+      style={{ backgroundColor: '#797474' }}
       aria-label={`Scroll ${direction}`}
     >
       <svg 
@@ -12,7 +13,7 @@ const ArrowButton = ({ onClick, direction = 'right' }) => {
         height="20" 
         viewBox="0 0 24 24" 
         fill="none" 
-        stroke="black" 
+        stroke="white" 
         strokeWidth="4" 
         strokeLinecap="round" 
         strokeLinejoin="round"

@@ -1,6 +1,7 @@
 import React from 'react';
 import NavBar from './Components/navBar.jsx';
 import ProductSection from './Components/productSection.jsx';
+import ProductDetails from './Components/productDetails.jsx';
 
 const HomePage = () => {
   return (

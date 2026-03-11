@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useMemo } from 'react';
 import ProductCard from './productCard.jsx';
 import ArrowButton from './arrowButton.jsx';
 
@@ -15,7 +15,40 @@ const ProductSection = ({ title }) => {
     }
   };
 
-  const products = Array(8).fill({ title: "White T-Shirt", price: "$9.99", image: "/products/shirt.png" });
+  const products = useMemo(() => {
+    const files = import.meta.glob('/src/assets/Collection/**/*.{png,jpg,jpeg,webp}', { eager: true, as: 'url' });
+    const map = {};
+    for (const [path, url] of Object.entries(files)) {
+      const parts = path.split('/');
+      const idx = parts.indexOf('Collection');
+      const category = parts[idx + 1];
+      const filename = parts[parts.length - 1];
+      const nameWithVariant = filename.replace(/\.(png|jpg|jpeg|webp)$/i, '').replace(/^\d+\.\s*/, '');
+      const variantMatch = nameWithVariant.match(/\(([^)]+)\)/);
+      const variant = variantMatch ? variantMatch[1].toLowerCase() : '';
+      const name = nameWithVariant.replace(/\s*\(.*\)\s*$/, '');
+      const slug = name.toLowerCase().replace(/\s+/g, '-');
+      const key = `${category}:${slug}`;
+      if (!map[key]) {
+        map[key] = { category, name, slug, price: '9.99', backImage: undefined, frontImage: undefined };
+      }
+      if (variant === 'front') {
+        map[key].frontImage = url;
+      } else if (variant === 'back') {
+        map[key].backImage = url;
+      } else {
+        map[key].backImage = map[key].backImage || url;
+      }
+    }
+    const list = Object.values(map);
+    const hash = (s) => {
+      let h = 0;
+      for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+      return h;
+    };
+    return list.sort((a, b) => hash(a.slug) - hash(b.slug));
+  }, []);
+  const sectionProducts = products.filter(p => p.category === title);
 
   return (
     <section className="w-full py-12 flex flex-col items-center relative mt-8 outline-none">
@@ -39,9 +72,15 @@ const ProductSection = ({ title }) => {
           className="w-full flex overflow-x-auto gap-10 px-32 py-8 scroll-smooth no-scrollbar outline-none"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          {products.map((product, index) => (
+          {sectionProducts.map((product, index) => (
             <div key={index} className="flex-shrink-0">
-              <ProductCard {...product} />
+              <ProductCard 
+                title={product.name} 
+                price={`$${product.price}`} 
+                backImage={product.backImage} 
+                frontImage={product.frontImage} 
+                slug={product.slug}
+              />
             </div>
           ))}
         </div>

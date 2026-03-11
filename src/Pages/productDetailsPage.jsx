@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import ProductDetails from '../Components/productDetails.jsx';
 import NavBar from '../Components/navBar.jsx';
 import Footer from '../Components/footer.jsx';
@@ -14,23 +14,35 @@ const ProductDetailsPage = () => {
       const idx = parts.indexOf('Collection');
       const category = parts[idx + 1];
       const filename = parts[parts.length - 1];
-      const nameWithVariant = filename.replace(/\.(png|jpg|jpeg|webp)$/i, '').replace(/^\d+\.\s*/, '');
-      const variantMatch = nameWithVariant.match(/\(([^)]+)\)/);
-      const variant = variantMatch ? variantMatch[1].toLowerCase() : '';
-      const name = nameWithVariant.replace(/\s*\(.*\)\s*$/, '');
+      const cleaned = filename.replace(/\.(png|jpg|jpeg|webp)$/i, '').replace(/^\d+\.\s*/, '');
+      const rx = /^(.*?)(?:\s*\((front|back)\))\s*\(([^,]+)\s*,\s*([^)]+)\)\s*$/i;
+      const m = cleaned.match(rx);
+      const name = m ? m[1].trim() : cleaned.replace(/\s*\(.*\)\s*$/, '').trim();
+      const variant = m ? m[2].toLowerCase() : '';
+      const priceINR = m ? m[3].trim() : undefined;
+      const priceNPR = m ? m[4].trim() : undefined;
       const s = name.toLowerCase().replace(/\s+/g, '-');
       const key = `${category}:${s}`;
-      if (!map[key]) map[key] = { category, name, slug: s, price: '9.99', images: {} };
+      if (!map[key]) map[key] = { category, name, slug: s, priceINR: undefined, priceNPR: undefined, images: {} };
+      if (priceINR && !map[key].priceINR) map[key].priceINR = priceINR;
+      if (priceNPR && !map[key].priceNPR) map[key].priceNPR = priceNPR;
       if (variant === 'front') map[key].images.front = url;
       else if (variant === 'back') map[key].images.back = url;
       else map[key].images.back = map[key].images.back || url;
     }
     return Object.values(map);
   }, []);
-  const product = products.find(p => p.slug === slug) || { name: 'Product', price: '9.99', images: {} };
+  const product = products.find(p => p.slug === slug) || { name: 'Product', priceINR: '0', priceNPR: '0', images: {} };
   const backImg = product.images?.back || product.images?.front;
   const frontImg = product.images?.front || product.images?.back;
   const description = `${product.name} is crafted with premium materials and designed for everyday comfort, durability, and clean style.`;
+  useEffect(() => {
+    if (window.lenis && typeof window.lenis.scrollTo === 'function') {
+      window.lenis.scrollTo(0, { immediate: true });
+    } else {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    }
+  }, [slug]);
   return (
     <div className="min-h-screen flex flex-col bg-[#f5f5f5]">
       <NavBar />
@@ -45,7 +57,7 @@ const ProductDetailsPage = () => {
             </div>
           </div>
           <div className="flex-shrink-0 w-[440px]">
-            <ProductDetails title={product.name} price={product.price} description={description} />
+            <ProductDetails title={product.name} priceINR={product.priceINR} priceNPR={product.priceNPR} description={description} />
           </div>
         </div>
       </div>

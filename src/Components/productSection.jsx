@@ -23,15 +23,20 @@ const ProductSection = ({ title }) => {
       const idx = parts.indexOf('Collection');
       const category = parts[idx + 1];
       const filename = parts[parts.length - 1];
-      const nameWithVariant = filename.replace(/\.(png|jpg|jpeg|webp)$/i, '').replace(/^\d+\.\s*/, '');
-      const variantMatch = nameWithVariant.match(/\(([^)]+)\)/);
-      const variant = variantMatch ? variantMatch[1].toLowerCase() : '';
-      const name = nameWithVariant.replace(/\s*\(.*\)\s*$/, '');
+      const cleaned = filename.replace(/\.(png|jpg|jpeg|webp)$/i, '').replace(/^\d+\.\s*/, '');
+      const rx = /^(.*?)(?:\s*\((front|back)\))\s*\(([^,]+)\s*,\s*([^)]+)\)\s*$/i;
+      const m = cleaned.match(rx);
+      const name = m ? m[1].trim() : cleaned.replace(/\s*\(.*\)\s*$/, '').trim();
+      const variant = m ? m[2].toLowerCase() : '';
+      const priceINR = m ? m[3].trim() : undefined;
+      const priceNPR = m ? m[4].trim() : undefined;
       const slug = name.toLowerCase().replace(/\s+/g, '-');
       const key = `${category}:${slug}`;
       if (!map[key]) {
-        map[key] = { category, name, slug, price: '9.99', backImage: undefined, frontImage: undefined };
+        map[key] = { category, name, slug, priceINR: undefined, priceNPR: undefined, backImage: undefined, frontImage: undefined };
       }
+      if (priceINR && !map[key].priceINR) map[key].priceINR = priceINR;
+      if (priceNPR && !map[key].priceNPR) map[key].priceNPR = priceNPR;
       if (variant === 'front') {
         map[key].frontImage = url;
       } else if (variant === 'back') {
@@ -49,6 +54,17 @@ const ProductSection = ({ title }) => {
     return list.sort((a, b) => hash(a.slug) - hash(b.slug));
   }, []);
   const sectionProducts = products.filter(p => p.category === title);
+  const isNepal = useMemo(() => {
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+      const langs = navigator.languages || [navigator.language || ''];
+      const langNepal = langs.some(l => /-NP$/i.test(l));
+      const tzNepal = /Asia\/Kathmandu/i.test(tz);
+      return langNepal || tzNepal;
+    } catch {
+      return false;
+    }
+  }, []);
 
   return (
     <section className="w-full py-12 flex flex-col items-center relative mt-8 outline-none">
@@ -76,7 +92,11 @@ const ProductSection = ({ title }) => {
             <div key={index} className="flex-shrink-0">
               <ProductCard 
                 title={product.name} 
-                price={`$${product.price}`} 
+                price={
+                  isNepal
+                    ? (product.priceNPR ? `Rs. ${product.priceNPR}` : 'Rs. —')
+                    : (product.priceINR ? `₹${product.priceINR}` : '₹—')
+                  } 
                 backImage={product.backImage} 
                 frontImage={product.frontImage} 
                 slug={product.slug}

@@ -1,13 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 
 const ProductDetails = ({ 
   title = "T-Shirt (White)", 
-  price = "9.99", 
+  priceINR = "0", 
+  priceNPR = "0", 
   description = "It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using Lorem Ipsum is that it has a more-or-less normal distribution of letters, as opposed to using 'Content here, content here', making it look like readable English. Many desktop publishing packages and web page editors now use Lorem Ipsum as their default model text, and a search for 'lorem ipsum' will uncover many web sites still in their infancy. Various versions have", 
   colors = ["#3D5443", "#4D3434", "#4A4A4A"], 
   sizes = ["M", "L", "S"] 
 }) => {
   const [quantity, setQuantity] = useState(1);
+  const isNepal = useMemo(() => {
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+      const langs = navigator.languages || [navigator.language || ''];
+      const langNepal = langs.some(l => /-NP$/i.test(l));
+      const tzNepal = /Asia\/Kathmandu/i.test(tz);
+      return langNepal || tzNepal;
+    } catch {
+      return false;
+    }
+  }, []);
+  const displayPrice = isNepal ? `Rs. ${priceNPR}` : `₹${priceINR}`;
 
   return (
     <div className="w-full max-w-[440px] bg-[#D9D9D9] rounded-[35px] overflow-hidden flex flex-col font-sans relative shadow-xl mx-auto">
@@ -15,7 +28,7 @@ const ProductDetails = ({
       <div className="p-9 pt-10 pb-12 relative z-20 flex flex-col gap-5">
         <div className="flex justify-between items-baseline">
           <h2 className="text-lg font-bold text-black tracking-tight">{title}</h2>
-          <span className="text-lg font-bold text-black">${price}</span>
+          <span className="text-lg font-bold text-black">{displayPrice}</span>
         </div>
         
         <p className="text-[12px] text-black/90 leading-relaxed font-medium">

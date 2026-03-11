@@ -2,6 +2,7 @@ import React from 'react';
 import NavBar from './Components/navBar.jsx';
 import ProductSection from './Components/productSection.jsx';
 import ProductDetails from './Components/productDetails.jsx';
+import Footer from './Components/footer.jsx';
 
 const HomePage = () => {
   return (
@@ -20,6 +21,7 @@ const HomePage = () => {
         <ProductSection title="Hoodies" />
         <ProductSection title="Pants" />
       </div>
+      <Footer />
     </div>
   );
 };

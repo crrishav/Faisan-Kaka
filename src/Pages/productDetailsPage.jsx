@@ -1,13 +1,14 @@
 import React from 'react';
 import ProductDetails from '../Components/productDetails.jsx';
 import NavBar from '../Components/navBar.jsx';
+import Footer from '../Components/footer.jsx';
 
 const ProductDetailsPage = () => {
   return (
-    <>
+    <div className="min-h-screen flex flex-col bg-[#f5f5f5]">
       <NavBar />
-      <div className="min-h-screen bg-[#f5f5f5] px-8 pt-28">
-        <div className="max-w-7xl mx-auto flex items-start justify-center gap-8">
+      <div className="flex-1 px-8 pt-28">
+        <div className="max-w-7xl mx-auto flex items-start justify-center gap-8 h-screen pt-12">
           <div className="w-[600px] grid grid-cols-2 gap-8">
             <div className="rounded-[35px] overflow-hidden shadow-xl bg-[#1f3c34]">
               <img
@@ -29,7 +30,8 @@ const ProductDetailsPage = () => {
           </div>
         </div>
       </div>
-    </>
+      <Footer />
+    </div>
   );
 };
 

@@ -1,25 +1,4 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-
-// simple throttle utility for scroll handler
-function throttle(fn, wait) {
-  let last = 0;
-  return (...args) => {
-    const now = Date.now();
-    if (now - last >= wait) {
-      last = now;
-      fn(...args);
-    }
-  };
-}
-
-// detect mobile by width or user agent
-function isMobileDevice() {
-  if (typeof window === 'undefined') return false;
-  return (
-    window.innerWidth < 768 ||
-    /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
-  );
-}
 import logo from '../assets/logo.png';
 import { useNavigate, useLocation } from 'react-router-dom';
 import useCart from './useCart.jsx';
@@ -46,8 +25,7 @@ const NavBar = () => {
   const location = useLocation();
 
   // state for show-on-scroll-up navbar
-  const [showNav, setShowNav] = useState(true);
-  const lastScrollY = useRef(0);
+  // navbar always visible; no scroll state required
   const { items, currency, total, updateQuantity, removeItem } = useCart();
   const allProducts = useProducts();
 
@@ -290,26 +268,14 @@ const NavBar = () => {
       }, 200);
   };
 
-  // manage navbar visibility on scroll (show on up, hide on down)
-  useEffect(() => {
-    const onScroll = throttle(() => {
-      const currentY = window.scrollY;
-      if (currentY < lastScrollY.current || currentY < 60) {
-        setShowNav(true);
-      } else if (currentY > lastScrollY.current && currentY > 60) {
-        setShowNav(false);
-      }
-      lastScrollY.current = currentY;
-    }, 100);
-
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
+  // manage navbar visibility: desktop always visible, mobile hides on scroll down
+  // and re-shows only when footer enters viewport
+  // navbar is fixed and always shown; no scroll listeners needed
 
   return (
     <nav
         ref={navRef}
-        className={`fixed top-6 z-[60] md:z-50 w-full max-w-[100vw] px-4 overflow-x-hidden lg:flex lg:justify-center transition-transform duration-300 ${showNav ? 'translate-y-0' : '-translate-y-full'}`}
+        className="fixed top-0 z-[60] md:z-50 w-full max-w-[100vw] px-4 pt-2 overflow-x-hidden lg:flex lg:justify-center"
         onMouseLeave={scheduleClose}
       >
       <div

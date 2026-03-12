@@ -99,4 +99,26 @@ describe('NavBar Cart Dropdown Height', () => {
         expect(navContainer.style.height).toBe('230px');
     });
   });
+
+  it('remains fixed at top on mobile even after scrolling', () => {
+    // simulate mobile viewport
+    global.innerWidth = 375;
+    window.dispatchEvent(new Event('resize'));
+
+    mockUseCart.mockReturnValue({ items: [], currency: 'INR', total: 0, updateQuantity: vi.fn(), removeItem: vi.fn() });
+    const { container } = render(
+      <BrowserRouter>
+        <NavBar />
+      </BrowserRouter>
+    );
+    const nav = container.querySelector('nav');
+    expect(nav).toBeTruthy();
+    // initial top should be 0 (tailwind top-0)
+    expect(nav.style.top || getComputedStyle(nav).top).toBe('0px');
+
+    // simulate scroll event
+    window.scrollY = 100;
+    fireEvent.scroll(window);
+    expect(nav.style.top || getComputedStyle(nav).top).toBe('0px');
+  });
 });

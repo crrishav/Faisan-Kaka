@@ -16,7 +16,7 @@ const ProductCard = ({ title, price, backImage, frontImage, slug }) => {
   }, [backImage, frontImage]);
   return (
     <div 
-      className="w-64 md:w-[280px] min-w-0 flex-shrink-0 rounded-[32px] bg-[#D9D9D9] p-4 flex flex-col items-center text-center shadow-md hover:shadow-2xl transition-all duration-300 cursor-pointer"
+      className="w-64 md:w-[280px] min-w-0 flex-shrink-0 mx-auto rounded-[32px] bg-[#D9D9D9] p-4 flex flex-col items-center text-center shadow-md hover:shadow-2xl transition-all duration-300 cursor-pointer"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onClick={() => {

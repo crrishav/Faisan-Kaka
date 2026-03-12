@@ -1,4 +1,4 @@
-import React, { useRef, useMemo } from 'react';
+import React, { useRef, useMemo, useEffect } from 'react';
 import ProductCard from './productCard.jsx';
 import ArrowButton from './arrowButton.jsx';
 import useProducts from './useProducts.jsx';
@@ -30,16 +30,34 @@ const ProductSection = ({ title }) => {
     }
   }, []);
 
+  useEffect(() => {
+    // on mobile, move scroll container so that full group is centered
+    const updatePosition = () => {
+      if (!scrollContainerRef.current) return;
+      const vw = window.innerWidth;
+      const cw = scrollContainerRef.current.scrollWidth;
+      if (vw <= 768 && sectionProducts.length > 1) {
+        const offset = (vw - cw) / 2;
+        scrollContainerRef.current.style.transform = `translateX(${offset}px)`;
+      } else {
+        scrollContainerRef.current.style.transform = '';
+      }
+    };
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    return () => window.removeEventListener('resize', updatePosition);
+  }, [sectionProducts.length]);
+
   return (
-    <section className="w-full py-12 flex flex-col items-center relative mt-8 outline-none max-w-[100vw] overflow-x-hidden">
+    <section className="w-full py-12 flex flex-col items-center relative mt-8 outline-none max-w-[100vw]">
       {/* Header Section */}
       <div className="w-full px-4 md:px-32 flex flex-col items-center md:items-start mb-4 md:mb-6">
         <h2 className="text-5xl md:text-3xl font-black text-black tracking-tighter">{title}</h2>
       </div>
 
-      <div className="w-full relative flex items-center group max-w-[100vw] overflow-x-hidden">
+      <div className="w-full relative flex items-center group max-w-[100vw] overflow-x-auto">
         {/* Left feathering overlay */}
-        <div className="absolute left-0 top-0 bottom-0 w-16 md:w-32 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none"></div>
+        <div className="hidden md:block absolute left-0 top-0 bottom-0 w-16 md:w-32 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none"></div>
         
         {/* Left Navigation */}
         <div className="absolute left-4 md:left-8 z-20 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity touch-manipulation">
@@ -49,7 +67,7 @@ const ProductSection = ({ title }) => {
         {/* Scrollable List */}
         <div 
           ref={scrollContainerRef}
-          className="w-full flex overflow-x-auto gap-4 md:gap-10 px-4 md:px-32 py-8 scroll-smooth no-scrollbar outline-none justify-center md:justify-start"
+          className="flex overflow-x-auto gap-4 md:gap-10 py-8 scroll-smooth no-scrollbar outline-none justify-center md:justify-start md:px-32"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {sectionProducts.map((product, index) => (
@@ -75,7 +93,7 @@ const ProductSection = ({ title }) => {
         </div>
 
         {/* Right feathering overlay */}
-        <div className="absolute right-0 top-0 bottom-0 w-16 md:w-32 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none"></div>
+        <div className="hidden md:block absolute right-0 top-0 bottom-0 w-16 md:w-32 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none"></div>
       </div>
     </section>
   );

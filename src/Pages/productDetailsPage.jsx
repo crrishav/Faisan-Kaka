@@ -61,19 +61,20 @@ const ProductDetailsPage = () => {
     }
   }, [slug]);
   return (
-    <div className="min-h-screen flex flex-col bg-[#f5f5f5]">
+    <div className="min-h-screen flex flex-col bg-[#f5f5f5] overflow-x-hidden">
       <NavBar />
-      <div className="flex-1 px-8 pt-28">
-        <div className="max-w-7xl mx-auto flex items-start justify-center gap-8 h-screen pt-12">
-          <div className="w-[600px] grid grid-cols-2 gap-8">
+      <div className="flex-1 px-4 sm:px-8 pt-8 md:pt-28 overflow-x-hidden flex items-center justify-center">
+        <div className="max-w-7xl mx-auto flex flex-col items-center justify-center md:flex-row md:items-start gap-8 md:h-screen pt-12">
+          {/* image previews only on desktop */}
+          <div className="hidden md:grid w-full md:w-[600px] grid-cols-1 md:grid-cols-2 gap-8">
             <div className="rounded-[35px] overflow-hidden shadow-xl bg-[#1f3c34]">
-              <img src={backImg} alt={product.name} className="w-full h-[420px] object-cover" />
+              <img src={backImg} alt={product.name} className="w-full h-64 md:h-[420px] object-cover" />
             </div>
             <div className="rounded-[35px] overflow-hidden shadow-xl bg-[#27443b]">
-              <img src={frontImg} alt={product.name} className="w-full h-[420px] object-cover" />
+              <img src={frontImg} alt={product.name} className="w-full h-64 md:h-[420px] object-cover" />
             </div>
           </div>
-          <div className="flex-shrink-0 w-[440px]">
+          <div className="w-full md:w-[440px] flex-shrink-0">
             <ProductDetails 
               title={product.name} 
               priceINR={product.priceINR} 

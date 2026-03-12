@@ -8,8 +8,16 @@ const ProductSection = ({ title }) => {
 
   const scroll = (direction) => {
     if (scrollContainerRef.current) {
-      const scrollAmount = 320;
-      scrollContainerRef.current.scrollBy({
+      const container = scrollContainerRef.current;
+      // default to viewport width
+      let scrollAmount = container.clientWidth;
+      const firstChild = container.querySelector('.carousel-item');
+      if (firstChild) {
+        const style = window.getComputedStyle(container);
+        const gap = parseFloat(style.gap) || 0;
+        scrollAmount = firstChild.getBoundingClientRect().width + gap;
+      }
+      container.scrollBy({
         left: direction === 'left' ? -scrollAmount : scrollAmount,
         behavior: 'smooth'
       });
@@ -30,23 +38,7 @@ const ProductSection = ({ title }) => {
     }
   }, []);
 
-  useEffect(() => {
-    // on mobile, move scroll container so that full group is centered
-    const updatePosition = () => {
-      if (!scrollContainerRef.current) return;
-      const vw = window.innerWidth;
-      const cw = scrollContainerRef.current.scrollWidth;
-      if (vw <= 768 && sectionProducts.length > 1) {
-        const offset = (vw - cw) / 2;
-        scrollContainerRef.current.style.transform = `translateX(${offset}px)`;
-      } else {
-        scrollContainerRef.current.style.transform = '';
-      }
-    };
-    updatePosition();
-    window.addEventListener('resize', updatePosition);
-    return () => window.removeEventListener('resize', updatePosition);
-  }, [sectionProducts.length]);
+  // removed manual centering effect; CSS scroll snapping handles mobile layout instead
 
   return (
     <section className="w-full py-12 flex flex-col items-center relative mt-8 outline-none max-w-[100vw]">
@@ -59,19 +51,21 @@ const ProductSection = ({ title }) => {
         {/* Left feathering overlay */}
         <div className="hidden md:block absolute left-0 top-0 bottom-0 w-16 md:w-32 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none"></div>
         
-        {/* Left Navigation */}
-        <div className="absolute left-4 md:left-8 z-20 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity touch-manipulation">
-          <ArrowButton direction="left" onClick={() => scroll('left')} />
-        </div>
+        {/* Left Navigation (only show if more than one product) */}
+        {sectionProducts.length > 1 && (
+          <div className="absolute left-4 md:left-8 z-20 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity touch-manipulation">
+            <ArrowButton direction="left" onClick={() => scroll('left')} />
+          </div>
+        )}
 
         {/* Scrollable List */}
         <div 
           ref={scrollContainerRef}
-          className="flex overflow-x-auto gap-4 md:gap-10 py-8 scroll-smooth no-scrollbar outline-none justify-center md:justify-start md:px-32"
+          className="w-full flex overflow-x-auto gap-4 md:gap-10 py-8 scroll-smooth no-scrollbar outline-none snap-x snap-mandatory md:snap-none px-[10vw] md:px-32"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {sectionProducts.map((product, index) => (
-            <div key={index} className="flex-shrink-0">
+            <div key={index} className="flex-shrink-0 carousel-item w-[80vw] max-w-[280px] snap-center mx-auto">
               <ProductCard 
                 title={product.name} 
                 price={
@@ -87,10 +81,12 @@ const ProductSection = ({ title }) => {
           ))}
         </div>
 
-        {/* Right Navigation */}
-        <div className="absolute right-4 md:right-8 z-20 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity touch-manipulation">
-          <ArrowButton direction="right" onClick={() => scroll('right')} />
-        </div>
+        {/* Right Navigation (only show if more than one product) */}
+        {sectionProducts.length > 1 && (
+          <div className="absolute right-4 md:right-8 z-20 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity touch-manipulation">
+            <ArrowButton direction="right" onClick={() => scroll('right')} />
+          </div>
+        )}
 
         {/* Right feathering overlay */}
         <div className="hidden md:block absolute right-0 top-0 bottom-0 w-16 md:w-32 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none"></div>

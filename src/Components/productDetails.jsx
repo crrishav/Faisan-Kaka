@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import useCart from './useCart.jsx';
 
 const ProductDetails = ({ 
   title = "T-Shirt (White)", 
@@ -6,9 +7,11 @@ const ProductDetails = ({
   priceNPR = "0", 
   description = "It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using Lorem Ipsum is that it has a more-or-less normal distribution of letters, as opposed to using 'Content here, content here', making it look like readable English. Many desktop publishing packages and web page editors now use Lorem Ipsum as their default model text, and a search for 'lorem ipsum' will uncover many web sites still in their infancy. Various versions have", 
   colors = ["#3D5443", "#4D3434", "#4A4A4A"], 
-  sizes = ["M", "L", "S"] 
+  sizes = ["M", "L", "S"],
+  slug = undefined
 }) => {
   const [quantity, setQuantity] = useState(1);
+  const { addItem } = useCart();
   const isNepal = useMemo(() => {
     try {
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
@@ -21,6 +24,10 @@ const ProductDetails = ({
     }
   }, []);
   const displayPrice = isNepal ? `Rs. ${priceNPR}` : `₹${priceINR}`;
+  const handleAddToCart = () => {
+    const id = slug || title.toLowerCase().replace(/\s+/g, '-');
+    addItem({ id, title, priceINR, priceNPR, quantity });
+  };
 
   return (
     <div className="w-full max-w-[440px] bg-[#D9D9D9] rounded-[35px] overflow-hidden flex flex-col font-sans relative shadow-xl mx-auto">
@@ -74,19 +81,19 @@ const ProductDetails = ({
                 <div className="flex items-center gap-5">
                     <button 
                         onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                        className="text-2xl font-bold hover:text-gray-400 transition-colors cursor-pointer"
+                        className="w-8 h-8 flex items-center justify-center text-xl font-bold hover:text-gray-400 transition-colors cursor-pointer"
                     >
                         -
                     </button>
-                    <span className="text-lg font-bold w-6 text-center">{quantity}</span>
+                    <span className="text-lg font-bold w-8 text-center">{quantity}</span>
                     <button 
                         onClick={() => setQuantity(quantity + 1)}
-                        className="text-2xl font-bold hover:text-gray-400 transition-colors cursor-pointer"
+                        className="w-8 h-8 flex items-center justify-center text-xl font-bold hover:text-gray-400 transition-colors cursor-pointer"
                     >
                         +
                     </button>
                 </div>
-                <button className="font-bold text-base whitespace-nowrap hover:opacity-80 transition-opacity cursor-pointer">
+                <button onClick={handleAddToCart} className="font-bold text-base whitespace-nowrap hover:opacity-80 transition-opacity cursor-pointer">
                     Add To Cart
                 </button>
             </div>

@@ -12,7 +12,7 @@ const SmoothScroll = ({ children }) => {
       gestureDirection: 'vertical',
       smooth: true,
       mouseMultiplier: 1,
-      smoothTouch: false,
+      smoothTouch: true, // Enable smooth touch scrolling for mobile
       touchMultiplier: 2,
       infinite: false,
     });

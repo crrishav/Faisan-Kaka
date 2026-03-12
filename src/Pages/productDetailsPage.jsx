@@ -15,17 +15,34 @@ const ProductDetailsPage = () => {
       const category = parts[idx + 1];
       const filename = parts[parts.length - 1];
       const cleaned = filename.replace(/\.(png|jpg|jpeg|webp)$/i, '').replace(/^\d+\.\s*/, '');
-      const rx = /^(.*?)(?:\s*\((front|back)\))\s*\(([^,]+)\s*,\s*([^)]+)\)\s*$/i;
+      
+      // Enhanced regex to handle both formats: "Name (variant) (price1, price2)" and "Name (price1, price2)"
+      const rx = /^(.*?)(?:\s*\((front|back|Front|Back)\))?\s*\(([^,]+)\s*,\s*([^)]+)\)\s*$/i;
       const m = cleaned.match(rx);
-      const name = m ? m[1].trim() : cleaned.replace(/\s*\(.*\)\s*$/, '').trim();
-      const variant = m ? m[2].toLowerCase() : '';
-      const priceINR = m ? m[3].trim() : undefined;
-      const priceNPR = m ? m[4].trim() : undefined;
+      
+      let name, variant, priceINR, priceNPR;
+      
+      if (m) {
+        name = m[1].trim();
+        variant = (m[2] || '').toLowerCase();
+        priceINR = m[3].trim();
+        priceNPR = m[4].trim();
+      } else {
+        // Fallback for files without price info
+        name = cleaned.replace(/\s*\(.*\)\s*$/, '').trim();
+        variant = '';
+        priceINR = undefined;
+        priceNPR = undefined;
+      }
+      
       const s = name.toLowerCase().replace(/\s+/g, '-');
       const key = `${category}:${s}`;
+      
       if (!map[key]) map[key] = { category, name, slug: s, priceINR: undefined, priceNPR: undefined, images: {} };
+      
       if (priceINR && !map[key].priceINR) map[key].priceINR = priceINR;
       if (priceNPR && !map[key].priceNPR) map[key].priceNPR = priceNPR;
+      
       if (variant === 'front') map[key].images.front = url;
       else if (variant === 'back') map[key].images.back = url;
       else map[key].images.back = map[key].images.back || url;
@@ -57,7 +74,7 @@ const ProductDetailsPage = () => {
             </div>
           </div>
           <div className="flex-shrink-0 w-[440px]">
-            <ProductDetails title={product.name} priceINR={product.priceINR} priceNPR={product.priceNPR} description={description} />
+            <ProductDetails title={product.name} priceINR={product.priceINR} priceNPR={product.priceNPR} description={description} slug={product.slug} />
           </div>
         </div>
       </div>

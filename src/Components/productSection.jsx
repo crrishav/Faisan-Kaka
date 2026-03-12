@@ -1,6 +1,7 @@
 import React, { useRef, useMemo } from 'react';
 import ProductCard from './productCard.jsx';
 import ArrowButton from './arrowButton.jsx';
+import useProducts from './useProducts.jsx';
 
 const ProductSection = ({ title }) => {
   const scrollContainerRef = useRef(null);
@@ -15,44 +16,7 @@ const ProductSection = ({ title }) => {
     }
   };
 
-  const products = useMemo(() => {
-    const files = import.meta.glob('/src/assets/Collection/**/*.{png,jpg,jpeg,webp}', { eager: true, as: 'url' });
-    const map = {};
-    for (const [path, url] of Object.entries(files)) {
-      const parts = path.split('/');
-      const idx = parts.indexOf('Collection');
-      const category = parts[idx + 1];
-      const filename = parts[parts.length - 1];
-      const cleaned = filename.replace(/\.(png|jpg|jpeg|webp)$/i, '').replace(/^\d+\.\s*/, '');
-      const rx = /^(.*?)(?:\s*\((front|back)\))\s*\(([^,]+)\s*,\s*([^)]+)\)\s*$/i;
-      const m = cleaned.match(rx);
-      const name = m ? m[1].trim() : cleaned.replace(/\s*\(.*\)\s*$/, '').trim();
-      const variant = m ? m[2].toLowerCase() : '';
-      const priceINR = m ? m[3].trim() : undefined;
-      const priceNPR = m ? m[4].trim() : undefined;
-      const slug = name.toLowerCase().replace(/\s+/g, '-');
-      const key = `${category}:${slug}`;
-      if (!map[key]) {
-        map[key] = { category, name, slug, priceINR: undefined, priceNPR: undefined, backImage: undefined, frontImage: undefined };
-      }
-      if (priceINR && !map[key].priceINR) map[key].priceINR = priceINR;
-      if (priceNPR && !map[key].priceNPR) map[key].priceNPR = priceNPR;
-      if (variant === 'front') {
-        map[key].frontImage = url;
-      } else if (variant === 'back') {
-        map[key].backImage = url;
-      } else {
-        map[key].backImage = map[key].backImage || url;
-      }
-    }
-    const list = Object.values(map);
-    const hash = (s) => {
-      let h = 0;
-      for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
-      return h;
-    };
-    return list.sort((a, b) => hash(a.slug) - hash(b.slug));
-  }, []);
+  const products = useProducts();
   const sectionProducts = products.filter(p => p.category === title);
   const isNepal = useMemo(() => {
     try {
@@ -78,14 +42,14 @@ const ProductSection = ({ title }) => {
         <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none"></div>
         
         {/* Left Navigation */}
-        <div className="absolute left-8 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="absolute left-8 z-20 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity touch-manipulation">
           <ArrowButton direction="left" onClick={() => scroll('left')} />
         </div>
 
         {/* Scrollable List */}
         <div 
           ref={scrollContainerRef}
-          className="w-full flex overflow-x-auto gap-10 px-32 py-8 scroll-smooth no-scrollbar outline-none"
+          className="w-full flex overflow-x-auto gap-10 px-32 py-8 scroll-smooth no-scrollbar outline-none justify-center md:justify-start"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {sectionProducts.map((product, index) => (
@@ -106,7 +70,7 @@ const ProductSection = ({ title }) => {
         </div>
 
         {/* Right Navigation */}
-        <div className="absolute right-8 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="absolute right-8 z-20 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity touch-manipulation">
           <ArrowButton direction="right" onClick={() => scroll('right')} />
         </div>
 

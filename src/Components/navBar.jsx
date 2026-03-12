@@ -1,9 +1,13 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import logo from '../assets/logo.png';
 import { useNavigate, useLocation } from 'react-router-dom';
+import useCart from './useCart.jsx';
+import useProducts from './useProducts.jsx';
 
 const NavBar = () => {
   const [activeMenu, setActiveMenu] = useState(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobileCartOpen, setIsMobileCartOpen] = useState(false);
   const containerRef = useRef(null);
   const headerRef = useRef(null);
   const contentRef = useRef(null);
@@ -11,29 +15,110 @@ const NavBar = () => {
   const closeTimer = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const { items, currency, total, updateQuantity, removeItem } = useCart();
+  const allProducts = useProducts();
+
+  // Search state
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const searchInputRef = useRef(null);
+
+  const imageMap = useMemo(() => {
+    const files = import.meta.glob('/src/assets/Collection/**/*.{png,jpg,jpeg,webp}', { eager: true, as: 'url' });
+    const map = {};
+    for (const [path, url] of Object.entries(files)) {
+      const parts = path.split('/');
+      const filename = parts[parts.length - 1];
+      const cleaned = filename.replace(/\.(png|jpg|jpeg|webp)$/i, '').replace(/^\d+\.\s*/, '');
+      
+      // Enhanced regex to handle both formats: "Name (variant) (price1, price2)" and "Name (price1, price2)"
+      const rx = /^(.*?)(?:\s*\((front|back|Front|Back)\))?\s*\(([^,]+)\s*,\s*([^)]+)\)\s*$/i;
+      const m = cleaned.match(rx);
+      
+      let name, variant;
+      
+      if (m) {
+        name = m[1].trim();
+        variant = (m[2] || '').toLowerCase();
+      } else {
+        // Fallback for files without price info
+        name = cleaned.replace(/\s*\(.*\)\s*$/, '').trim();
+        variant = '';
+      }
+      
+      const slug = name.toLowerCase().replace(/\s+/g, '-');
+      if (!map[slug]) map[slug] = {};
+      if (variant === 'front') map[slug].front = url;
+      else if (variant === 'back') map[slug].back = url;
+      else map[slug].back = map[slug].back || url;
+    }
+    return map;
+  }, []);
 
   const openMenu = (name) => {
     if (closeTimer.current) clearTimeout(closeTimer.current);
     setActiveMenu(name);
   };
 
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+    setIsMobileCartOpen(false);
+  };
+
+  const toggleMobileCart = () => {
+    setIsMobileCartOpen(!isMobileCartOpen);
+    setIsMobileMenuOpen(false);
+  };
+
+  const closeMobileMenus = () => {
+    setIsMobileMenuOpen(false);
+    setIsMobileCartOpen(false);
+  };
+
   const scheduleClose = () => {
     if (closeTimer.current) clearTimeout(closeTimer.current);
-    closeTimer.current = setTimeout(() => setActiveMenu(null), 80);
+    closeTimer.current = setTimeout(() => {
+        setActiveMenu(null);
+        // Do not close search automatically on mouse leave, only menu
+    }, 80);
   };
 
   useEffect(() => {
-    if (headerRef.current) {
-      setMinHeight(headerRef.current.offsetHeight);
-    }
+    const updateHeight = () => {
+      // Only measure/set height on desktop — on mobile the desktop header is display:none
+      // so offsetHeight returns 0, causing the container to collapse.
+      if (window.innerWidth >= 768 && headerRef.current) {
+        setMinHeight(headerRef.current.offsetHeight);
+      } else {
+        // On mobile, clear any JS-set height so CSS controls layout naturally
+        setMinHeight(0);
+        if (containerRef.current) containerRef.current.style.height = '';
+      }
+    };
+    updateHeight();
+    window.addEventListener('resize', updateHeight);
+    return () => window.removeEventListener('resize', updateHeight);
   }, []);
 
   useEffect(() => {
+    // On mobile (< 768px) the desktop header is display:none — skip JS height control
+    // entirely so the container uses its natural CSS height (auto).
     if (!containerRef.current || !headerRef.current) return;
+    if (window.innerWidth < 768) {
+      containerRef.current.style.height = '';
+      return;
+    }
     const base = headerRef.current.offsetHeight;
-    const target = activeMenu && contentRef.current ? contentRef.current.scrollHeight : 0;
-    containerRef.current.style.height = `${base + target}px`;
-  }, [activeMenu]);
+    const target = activeMenu && contentRef.current ? contentRef.current.offsetHeight : 0;
+    // Add extra height for search results if search is active and has results
+    const searchHeight = isSearchOpen && searchResults.length > 0 && activeMenu === 'search' && contentRef.current ? contentRef.current.offsetHeight : 0;
+
+    // Prioritize search height if search is active
+    const finalHeight = activeMenu === 'search' ? base + searchHeight : base + target;
+
+    containerRef.current.style.height = `${finalHeight}px`;
+  }, [activeMenu, items, isSearchOpen, searchResults]);
 
   const handleLogoClick = () => {
     if (location.pathname === '/') {
@@ -47,18 +132,102 @@ const NavBar = () => {
     }
   };
 
+  const handleSearchClick = () => {
+    setIsSearchOpen(true);
+    setActiveMenu('search'); // Use 'search' as a virtual menu state
+    setTimeout(() => {
+        if (searchInputRef.current) searchInputRef.current.focus();
+    }, 100);
+  };
+
+  const handleSearchChange = (e) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    if (query.trim().length > 0) {
+        const results = allProducts.filter(p => p.name.toLowerCase().includes(query.toLowerCase())).slice(0, 5);
+        setSearchResults(results);
+        setActiveMenu('search'); // Ensure menu is open to show results
+    } else {
+        setSearchResults([]);
+    }
+  };
+
+  const handleSearchResultClick = (product) => {
+    // 1. Navigate to home if not there
+    if (location.pathname !== '/') {
+        navigate('/');
+        // Wait for navigation
+        setTimeout(() => scrollToProduct(product), 500);
+    } else {
+        scrollToProduct(product);
+    }
+    setIsSearchOpen(false);
+    setSearchQuery('');
+    setSearchResults([]);
+    setActiveMenu(null);
+  };
+
+  const scrollToProduct = (product) => {
+    // Dispatch custom event to ProductSection or handle scroll globally
+    // We can use the slug to find the element if we add ids to product cards
+    const element = document.getElementById(`product-${product.slug}`);
+    if (element) {
+        // Scroll window to the section containing the product
+        // The element is inside a horizontal scroll container.
+        // We need to find the container.
+        const container = element.closest('.overflow-x-auto');
+        if (container) {
+            // Scroll window to container
+            const containerRect = container.getBoundingClientRect();
+            const absoluteTop = window.scrollY + containerRect.top - 100; // Offset for navbar
+            
+            if (window.lenis && typeof window.lenis.scrollTo === 'function') {
+                window.lenis.scrollTo(absoluteTop);
+            } else {
+                window.scrollTo({ top: absoluteTop, behavior: 'smooth' });
+            }
+
+            // Scroll horizontal container to product
+            const elementRect = element.getBoundingClientRect();
+            const containerLeft = container.getBoundingClientRect().left;
+            const scrollLeft = element.offsetLeft - (container.clientWidth / 2) + (element.clientWidth / 2);
+            
+            container.scrollTo({
+                left: scrollLeft,
+                behavior: 'smooth'
+            });
+
+            // Trigger attention animation
+            // Dispatch event
+            const event = new CustomEvent('highlight-product', { detail: { slug: product.slug } });
+            window.dispatchEvent(event);
+        }
+    }
+  };
+
+  const handleBlur = (e) => {
+      // Delay closing to allow click on results
+      setTimeout(() => {
+          if (!document.activeElement || document.activeElement !== searchInputRef.current) {
+            // setIsSearchOpen(false);
+            // setActiveMenu(null);
+          }
+      }, 200);
+  };
+
   return (
-    <nav className="fixed top-6 left-1/2 -translate-x-1/2 z-50" onMouseLeave={scheduleClose}>
+    <nav className="fixed top-6 left-1/2 -translate-x-1/2 z-[60] md:z-50" onMouseLeave={scheduleClose}>
       <div
         ref={containerRef}
-        className="w-[900px] max-w-[90vw] rounded-3xl bg-white/10 backdrop-blur-md border border-black/10 shadow-md overflow-hidden transition-all duration-300 ease-out"
-        style={{ height: minHeight ? `${minHeight}px` : undefined }}
+        className="w-[900px] max-w-[90vw] md:max-w-[90vw] rounded-3xl bg-white/10 backdrop-blur-md border border-black/10 shadow-md overflow-hidden transition-all duration-300 ease-out"
+        style={{ height: (minHeight && typeof window !== 'undefined' && window.innerWidth >= 768) ? `${minHeight}px` : undefined }}
       >
-        <div ref={headerRef} className="px-12 py-3">
+        {/* Desktop Navigation */}
+        <div ref={headerRef} className="px-12 py-3 hidden md:block">
           <div className="flex items-center justify-between gap-8 text-black">
             <a
               href="#collection"
-              className="font-bold transition hover:opacity-70 text-black"
+              className={`font-bold transition hover:opacity-70 text-black ${isSearchOpen ? 'hidden md:block' : ''}`}
               onMouseEnter={() => openMenu('collection')}
               onMouseLeave={scheduleClose}
             >
@@ -66,31 +235,124 @@ const NavBar = () => {
             </a>
             <a
               href="#about"
-              className="font-bold transition hover:opacity-70 text-black"
+              className={`font-bold transition hover:opacity-70 text-black ${isSearchOpen ? 'hidden md:block' : ''}`}
               onMouseEnter={() => openMenu('about')}
               onMouseLeave={scheduleClose}
             >
               About
             </a>
             <img src={logo} alt="Logo" className="h-8 cursor-pointer" onClick={handleLogoClick} />
-            <button className="font-bold transition hover:opacity-70 text-black">Search</button>
-            <a
-              href="#cart"
-              className="font-bold transition hover:opacity-70 text-black"
-              onMouseEnter={() => openMenu('cart')}
-              onMouseLeave={scheduleClose}
+            
+            {isSearchOpen ? (
+                <div className="flex-1 max-w-xs relative">
+                    <input 
+                        ref={searchInputRef}
+                        type="text" 
+                        value={searchQuery}
+                        onChange={handleSearchChange}
+                        onBlur={() => {
+                            // Only close if we didn't click a result
+                            setTimeout(() => {
+                                setIsSearchOpen(false);
+                                if (activeMenu === 'search') setActiveMenu(null);
+                            }, 200);
+                        }}
+                        placeholder="Search products..."
+                        className="w-full bg-transparent border-b-2 border-black text-black font-bold outline-none px-2 py-1 placeholder-black/50"
+                    />
+                </div>
+            ) : (
+                <button 
+                    className="font-bold transition hover:opacity-70 text-black"
+                    onClick={handleSearchClick}
+                >
+                    Search
+                </button>
+            )}
+
+            <div className="relative" onMouseEnter={() => openMenu('cart')} onMouseLeave={scheduleClose}>
+              <a
+                href="#cart"
+                className="font-bold transition hover:opacity-70 text-black relative inline-block"
+              >
+                Cart
+                {items.length > 0 && (
+                  <span className="pointer-events-none absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                )}
+              </a>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Navigation */}
+        <div className="md:hidden px-4 py-3 relative z-[61]">
+          <div className="flex items-center justify-between">
+            {/* Cart Icon */}
+            <button 
+              onClick={toggleMobileCart}
+              className="p-2 text-black font-bold relative touch-manipulation"
             >
-              Cart
-            </a>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 2L6 9H3l3 7h12l3-7h-3l-3-7z"/>
+                <path d="M9 2v7"/>
+                <path d="M15 2v7"/>
+              </svg>
+              {items.length > 0 && (
+                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+              )}
+            </button>
+
+            {/* Logo */}
+            <img src={logo} alt="Logo" className="h-8 cursor-pointer" onClick={handleLogoClick} />
+
+            {/* Hamburger Menu */}
+            <button 
+              onClick={toggleMobileMenu}
+              className="p-2 text-black font-bold touch-manipulation"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="3" y1="6" x2="21" y2="6"/>
+                <line x1="3" y1="12" x2="21" y2="12"/>
+                <line x1="3" y1="18" x2="21" y2="18"/>
+              </svg>
+            </button>
           </div>
         </div>
 
         <div
           ref={contentRef}
-          className={`px-12 pb-12 pt-6 min-h-[360px] transition-all duration-300 ease-in-out ${activeMenu ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'}`}
+          className={`px-12 pb-12 pt-6 max-h-[360px] overflow-y-auto no-scrollbar transition-all duration-300 ease-in-out ${activeMenu ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'} ${activeMenu && activeMenu !== 'collection' ? 'bg-white/80 rounded-2xl p-6 backdrop-blur-md shadow-lg' : ''}`}
           onMouseEnter={() => activeMenu && openMenu(activeMenu)}
           onMouseLeave={scheduleClose}
         >
+          {/* Search Results */}
+          <div className={`${activeMenu === 'search' ? 'block' : 'hidden'}`}>
+             {searchResults.length > 0 ? (
+                 <div className="flex flex-col gap-3">
+                     {searchResults.map(product => (
+                         <div 
+                            key={product.slug} 
+                            className="flex items-center gap-4 p-2 hover:bg-black/5 rounded-lg cursor-pointer transition-colors"
+                            onClick={() => handleSearchResultClick(product)}
+                            onMouseDown={(e) => e.preventDefault()} // Prevent blur
+                         >
+                             <div className="w-12 h-12 rounded bg-gray-200 overflow-hidden flex-shrink-0">
+                                 <img src={product.backImage || product.frontImage} alt={product.name} className="w-full h-full object-cover" />
+                             </div>
+                             <div className="flex flex-col">
+                                 <span className="font-bold text-sm">{product.name}</span>
+                                 <span className="text-xs text-black/60">{currency === 'NPR' ? `Rs. ${product.priceNPR}` : `₹${product.priceINR}`}</span>
+                             </div>
+                         </div>
+                     ))}
+                 </div>
+             ) : (
+                 <div className="text-center py-4 text-black/50 font-medium">
+                     {searchQuery ? 'No products found' : 'Type to search...'}
+                 </div>
+             )}
+          </div>
+
           <div className={`${activeMenu === 'collection' ? 'block' : 'hidden'}`}>
             <div className="flex flex-col gap-6 w-full">
               <div className="w-full bg-black text-white rounded-2xl py-8 text-center text-xl font-bold">T-Shirt</div>
@@ -147,13 +409,196 @@ const NavBar = () => {
             </div>
           </div>
           <div className={`${activeMenu === 'cart' ? 'block' : 'hidden'}`}>
-            <div className="flex flex-col items-center gap-6">
-              <div className="flex justify-center w-full py-6">
-                <p className="text-sm font-bold text-black">No Items Added Yet</p>
-              </div>
-              <button className="rounded-xl bg-black text-white font-bold px-6 py-3 transition hover:opacity-90">
-                Checkout
+            <div className="flex flex-col gap-4">
+              {items.length === 0 ? (
+                <div className="flex flex-col items-center w-full py-6">
+                  <p className="text-sm font-bold text-black">No Items Added Yet</p>
+                </div>
+              ) : (
+                <>
+                  <div className="flex flex-col gap-3">
+                    {items.map((i) => {
+                      const imgSrc = imageMap[i.id]?.back || imageMap[i.id]?.front;
+                      return (
+                        <div key={i.id} className="flex items-center justify-between w-full">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-xl bg-black/10 overflow-hidden">
+                              {imgSrc ? (
+                                <img src={imgSrc} alt={i.title} className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full" />
+                              )}
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-sm font-bold text-black">{i.title}</span>
+                              <span className="text-xs text-black/70">
+                                {currency === 'NPR' ? `Rs. ${i.priceNPR}` : `₹${i.priceINR}`}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button
+                              className="relative w-8 h-8 flex items-center justify-center bg-white text-black border border-black rounded hover:bg-gray-100 transition-colors text-lg after:absolute after:-inset-[6px] after:content-['']"
+                              onClick={() => updateQuantity(i.id, Math.max(1, i.quantity - 1))}
+                            >
+                              -
+                            </button>
+                            <span className="w-6 text-center text-sm font-bold text-black">{i.quantity}</span>
+                            <button
+                              className="relative w-8 h-8 flex items-center justify-center bg-white text-black border border-black rounded hover:bg-gray-100 transition-colors text-lg after:absolute after:-inset-[6px] after:content-['']"
+                              onClick={() => updateQuantity(i.id, i.quantity + 1)}
+                            >
+                              +
+                            </button>
+                            <button
+                              className="ml-2 w-8 h-8 flex items-center justify-center rounded-full text-white hover:opacity-80 transition-opacity"
+                              style={{ backgroundColor: '#ef4444' }}
+                              onClick={() => removeItem(i.id)}
+                              aria-label="Remove"
+                              title="Remove"
+                            >
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                <line x1="10" y1="11" x2="10" y2="17"></line>
+                                <line x1="14" y1="11" x2="14" y2="17"></line>
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="flex items-center justify-between pt-2">
+                    <span className="text-sm font-bold text-black">Total</span>
+                    <span className="text-sm font-bold text-black">
+                      {currency === 'NPR' ? `Rs. ${total.toFixed(2)}` : `₹${total.toFixed(2)}`}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-center">
+                    <button
+                      className="rounded-xl bg-black text-black font-bold px-6 py-3 transition hover:opacity-90"
+                    >
+                      Checkout
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Menu Dropdown */}
+        <div className={`md:hidden transition-all duration-300 ease-in-out ${isMobileMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0 pointer-events-none'} overflow-hidden`}>
+          <div className="px-4 py-4 bg-white/80 backdrop-blur-md border-t border-black/10">
+            <div className="flex flex-col gap-4">
+              <button 
+                onClick={() => {
+                  navigate('/#collection');
+                  closeMobileMenus();
+                }}
+                className="text-left font-bold text-black hover:opacity-70 transition py-2"
+              >
+                Collection
               </button>
+              <button 
+                onClick={() => {
+                  navigate('/#about');
+                  closeMobileMenus();
+                }}
+                className="text-left font-bold text-black hover:opacity-70 transition py-2"
+              >
+                About
+              </button>
+              <button 
+                onClick={() => {
+                  handleSearchClick();
+                  setIsMobileMenuOpen(false);
+                }}
+                className="text-left font-bold text-black hover:opacity-70 transition py-2"
+              >
+                Search
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Cart Dropdown */}
+        <div className={`md:hidden transition-all duration-300 ease-in-out ${isMobileCartOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0 pointer-events-none'} overflow-hidden`}>
+          <div className="px-4 py-4 bg-white/80 backdrop-blur-md border-t border-black/10">
+            <div className="flex flex-col gap-4 max-h-80 overflow-y-auto">
+              {items.length === 0 ? (
+                <div className="flex flex-col items-center w-full py-6">
+                  <p className="text-sm font-bold text-black">No Items Added Yet</p>
+                </div>
+              ) : (
+                <>
+                  {items.map((i) => {
+                    const imgSrc = imageMap[i.id]?.back || imageMap[i.id]?.front;
+                    return (
+                      <div key={i.id} className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-xl bg-black/10 overflow-hidden">
+                            {imgSrc ? (
+                              <img src={imgSrc} alt={i.title} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full" />
+                            )}
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-sm font-bold text-black">{i.title}</span>
+                            <span className="text-xs text-black/70">
+                              {currency === 'NPR' ? `Rs. ${i.priceNPR}` : `₹${i.priceINR}`}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            className="relative w-6 h-6 flex items-center justify-center bg-white text-black border border-black rounded hover:bg-gray-100 transition-colors text-xs"
+                            onClick={() => updateQuantity(i.id, Math.max(1, i.quantity - 1))}
+                          >
+                            -
+                          </button>
+                          <span className="w-4 text-center text-xs font-bold text-black">{i.quantity}</span>
+                          <button
+                            className="relative w-6 h-6 flex items-center justify-center bg-white text-black border border-black rounded hover:bg-gray-100 transition-colors text-xs"
+                            onClick={() => updateQuantity(i.id, i.quantity + 1)}
+                          >
+                            +
+                          </button>
+                          <button
+                            className="ml-1 w-6 h-6 flex items-center justify-center rounded-full text-white hover:opacity-80 transition-opacity"
+                            style={{ backgroundColor: '#ef4444' }}
+                            onClick={() => removeItem(i.id)}
+                            aria-label="Remove"
+                            title="Remove"
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="3 6 5 6 21 6"></polyline>
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                              <line x1="10" y1="11" x2="10" y2="17"></line>
+                              <line x1="14" y1="11" x2="14" y2="17"></line>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <div className="flex items-center justify-between pt-2 border-t border-black/20">
+                    <span className="text-sm font-bold text-black">Total</span>
+                    <span className="text-sm font-bold text-black">
+                      {currency === 'NPR' ? `Rs. ${total.toFixed(2)}` : `₹${total.toFixed(2)}`}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-center">
+                    <button
+                      className="rounded-xl bg-black text-white font-bold px-4 py-2 transition hover:opacity-90 text-sm"
+                    >
+                      Checkout
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

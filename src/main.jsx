@@ -3,11 +3,14 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 import SmoothScroll from './Components/smoothScroll.jsx'
+import { CartProvider } from './Components/cartContext.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <SmoothScroll>
-      <App />
+      <CartProvider>
+        <App />
+      </CartProvider>
     </SmoothScroll>
   </StrictMode>,
 )

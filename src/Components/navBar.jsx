@@ -288,7 +288,11 @@ const NavBar = () => {
   };
 
   return (
-    <nav ref={navRef} className="fixed top-6 left-1/2 -translate-x-1/2 z-[60] md:z-50" onMouseLeave={scheduleClose}>
+    <nav
+        ref={navRef}
+        className="fixed top-6 left-1/2 -translate-x-1/2 z-[60] md:z-50 w-full max-w-[100vw] px-4 overflow-x-hidden"
+        onMouseLeave={scheduleClose}
+      >
       <div
         ref={containerRef}
         className="w-[90vw] md:w-[900px] max-w-[90vw] rounded-3xl bg-white/10 backdrop-blur-md border border-black/10 shadow-md overflow-hidden transition-all duration-300 ease-out"
@@ -357,8 +361,8 @@ const NavBar = () => {
         </div>
 
         {/* Mobile Navigation Bar */}
-        <div className="md:hidden px-4 py-3 relative z-[61]">
-          <div className="flex items-center justify-center gap-4">
+        <div className="md:hidden px-4 py-3 relative z-[61] w-full max-w-[100vw] overflow-x-hidden">
+          <div className="flex items-center justify-between w-full gap-4">
             {/* Cart Icon */}
             <button
               onClick={toggleMobileCart}
@@ -378,7 +382,12 @@ const NavBar = () => {
             </button>
 
             {/* Logo - Centered */}
-            <img src={logo} alt="Faisan Kaka" className="h-6 md:h-8 cursor-pointer" onClick={handleLogoClick} />
+            <img
+              src={logo}
+              alt="Faisan Kaka"
+              className="h-6 md:h-8 cursor-pointer max-w-[50px] max-h-[50px] w-auto h-auto"
+              onClick={handleLogoClick}
+            />
 
             {/* Hamburger / Close toggle */}
             <button
@@ -579,7 +588,7 @@ const NavBar = () => {
           id="mobile-menu-panel"
           role="menu"
           aria-label="Site navigation"
-          className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${isMobileMenuOpen ? 'max-h-[80vh] opacity-100' : 'max-h-0 opacity-0 pointer-events-none'}`}
+          className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out w-full max-w-[100vw] ${isMobileMenuOpen ? 'max-h-[80vh] opacity-100' : 'max-h-0 opacity-0 pointer-events-none'}`}
         >
           <div className="border-t border-black/10 bg-white/90 backdrop-blur-md">
 
@@ -746,7 +755,7 @@ const NavBar = () => {
         </div>
 
         {/* Mobile Cart Dropdown */}
-        <div id="mobile-cart-panel" className={`md:hidden transition-all duration-300 ease-in-out ${isMobileCartOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0 pointer-events-none'} overflow-hidden`}>
+        <div id="mobile-cart-panel" className={`md:hidden transition-all duration-300 ease-in-out w-full max-w-[100vw] ${isMobileCartOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0 pointer-events-none'} overflow-hidden`}>
           <div className="px-4 py-4 bg-white/80 backdrop-blur-md border-t border-black/10">
             <div className="flex flex-col gap-4 max-h-80 overflow-y-auto">
               {items.length === 0 ? (

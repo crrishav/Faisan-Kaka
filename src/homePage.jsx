@@ -5,7 +5,7 @@ import Footer from './Components/footer.jsx';
 
 const HomePage = () => {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white overflow-x-hidden max-w-[100vw]">
       <NavBar />
       
       {/* Hero Section (Empty for now) */}

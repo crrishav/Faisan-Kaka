@@ -5,6 +5,11 @@ const SmoothScroll = ({ children }) => {
   const lenisRef = useRef(null);
 
   useEffect(() => {
+    // disable Lenis on narrow/mobile devices so interactions jump immediately
+    if (window.innerWidth < 768 || /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+      return; // do not initialize smooth scroll
+    }
+
     const lenis = new Lenis({
       duration: 1.2,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
@@ -12,7 +17,7 @@ const SmoothScroll = ({ children }) => {
       gestureDirection: 'vertical',
       smooth: true,
       mouseMultiplier: 1,
-      smoothTouch: true, // Enable smooth touch scrolling for mobile
+      smoothTouch: true,
       touchMultiplier: 2,
       infinite: false,
     });

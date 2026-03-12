@@ -1,4 +1,25 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+
+// simple throttle utility for scroll handler
+function throttle(fn, wait) {
+  let last = 0;
+  return (...args) => {
+    const now = Date.now();
+    if (now - last >= wait) {
+      last = now;
+      fn(...args);
+    }
+  };
+}
+
+// detect mobile by width or user agent
+function isMobileDevice() {
+  if (typeof window === 'undefined') return false;
+  return (
+    window.innerWidth < 768 ||
+    /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+  );
+}
 import logo from '../assets/logo.png';
 import { useNavigate, useLocation } from 'react-router-dom';
 import useCart from './useCart.jsx';
@@ -23,6 +44,10 @@ const NavBar = () => {
   const closeTimer = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
+
+  // state for show-on-scroll-up navbar
+  const [showNav, setShowNav] = useState(true);
+  const lastScrollY = useRef(0);
   const { items, currency, total, updateQuantity, removeItem } = useCart();
   const allProducts = useProducts();
 
@@ -109,12 +134,7 @@ const NavBar = () => {
 
   const handleMobileResultClick = (product) => {
     closeMobileMenus();
-    if (location.pathname !== '/') {
-      navigate('/');
-      setTimeout(() => scrollToProduct(product), 500);
-    } else {
-      scrollToProduct(product);
-    }
+    navigate(`/product/${product.slug}`);
   };
 
   const scheduleClose = () => {
@@ -144,15 +164,15 @@ const NavBar = () => {
 
   // Scroll-triggered collapse: close all mobile panels when user scrolls
   useEffect(() => {
-    const handleScroll = () => {
+    const handleScrollPanels = () => {
       if (window.innerWidth < 768) {
         setIsMobileMenuOpen(false);
         setIsMobileCartOpen(false);
         setMobileSubmenu(null);
       }
     };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScrollPanels, { passive: true });
+    return () => window.removeEventListener('scroll', handleScrollPanels);
   }, []);
 
   // Outside-tap collapse: close all mobile panels when tapping outside the nav
@@ -183,22 +203,25 @@ const NavBar = () => {
     }
     const base = headerRef.current.offsetHeight;
     const target = activeMenu && contentRef.current ? contentRef.current.offsetHeight : 0;
-    // Add extra height for search results if search is active and has results
     const searchHeight = isSearchOpen && searchResults.length > 0 && activeMenu === 'search' && contentRef.current ? contentRef.current.offsetHeight : 0;
-
-    // Prioritize search height if search is active
     const finalHeight = activeMenu === 'search' ? base + searchHeight : base + target;
-
     containerRef.current.style.height = `${finalHeight}px`;
   }, [activeMenu, items, isSearchOpen, searchResults]);
 
+  // helper that scrolls immediately on mobile, otherwise uses lenis/smooth fallback
+  const performScroll = (top) => {
+    if (isMobileDevice()) {
+      window.scrollTo({ top, behavior: 'auto' });
+    } else if (window.lenis && typeof window.lenis.scrollTo === 'function') {
+      window.lenis.scrollTo(top);
+    } else {
+      window.scrollTo({ top, behavior: 'smooth' });
+    }
+  };
+
   const handleLogoClick = () => {
     if (location.pathname === '/') {
-      if (window.lenis && typeof window.lenis.scrollTo === 'function') {
-        window.lenis.scrollTo(0);
-      } else {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
+      performScroll(0);
     } else {
       navigate('/');
     }
@@ -224,15 +247,9 @@ const NavBar = () => {
     }
   };
 
+  // navigate directly to product detail page
   const handleSearchResultClick = (product) => {
-    // 1. Navigate to home if not there
-    if (location.pathname !== '/') {
-        navigate('/');
-        // Wait for navigation
-        setTimeout(() => scrollToProduct(product), 500);
-    } else {
-        scrollToProduct(product);
-    }
+    navigate(`/product/${product.slug}`);
     setIsSearchOpen(false);
     setSearchQuery('');
     setSearchResults([]);
@@ -241,36 +258,22 @@ const NavBar = () => {
 
   const scrollToProduct = (product) => {
     // Dispatch custom event to ProductSection or handle scroll globally
-    // We can use the slug to find the element if we add ids to product cards
     const element = document.getElementById(`product-${product.slug}`);
     if (element) {
-        // Scroll window to the section containing the product
-        // The element is inside a horizontal scroll container.
-        // We need to find the container.
         const container = element.closest('.overflow-x-auto');
         if (container) {
-            // Scroll window to container
             const containerRect = container.getBoundingClientRect();
             const absoluteTop = window.scrollY + containerRect.top - 100; // Offset for navbar
-            
-            if (window.lenis && typeof window.lenis.scrollTo === 'function') {
-                window.lenis.scrollTo(absoluteTop);
-            } else {
-                window.scrollTo({ top: absoluteTop, behavior: 'smooth' });
-            }
 
-            // Scroll horizontal container to product
-            const elementRect = element.getBoundingClientRect();
-            const containerLeft = container.getBoundingClientRect().left;
+            performScroll(absoluteTop);
+
+            // horizontal scroll; instant jump on mobile
             const scrollLeft = element.offsetLeft - (container.clientWidth / 2) + (element.clientWidth / 2);
-            
             container.scrollTo({
                 left: scrollLeft,
-                behavior: 'smooth'
+                behavior: isMobileDevice() ? 'auto' : 'smooth'
             });
 
-            // Trigger attention animation
-            // Dispatch event
             const event = new CustomEvent('highlight-product', { detail: { slug: product.slug } });
             window.dispatchEvent(event);
         }
@@ -287,10 +290,26 @@ const NavBar = () => {
       }, 200);
   };
 
+  // manage navbar visibility on scroll (show on up, hide on down)
+  useEffect(() => {
+    const onScroll = throttle(() => {
+      const currentY = window.scrollY;
+      if (currentY < lastScrollY.current || currentY < 60) {
+        setShowNav(true);
+      } else if (currentY > lastScrollY.current && currentY > 60) {
+        setShowNav(false);
+      }
+      lastScrollY.current = currentY;
+    }, 100);
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   return (
     <nav
         ref={navRef}
-        className="fixed top-6 left-1/2 -translate-x-1/2 z-[60] md:z-50 w-full max-w-[100vw] px-4 overflow-x-hidden"
+        className={`fixed top-6 z-[60] md:z-50 w-full max-w-[100vw] px-4 overflow-x-hidden lg:flex lg:justify-center transition-transform duration-300 ${showNav ? 'translate-y-0' : '-translate-y-full'}`}
         onMouseLeave={scheduleClose}
       >
       <div
@@ -732,7 +751,7 @@ const NavBar = () => {
                           aria-selected="false"
                           onMouseDown={e => e.preventDefault()}
                           onClick={() => handleMobileResultClick(product)}
-                          className="flex items-center gap-3 p-2 rounded-xl active:bg-black/5 transition-colors text-left w-full min-h-[48px]"
+                          className="flex items-center gap-3 p-2 rounded-xl active:bg-black/5 transition-colors text-left w-full min-h-[48px] cursor-pointer"
                         >
                           <div className="w-10 h-10 rounded-lg bg-black/10 overflow-hidden flex-shrink-0">
                             <img src={product.backImage || product.frontImage} alt={product.name} className="w-full h-full object-cover" />

@@ -25,7 +25,7 @@ const NavBar = () => {
   const searchInputRef = useRef(null);
 
   const imageMap = useMemo(() => {
-    const files = import.meta.glob('/src/assets/Collection/**/*.{png,jpg,jpeg,webp}', { eager: true, as: 'url' });
+    const files = import.meta.glob('/src/assets/Collection/**/*.{png,jpg,jpeg,webp}', { eager: true, query: '?url', import: 'default' });
     const map = {};
     for (const [path, url] of Object.entries(files)) {
       const parts = path.split('/');
@@ -99,6 +99,18 @@ const NavBar = () => {
     updateHeight();
     window.addEventListener('resize', updateHeight);
     return () => window.removeEventListener('resize', updateHeight);
+  }, []);
+
+  // Scroll-triggered collapse: close mobile dropdowns when user scrolls
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.innerWidth < 768) {
+        setIsMobileMenuOpen(false);
+        setIsMobileCartOpen(false);
+      }
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   useEffect(() => {
@@ -319,9 +331,10 @@ const NavBar = () => {
           </div>
         </div>
 
+        {/* Desktop dropdown panel — hidden on mobile to prevent layout height bleed */}
         <div
           ref={contentRef}
-          className={`px-12 pb-12 pt-6 max-h-[360px] overflow-y-auto no-scrollbar transition-all duration-300 ease-in-out ${activeMenu ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'} ${activeMenu && activeMenu !== 'collection' ? 'bg-white/80 rounded-2xl p-6 backdrop-blur-md shadow-lg' : ''}`}
+          className={`hidden md:block px-12 pb-12 pt-6 max-h-[360px] overflow-y-auto no-scrollbar transition-all duration-300 ease-in-out ${activeMenu ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2 pointer-events-none'} ${activeMenu && activeMenu !== 'collection' ? 'bg-white/80 rounded-2xl p-6 backdrop-blur-md shadow-lg' : ''}`}
           onMouseEnter={() => activeMenu && openMenu(activeMenu)}
           onMouseLeave={scheduleClose}
         >

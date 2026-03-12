@@ -2,6 +2,7 @@ import React, { useMemo, useEffect } from 'react';
 import ProductDetails from '../Components/productDetails.jsx';
 import NavBar from '../Components/navBar.jsx';
 import Footer from '../Components/footer.jsx';
+import SmoothScroll from '../Components/smoothScroll.jsx';
 import { useParams } from 'react-router-dom';
 
 const ProductDetailsPage = () => {
@@ -61,6 +62,7 @@ const ProductDetailsPage = () => {
     }
   }, [slug]);
   return (
+    <SmoothScroll>
     <div className="min-h-screen flex flex-col bg-[#f5f5f5] overflow-x-hidden">
       <NavBar />
       <div className="flex-1 px-4 sm:px-8 pt-8 md:pt-28 overflow-x-hidden flex items-center justify-center">
@@ -89,6 +91,7 @@ const ProductDetailsPage = () => {
       </div>
       <Footer />
     </div>
+    </SmoothScroll>
   );
 };
 

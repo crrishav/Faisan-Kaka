@@ -2,10 +2,12 @@ import React from 'react';
 import NavBar from './Components/navBar.jsx';
 import ProductSection from './Components/productSection.jsx';
 import Footer from './Components/footer.jsx';
+import SmoothScroll from './Components/smoothScroll.jsx';
 
 const HomePage = () => {
   return (
-    <div className="min-h-screen bg-white overflow-x-hidden max-w-[100vw]">
+    <SmoothScroll>
+      <div className="min-h-screen bg-white overflow-x-hidden max-w-[100vw]">
       <NavBar />
       
       {/* Hero Section (Empty for now) */}
@@ -21,7 +23,8 @@ const HomePage = () => {
         <ProductSection title="Pants" />
       </div>
       <Footer />
-    </div>
+      </div>
+    </SmoothScroll>
   );
 };
 

@@ -291,7 +291,7 @@ const NavBar = () => {
     <nav ref={navRef} className="fixed top-6 left-1/2 -translate-x-1/2 z-[60] md:z-50" onMouseLeave={scheduleClose}>
       <div
         ref={containerRef}
-        className="w-[900px] max-w-[90vw] md:max-w-[90vw] rounded-3xl bg-white/10 backdrop-blur-md border border-black/10 shadow-md overflow-hidden transition-all duration-300 ease-out"
+        className="w-[90vw] md:w-[900px] max-w-[90vw] rounded-3xl bg-white/10 backdrop-blur-md border border-black/10 shadow-md overflow-hidden transition-all duration-300 ease-out"
         style={{ height: (minHeight && typeof window !== 'undefined' && window.innerWidth >= 768) ? `${minHeight}px` : undefined }}
       >
         {/* Desktop Navigation */}
@@ -378,7 +378,7 @@ const NavBar = () => {
             </button>
 
             {/* Logo - Centered */}
-            <img src={logo} alt="Faisan Kaka" className="h-8 cursor-pointer" onClick={handleLogoClick} />
+            <img src={logo} alt="Faisan Kaka" className="h-6 md:h-8 cursor-pointer" onClick={handleLogoClick} />
 
             {/* Hamburger / Close toggle */}
             <button

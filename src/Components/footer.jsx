@@ -6,7 +6,7 @@ const Footer = () => {
     <footer className="bg-[#191818] text-[#f5f5f5] mt-12">
       <div className="max-w-7xl mx-auto px-8 py-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
         <div>
-          <img src={logo} alt="Logo" className="h-8" />
+          <img src={logo} alt="Logo" className="h-6 md:h-8" />
           <p className="mt-2 text-sm text-[#d4d4d4] max-w-sm">
             Timeless essentials crafted with care. Premium fabrics, clean cuts, and everyday comfort.
           </p>

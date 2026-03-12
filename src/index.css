@@ -126,4 +126,25 @@ body {
     flex-shrink: 0;
     min-width: 0;
   }
+  
+  /* Fix navbar width on mobile */
+  nav {
+    width: 100vw !important;
+    max-width: 100vw !important;
+  }
+  
+  /* Fix any fixed positioned elements */
+  .fixed {
+    max-width: 100vw;
+  }
+  
+  /* Ensure all containers respect viewport */
+  .w-full {
+    max-width: 100vw;
+  }
+  
+  /* Prevent any element from causing horizontal scroll */
+  * {
+    box-sizing: border-box;
+  }
 }

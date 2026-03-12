@@ -74,7 +74,15 @@ const ProductDetailsPage = () => {
             </div>
           </div>
           <div className="flex-shrink-0 w-[440px]">
-            <ProductDetails title={product.name} priceINR={product.priceINR} priceNPR={product.priceNPR} description={description} slug={product.slug} />
+            <ProductDetails 
+              title={product.name} 
+              priceINR={product.priceINR} 
+              priceNPR={product.priceNPR} 
+              description={description} 
+              slug={product.slug}
+              frontImage={frontImg}
+              backImage={backImg}
+            />
           </div>
         </div>
       </div>

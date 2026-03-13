@@ -3,6 +3,8 @@ import NavBar from './Components/navBar.jsx';
 import ProductSection from './Components/productSection.jsx';
 import Footer from './Components/footer.jsx';
 import SmoothScroll from './Components/smoothScroll.jsx';
+import DeliverySection from './Components/DeliverySection.jsx';
+import PrintSection from './Components/PrintSection.jsx';
 
 const HomePage = () => {
   return (
@@ -22,6 +24,13 @@ const HomePage = () => {
         <ProductSection title="Hoodies" />
         <ProductSection title="Pants" />
       </div>
+
+      {/* Delivery Section */}
+      <DeliverySection />
+
+      {/* Print Section */}
+      <PrintSection />
+
       <Footer />
       </div>
     </SmoothScroll>

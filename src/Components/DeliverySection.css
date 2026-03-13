@@ -1,0 +1,241 @@
+.delivery-section {
+  min-height: 100vh;
+  height: 100vh;
+  width: 100%;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.delivery-section.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.delivery-container {
+  width: 100%;
+  max-width: 1000px;
+  height: 100%;
+  max-height: 100vh;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.delivery-title {
+  font-size: 3rem;
+  font-weight: 900;
+  color: #000;
+  letter-spacing: -0.05em;
+  margin: 0 0 1rem 0;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(-20px);
+  transition: all 0.6s ease;
+  flex-shrink: 0;
+}
+
+@media (min-width: 768px) {
+  .delivery-title {
+    font-size: 1.875rem;
+  }
+}
+
+.delivery-section.visible .delivery-title {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.map-wrapper {
+  width: 100%;
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.svg-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.india-map-svg {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+/* SVG Path Animation Styles */
+.map-path {
+  fill: #e8f4f8;
+  stroke: #2c3e50;
+  stroke-width: 1.5;
+  stroke-dasharray: 2000;
+  stroke-dashoffset: 2000;
+  opacity: 0;
+}
+
+.delivery-section.svg-loaded .map-path {
+  animation: drawOutline 1.5s ease forwards;
+}
+
+@keyframes drawOutline {
+  0% {
+    stroke-dashoffset: 2000;
+    opacity: 0;
+    fill: transparent;
+  }
+  50% {
+    opacity: 1;
+    fill: transparent;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+    fill: #e8f4f8;
+  }
+}
+
+/* Hover effect for paths */
+.map-path:hover {
+  fill: #3498db !important;
+  stroke: #2980b9;
+  transition: fill 0.3s ease;
+  cursor: pointer;
+}
+
+/* Responsive Design - Tablet */
+@media (max-width: 768px) {
+  .delivery-section {
+    min-height: 100vh;
+    height: auto;
+    padding: 1rem 0;
+  }
+
+  .delivery-container {
+    padding: 0.75rem;
+    max-height: none;
+  }
+
+  .delivery-title {
+    font-size: 1.875rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .map-wrapper {
+    max-height: 70vh;
+  }
+
+  .map-path {
+    stroke-width: 1.2;
+  }
+}
+
+/* Responsive Design - Mobile */
+@media (max-width: 480px) {
+  .delivery-section {
+    min-height: 100vh;
+    height: auto;
+    padding: 0.5rem 0;
+  }
+
+  .delivery-container {
+    padding: 0.5rem;
+  }
+
+  .delivery-title {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .map-wrapper {
+    max-height: 65vh;
+  }
+
+  .map-path {
+    stroke-width: 1;
+    stroke-dasharray: 1500;
+    stroke-dashoffset: 1500;
+  }
+
+  @keyframes drawOutline {
+    0% {
+      stroke-dashoffset: 1500;
+      opacity: 0;
+      fill: transparent;
+    }
+    50% {
+      opacity: 1;
+      fill: transparent;
+    }
+    100% {
+      stroke-dashoffset: 0;
+      opacity: 1;
+      fill: #e8f4f8;
+    }
+  }
+}
+
+/* Small mobile devices */
+@media (max-width: 360px) {
+  .delivery-title {
+    font-size: 1.1rem;
+  }
+
+  .map-wrapper {
+    max-height: 60vh;
+  }
+}
+
+/* Touch interactions */
+@media (hover: none) and (pointer: coarse) {
+  .map-path {
+    stroke-width: 1.5px;
+  }
+
+  .map-path:active {
+    fill: #3498db !important;
+    stroke: #2980b9;
+  }
+}
+
+/* Landscape mode on mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+  .delivery-section {
+    min-height: auto;
+    height: auto;
+    padding: 0.5rem 0;
+  }
+
+  .delivery-container {
+    flex-direction: row;
+    gap: 1rem;
+  }
+
+  .delivery-title {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transform: rotate(180deg);
+    margin: 0;
+    font-size: 1.25rem;
+  }
+
+  .map-wrapper {
+    max-height: 90vh;
+  }
+}

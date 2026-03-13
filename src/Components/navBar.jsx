@@ -186,6 +186,19 @@ const NavBar = () => {
     containerRef.current.style.height = `${finalHeight}px`;
   }, [activeMenu, items, isSearchOpen, searchResults]);
 
+  // Listen for expand-navbar-about event from footer
+  useEffect(() => {
+    const handleExpandAbout = () => {
+      openMenu('about');
+    };
+    window.addEventListener('expand-navbar-about', handleExpandAbout);
+    return () => window.removeEventListener('expand-navbar-about', handleExpandAbout);
+  }, []);
+
+  const isMobileDevice = () => {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  };
+
   // helper that scrolls immediately on mobile, otherwise uses lenis/smooth fallback
   const performScroll = (top) => {
     if (isMobileDevice()) {
@@ -202,6 +215,33 @@ const NavBar = () => {
       performScroll(0);
     } else {
       navigate('/');
+    }
+  };
+
+  const handleCollectionItemClick = (category) => {
+    // Scroll to the product section matching the category
+    const scrollToPosition = () => {
+      const sections = document.querySelectorAll('[data-product-section]');
+      for (const section of sections) {
+        const titleElement = section.querySelector('h2');
+        if (titleElement && titleElement.textContent.trim() === category) {
+          const rect = section.getBoundingClientRect();
+          const top = window.scrollY + rect.top - 100; // Offset for navbar
+          performScroll(top);
+          break;
+        }
+      }
+    };
+
+    // Close the menu immediately for better UX
+    setActiveMenu(null);
+    
+    if (location.pathname === '/') {
+      // Use setTimeout to ensure DOM is settled before scrolling
+      setTimeout(scrollToPosition, 50);
+    } else {
+      navigate('/');
+      setTimeout(scrollToPosition, 350);
     }
   };
 
@@ -288,7 +328,7 @@ const NavBar = () => {
           <div className="flex items-center justify-between gap-8 text-black">
             <a
               href="#collection"
-              className={`font-bold transition hover:opacity-70 text-black ${isSearchOpen ? 'hidden md:block' : ''}`}
+              className={`font-bold transition hover:opacity-70 text-black cursor-pointer ${isSearchOpen ? 'hidden md:block' : ''}`}
               onMouseEnter={() => openMenu('collection')}
               onMouseLeave={scheduleClose}
             >
@@ -296,7 +336,7 @@ const NavBar = () => {
             </a>
             <a
               href="#about"
-              className={`font-bold transition hover:opacity-70 text-black ${isSearchOpen ? 'hidden md:block' : ''}`}
+              className={`font-bold transition hover:opacity-70 text-black cursor-pointer ${isSearchOpen ? 'hidden md:block' : ''}`}
               onMouseEnter={() => openMenu('about')}
               onMouseLeave={scheduleClose}
             >
@@ -324,7 +364,7 @@ const NavBar = () => {
                 </div>
             ) : (
                 <button 
-                    className="font-bold transition hover:opacity-70 text-black"
+                    className="font-bold transition hover:opacity-70 text-black cursor-pointer"
                     onClick={handleSearchClick}
                 >
                     Search
@@ -334,7 +374,7 @@ const NavBar = () => {
             <div className="relative" onMouseEnter={() => openMenu('cart')} onMouseLeave={scheduleClose}>
               <a
                 href="#cart"
-                className="font-bold transition hover:opacity-70 text-black relative inline-block"
+                className="font-bold transition hover:opacity-70 text-black relative inline-block cursor-pointer"
               >
                 Cart
                 {items.length > 0 && (
@@ -435,9 +475,9 @@ const NavBar = () => {
 
           <div className={`${activeMenu === 'collection' ? 'block' : 'hidden'}`}>
             <div className="flex flex-col gap-6 w-full">
-              <div className="w-full bg-black text-white rounded-2xl py-8 text-center text-xl font-bold">T-Shirt</div>
-              <div className="w-full bg-black text-white rounded-2xl py-8 text-center text-xl font-bold">Hoodie</div>
-              <div className="w-full bg-black text-white rounded-2xl py-8 text-center text-xl font-bold">Pants</div>
+              <button onClick={() => handleCollectionItemClick('T-Shirts')} className="w-full bg-black text-white rounded-2xl py-8 text-center text-xl font-bold cursor-pointer hover:opacity-90 transition-opacity">T-Shirts</button>
+              <button onClick={() => handleCollectionItemClick('Hoodies')} className="w-full bg-black text-white rounded-2xl py-8 text-center text-xl font-bold cursor-pointer hover:opacity-90 transition-opacity">Hoodies</button>
+              <button onClick={() => handleCollectionItemClick('Pants')} className="w-full bg-black text-white rounded-2xl py-8 text-center text-xl font-bold cursor-pointer hover:opacity-90 transition-opacity">Pants</button>
             </div>
           </div>
           <div className={`${activeMenu === 'about' ? 'block' : 'hidden'}`}>
@@ -457,15 +497,15 @@ const NavBar = () => {
               </div>
               <div className="flex flex-col justify-center h-full p-2 text-white">
                 <div className="flex flex-col gap-3 items-stretch">
-                  <a href="#instagram" className="flex items-center gap-3 rounded-2xl bg-black font-bold px-5 py-3 transition hover:opacity-90 w-full">
+                  <a href="#instagram" className="flex items-center gap-3 rounded-2xl bg-black font-bold px-5 py-3 transition hover:opacity-90 w-full cursor-pointer">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.5" y2="6.5"/></svg>
                     Instagram
                   </a>
-                  <a href="mailto:info@example.com" className="flex items-center gap-3 rounded-2xl bg-black font-bold px-5 py-3 transition hover:opacity-90 w-full">
+                  <a href="mailto:info@example.com" className="flex items-center gap-3 rounded-2xl bg-black font-bold px-5 py-3 transition hover:opacity-90 w-full cursor-pointer">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16v16H4z"/><path d="M22 6l-10 7L2 6"/></svg>
                     Email
                   </a>
-                  <a href="#whatsapp" className="flex items-center gap-3 rounded-2xl bg-black font-bold px-5 py-3 transition hover:opacity-90 w-full">
+                  <a href="#whatsapp" className="flex items-center gap-3 rounded-2xl bg-black font-bold px-5 py-3 transition hover:opacity-90 w-full cursor-pointer">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M3 21l1.65 -3.8a9 9 0 1 1 3.4 2.9l-5.05 .9" />
                       <path d="M9 10a.5 .5 0 0 0 1 0v-1a.5 .5 0 0 0 -1 0v1a5 5 0 0 0 5 5h1a.5 .5 0 0 0 0 -1h-1a.5 .5 0 0 0 0 1" />
@@ -474,12 +514,12 @@ const NavBar = () => {
                   </a>
                 </div>
                 <div className="flex items-center justify-end gap-4 mt-6">
-                  <a href="https://instagram.com/saurabh" target="_blank" rel="noreferrer" className="flex flex-col items-center gap-1">
+                  <a href="https://instagram.com/saurabh" target="_blank" rel="noreferrer" className="flex flex-col items-center gap-1 cursor-pointer">
                     <img src="https://i.pravatar.cc/96?img=12" alt="Saurabh" className="w-14 h-14 rounded-full border-2 border-black" />
                     <span className="text-xs font-bold text-black leading-tight">Saurabh</span>
                     <span className="text-[10px] text-black/70 leading-tight">Founder</span>
                   </a>
-                  <a href="https://instagram.com/rishavchaudhary" target="_blank" rel="noreferrer" className="flex flex-col items-center gap-1">
+                  <a href="https://instagram.com/rishavchaudhary" target="_blank" rel="noreferrer" className="flex flex-col items-center gap-1 cursor-pointer">
                     <img src="https://i.pravatar.cc/96?img=15" alt="Rishav" className="w-14 h-14 rounded-full border-2 border-black" />
                     <span className="text-xs font-bold text-black leading-tight">Rishav</span>
                     <span className="text-[10px] text-black/70 leading-tight">Co-Founder</span>
@@ -518,20 +558,20 @@ const NavBar = () => {
                           </div>
                           <div className="flex items-center gap-2">
                             <button
-                              className="relative w-8 h-8 flex items-center justify-center bg-white text-black border border-black rounded hover:bg-gray-100 transition-colors text-lg after:absolute after:-inset-[6px] after:content-['']"
+                              className="relative w-8 h-8 flex items-center justify-center bg-white text-black border border-black rounded hover:bg-gray-100 transition-colors text-lg after:absolute after:-inset-[6px] after:content-[''] cursor-pointer"
                               onClick={() => updateQuantity(i.id, Math.max(1, i.quantity - 1))}
                             >
                               -
                             </button>
                             <span className="w-6 text-center text-sm font-bold text-black">{i.quantity}</span>
                             <button
-                              className="relative w-8 h-8 flex items-center justify-center bg-white text-black border border-black rounded hover:bg-gray-100 transition-colors text-lg after:absolute after:-inset-[6px] after:content-['']"
+                              className="relative w-8 h-8 flex items-center justify-center bg-white text-black border border-black rounded hover:bg-gray-100 transition-colors text-lg after:absolute after:-inset-[6px] after:content-[''] cursor-pointer"
                               onClick={() => updateQuantity(i.id, i.quantity + 1)}
                             >
                               +
                             </button>
                             <button
-                              className="ml-2 w-8 h-8 flex items-center justify-center rounded-full text-white hover:opacity-80 transition-opacity"
+                              className="ml-2 w-8 h-8 flex items-center justify-center rounded-full text-white hover:opacity-80 transition-opacity cursor-pointer"
                               style={{ backgroundColor: '#ef4444' }}
                               onClick={() => removeItem(i.id)}
                               aria-label="Remove"
@@ -584,7 +624,7 @@ const NavBar = () => {
                 aria-expanded={mobileSubmenu === 'collection'}
                 aria-controls="mobile-submenu-collection"
                 onClick={() => toggleMobileSubmenu('collection')}
-                className={`w-full flex items-center justify-between px-5 py-4 min-h-[52px] font-bold text-black transition-colors active:bg-black/5 ${mobileSubmenu === 'collection' ? 'opacity-100' : 'opacity-80'}`}
+                className={`w-full flex items-center justify-between px-5 py-4 min-h-[52px] font-bold text-black transition-colors active:bg-black/5 cursor-pointer ${mobileSubmenu === 'collection' ? 'opacity-100' : 'opacity-80'}`}
               >
                 <span>Collection</span>
                 <svg
@@ -601,12 +641,12 @@ const NavBar = () => {
                 }`}
               >
                 <div className="px-5 pb-4 flex flex-col gap-2">
-                  {['T-Shirt', 'Hoodie', 'Pants'].map(cat => (
+                  {['T-Shirts', 'Hoodies', 'Pants'].map(cat => (
                     <button
                       key={cat}
                       role="menuitem"
-                      onClick={() => { navigate('/#collection'); closeMobileMenus(); }}
-                      className="w-full text-left font-bold text-white bg-black rounded-2xl px-5 py-4 min-h-[52px] transition-opacity active:opacity-70"
+                      onClick={() => { handleCollectionItemClick(cat); closeMobileMenus(); }}
+                      className="w-full text-left font-bold text-white bg-black rounded-2xl px-5 py-4 min-h-[52px] transition-opacity active:opacity-70 cursor-pointer"
                     >
                       {cat}
                     </button>
@@ -622,7 +662,7 @@ const NavBar = () => {
                 aria-expanded={mobileSubmenu === 'about'}
                 aria-controls="mobile-submenu-about"
                 onClick={() => toggleMobileSubmenu('about')}
-                className={`w-full flex items-center justify-between px-5 py-4 min-h-[52px] font-bold text-black transition-colors active:bg-black/5 ${mobileSubmenu === 'about' ? 'opacity-100' : 'opacity-80'}`}
+                className={`w-full flex items-center justify-between px-5 py-4 min-h-[52px] font-bold text-black transition-colors active:bg-black/5 cursor-pointer ${mobileSubmenu === 'about' ? 'opacity-100' : 'opacity-80'}`}
               >
                 <span>About</span>
                 <svg
@@ -644,26 +684,26 @@ const NavBar = () => {
                     with a focus on quality, comfort, and clean silhouettes.
                   </p>
                   <div className="flex flex-col gap-2">
-                    <a href="#instagram" className="flex items-center gap-3 rounded-2xl bg-black text-white font-bold px-5 py-3 min-h-[48px] active:opacity-70 transition-opacity">
+                    <a href="#instagram" className="flex items-center gap-3 rounded-2xl bg-black text-white font-bold px-5 py-3 min-h-[48px] active:opacity-70 transition-opacity cursor-pointer">
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.5" y2="6.5"/></svg>
                       Instagram
                     </a>
-                    <a href="mailto:info@example.com" className="flex items-center gap-3 rounded-2xl bg-black text-white font-bold px-5 py-3 min-h-[48px] active:opacity-70 transition-opacity">
+                    <a href="mailto:info@example.com" className="flex items-center gap-3 rounded-2xl bg-black text-white font-bold px-5 py-3 min-h-[48px] active:opacity-70 transition-opacity cursor-pointer">
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16v16H4z"/><path d="M22 6l-10 7L2 6"/></svg>
                       Email
                     </a>
-                    <a href="#whatsapp" className="flex items-center gap-3 rounded-2xl bg-black text-white font-bold px-5 py-3 min-h-[48px] active:opacity-70 transition-opacity">
+                    <a href="#whatsapp" className="flex items-center gap-3 rounded-2xl bg-black text-white font-bold px-5 py-3 min-h-[48px] active:opacity-70 transition-opacity cursor-pointer">
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21"/><path d="M9 10a.5.5 0 0 0 1 0v-1a.5.5 0 0 0-1 0v1a5 5 0 0 0 5 5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0 0 1"/></svg>
                       WhatsApp
                     </a>
                   </div>
                   <div className="flex gap-6 justify-center pt-1">
-                    <a href="https://instagram.com/saurabh" target="_blank" rel="noreferrer" className="flex flex-col items-center gap-1">
+                    <a href="https://instagram.com/saurabh" target="_blank" rel="noreferrer" className="flex flex-col items-center gap-1 cursor-pointer">
                       <img src="https://i.pravatar.cc/96?img=12" alt="Saurabh" className="w-12 h-12 rounded-full border-2 border-black" />
                       <span className="text-xs font-bold text-black">Saurabh</span>
                       <span className="text-[10px] text-black/60">Founder</span>
                     </a>
-                    <a href="https://instagram.com/rishavchaudhary" target="_blank" rel="noreferrer" className="flex flex-col items-center gap-1">
+                    <a href="https://instagram.com/rishavchaudhary" target="_blank" rel="noreferrer" className="flex flex-col items-center gap-1 cursor-pointer">
                       <img src="https://i.pravatar.cc/96?img=15" alt="Rishav" className="w-12 h-12 rounded-full border-2 border-black" />
                       <span className="text-xs font-bold text-black">Rishav</span>
                       <span className="text-[10px] text-black/60">Co-Founder</span>
@@ -680,7 +720,7 @@ const NavBar = () => {
                 aria-expanded={mobileSubmenu === 'search'}
                 aria-controls="mobile-submenu-search"
                 onClick={() => toggleMobileSubmenu('search')}
-                className={`w-full flex items-center justify-between px-5 py-4 min-h-[52px] font-bold text-black transition-colors active:bg-black/5 ${mobileSubmenu === 'search' ? 'opacity-100' : 'opacity-80'}`}
+                className={`w-full flex items-center justify-between px-5 py-4 min-h-[52px] font-bold text-black transition-colors active:bg-black/5 cursor-pointer ${mobileSubmenu === 'search' ? 'opacity-100' : 'opacity-80'}`}
               >
                 <span>Search</span>
                 <svg
@@ -770,20 +810,20 @@ const NavBar = () => {
                         </div>
                         <div className="flex items-center gap-2">
                           <button
-                            className="relative w-6 h-6 flex items-center justify-center bg-white text-black border border-black rounded hover:bg-gray-100 transition-colors text-xs"
+                            className="relative w-6 h-6 flex items-center justify-center bg-white text-black border border-black rounded hover:bg-gray-100 transition-colors text-xs cursor-pointer"
                             onClick={() => updateQuantity(i.id, Math.max(1, i.quantity - 1))}
                           >
                             -
                           </button>
                           <span className="w-4 text-center text-xs font-bold text-black">{i.quantity}</span>
                           <button
-                            className="relative w-6 h-6 flex items-center justify-center bg-white text-black border border-black rounded hover:bg-gray-100 transition-colors text-xs"
+                            className="relative w-6 h-6 flex items-center justify-center bg-white text-black border border-black rounded hover:bg-gray-100 transition-colors text-xs cursor-pointer"
                             onClick={() => updateQuantity(i.id, i.quantity + 1)}
                           >
                             +
                           </button>
                           <button
-                            className="ml-1 w-6 h-6 flex items-center justify-center rounded-full text-white hover:opacity-80 transition-opacity"
+                            className="ml-1 w-6 h-6 flex items-center justify-center rounded-full text-white hover:opacity-80 transition-opacity cursor-pointer"
                             style={{ backgroundColor: '#ef4444' }}
                             onClick={() => removeItem(i.id)}
                             aria-label="Remove"

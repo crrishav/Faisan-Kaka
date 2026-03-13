@@ -41,7 +41,7 @@ const ProductSection = ({ title }) => {
   // removed manual centering effect; CSS scroll snapping handles mobile layout instead
 
   return (
-    <section className="w-full py-12 flex flex-col items-center relative mt-8 outline-none max-w-[100vw]">
+    <section data-product-section className="w-full py-12 flex flex-col items-center relative mt-8 outline-none max-w-[100vw]">
       {/* Header Section */}
       <div className="w-full px-4 md:px-32 flex flex-col items-center md:items-start mb-4 md:mb-6">
         <h2 className="text-5xl md:text-3xl font-black text-black tracking-tighter">{title}</h2>

@@ -63,7 +63,7 @@ const Footer = () => {
     <footer className="bg-[#191818] text-[#f5f5f5] mt-12">
       <div className="max-w-7xl mx-auto px-8 py-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
         <div>
-          <img src={logo} alt="Logo" className="h-4 md:h-12" />
+          <img src={logo} alt="Logo" className="hidden md:block md:h-16" />
           <div className="mt-4 flex items-center gap-6">
             <a href="https://www.instagram.com/saurabhmaurya.___/" target="_blank" rel="noreferrer" className="flex items-center gap-3 cursor-pointer group">
               <img 
@@ -114,10 +114,6 @@ const Footer = () => {
       <div className="border-t border-[#323030]">
         <div className="max-w-7xl mx-auto px-8 py-4 flex flex-col md:flex-row items-center justify-between gap-2 text-xs text-[#bfbfbf]">
           <p>© {new Date().getFullYear()} Faisan Kaka. All rights reserved.</p>
-          <p className="flex gap-4">
-            <span>Privacy</span>
-            <span>Terms</span>
-          </p>
         </div>
       </div>
     </footer>

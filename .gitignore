@@ -12,6 +12,13 @@ dist
 dist-ssr
 *.local
 
+# Sanity Studio
+sanity/dist
+
+# Environment variables
+.env.local
+.env*.local
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -22,3 +29,4 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+

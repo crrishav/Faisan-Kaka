@@ -1,0 +1,27 @@
+{
+  "$schema": "https://sanity.io/schemas/v3",
+  "api": {
+    "projectId": "YOUR_PROJECT_ID_HERE",
+    "dataset": "production"
+  },
+  "project": {
+    "name": "faisan-kaka"
+  },
+  "plugins": [
+    "@sanity/pkg-utils/structure"
+  ],
+  "env": {
+    "development": {
+      "plugins": [
+        {
+          "name": "@sanity/base",
+          "config": {
+            "flags": ["before-live-edit"]
+          }
+        }
+      ]
+    }
+  },
+  "author": "Faisan Kaka Team",
+  "license": "UNLICENSED"
+}

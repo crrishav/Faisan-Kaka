@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import ProductSection from './productSection.jsx';
 
@@ -10,6 +10,7 @@ vi.mock('./useProducts.jsx', () => ({
 
 // simple helper to set viewport width
 function setViewport(width) {
+  // eslint-disable-next-line no-undef
   global.innerWidth = width;
   window.dispatchEvent(new Event('resize'));
 }
@@ -22,11 +23,15 @@ describe('ProductSection mobile layout', () => {
   it('applies centering padding on mobile when multiple cards exist', () => {
     setViewport(375);
     // return three products in the same category
-    mockUseProducts.mockReturnValue([
-      { category: 'T-Shirts', name: 'A', slug: 'a' },
-      { category: 'T-Shirts', name: 'B', slug: 'b' },
-      { category: 'T-Shirts', name: 'C', slug: 'c' },
-    ]);
+    mockUseProducts.mockReturnValue({
+      products: [
+        { category: 'T-Shirts', name: 'A', slug: 'a' },
+        { category: 'T-Shirts', name: 'B', slug: 'b' },
+        { category: 'T-Shirts', name: 'C', slug: 'c' },
+      ],
+      loading: false,
+      error: null
+    });
 
     const { container } = render(<ProductSection title="T-Shirts" />);
     const scrollDiv = container.querySelector('div.flex.overflow-x-auto');

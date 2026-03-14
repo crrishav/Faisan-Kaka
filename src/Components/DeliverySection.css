@@ -1,15 +1,16 @@
 .delivery-section {
-  min-height: 100vh;
-  height: 100vh;
   width: 100%;
+  max-width: 100vw;
   background: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
+  overflow-x: hidden;
   opacity: 0;
   transform: translateY(30px);
   transition: opacity 0.8s ease, transform 0.8s ease;
+  padding: 0;
+  margin-top: 2rem;
 }
 
 .delivery-section.visible {
@@ -19,23 +20,20 @@
 
 .delivery-container {
   width: 100%;
-  max-width: 1000px;
-  height: 100%;
-  max-height: 100vh;
-  padding: 1rem;
+  max-width: 100%;
+  height: auto;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   box-sizing: border-box;
+  padding: 0;
 }
 
 .delivery-title {
-  font-size: 3rem;
-  font-weight: 900;
   color: #000;
-  letter-spacing: -0.05em;
-  margin: 0 0 1rem 0;
+  letter-spacing: -0.02em;
+  margin: 1rem 0 2rem 0;
   text-align: center;
   opacity: 0;
   transform: translateY(-20px);
@@ -43,9 +41,27 @@
   flex-shrink: 0;
 }
 
-@media (min-width: 768px) {
+/* Breakpoints for Title and Font Scaling */
+@media (min-width: 1200px) {
   .delivery-title {
-    font-size: 1.875rem;
+    font-size: 3rem;
+    font-weight: 900;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1199px) {
+  .delivery-title {
+    font-size: 2.25rem;
+    font-weight: 800;
+  }
+}
+
+@media (max-width: 767px) {
+  .delivery-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    padding: 0 1rem;
   }
 }
 
@@ -56,12 +72,33 @@
 
 .map-wrapper {
   width: 100%;
-  flex: 1;
+  max-width: 100%;
+  margin: 0 auto;
   display: flex;
   justify-content: center;
   align-items: center;
   overflow: hidden;
-  min-height: 0;
+  position: relative;
+  flex: 1;
+}
+
+/* Responsive Map Heights */
+@media (min-width: 1200px) {
+  .map-wrapper {
+    height: 400px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1199px) {
+  .map-wrapper {
+    height: 325px;
+  }
+}
+
+@media (max-width: 767px) {
+  .map-wrapper {
+    height: 250px;
+  }
 }
 
 .svg-container {
@@ -70,11 +107,12 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  max-width: 100%;
 }
 
 .india-map-svg {
   width: 100%;
-  height: 100%;
+  height: auto;
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
@@ -82,28 +120,29 @@
 
 /* SVG Path Animation Styles */
 .map-path {
-  fill: #e8f4f8;
+  fill: transparent;
   stroke: #2c3e50;
   stroke-width: 1.5;
-  stroke-dasharray: 2000;
-  stroke-dashoffset: 2000;
+  stroke-dasharray: 3000;
+  stroke-dashoffset: 3000;
   opacity: 0;
-  visibility: hidden;
+  transition: fill 1s ease;
 }
 
 .delivery-section.svg-loaded .map-path {
-  visibility: visible;
-  animation: drawOutline 1.5s ease forwards;
+  animation: drawOutline 2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 @keyframes drawOutline {
   0% {
-    stroke-dashoffset: 2000;
+    stroke-dashoffset: 3000;
     opacity: 0;
     fill: transparent;
   }
-  50% {
+  20% {
     opacity: 1;
+  }
+  70% {
     fill: transparent;
   }
   100% {
@@ -121,88 +160,7 @@
   cursor: pointer;
 }
 
-/* Responsive Design - Tablet */
-@media (max-width: 768px) {
-  .delivery-section {
-    min-height: 100vh;
-    height: auto;
-    padding: 1rem 0;
-  }
-
-  .delivery-container {
-    padding: 0.75rem;
-    max-height: none;
-  }
-
-  .delivery-title {
-    font-size: 1.875rem;
-    margin-bottom: 0.75rem;
-  }
-
-  .map-wrapper {
-    max-height: 70vh;
-  }
-
-  .map-path {
-    stroke-width: 1.2;
-  }
-}
-
-/* Responsive Design - Mobile */
-@media (max-width: 480px) {
-  .delivery-section {
-    min-height: 100vh;
-    height: auto;
-    padding: 0.5rem 0;
-  }
-
-  .delivery-container {
-    padding: 0.5rem;
-  }
-
-  .delivery-title {
-    font-size: 1.5rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .map-wrapper {
-    max-height: 65vh;
-  }
-
-  .map-path {
-    stroke-width: 1;
-    stroke-dasharray: 1500;
-    stroke-dashoffset: 1500;
-  }
-
-  @keyframes drawOutline {
-    0% {
-      stroke-dashoffset: 1500;
-      opacity: 0;
-      fill: transparent;
-    }
-    50% {
-      opacity: 1;
-      fill: transparent;
-    }
-    100% {
-      stroke-dashoffset: 0;
-      opacity: 1;
-      fill: #e8f4f8;
-    }
-  }
-}
-
-/* Small mobile devices */
-@media (max-width: 360px) {
-  .delivery-title {
-    font-size: 1.1rem;
-  }
-
-  .map-wrapper {
-    max-height: 60vh;
-  }
-}
+/* Cleaned up old responsive sections */
 
 /* Touch interactions */
 @media (hover: none) and (pointer: coarse) {
@@ -216,28 +174,27 @@
   }
 }
 
-/* Landscape mode on mobile */
+/* Landscape mode on mobile adjustment */
 @media (max-height: 500px) and (orientation: landscape) {
   .delivery-section {
     min-height: auto;
     height: auto;
-    padding: 0.5rem 0;
+    padding: 1rem 0;
   }
 
   .delivery-container {
-    flex-direction: row;
-    gap: 1rem;
+    flex-direction: column;
+    gap: 0.5rem;
   }
 
   .delivery-title {
-    writing-mode: vertical-rl;
-    text-orientation: mixed;
-    transform: rotate(180deg);
-    margin: 0;
+    writing-mode: horizontal-tb;
+    transform: none;
+    margin: 0.5rem 0;
     font-size: 1.25rem;
   }
 
   .map-wrapper {
-    max-height: 90vh;
+    height: 200px;
   }
 }

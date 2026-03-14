@@ -1,4 +1,4 @@
-import { createClient } from 'sanity';
+import { createClient } from '@sanity/client';
 
 // Initialize Sanity client with environment variables
 export const sanityClient = createClient({

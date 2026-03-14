@@ -24,7 +24,22 @@ const ProductSection = ({ title }) => {
     }
   };
 
-  const products = useProducts();
+  // eslint-disable-next-line no-unused-vars
+  const { products, loading, error } = useProducts();
+  
+  // Preload all product images
+  useEffect(() => {
+    products.forEach(product => {
+      if (product.allImages && product.allImages.length > 0) {
+        product.allImages.forEach(imageUrl => {
+          if (imageUrl) {
+            const img = new Image();
+            img.src = imageUrl;
+          }
+        });
+      }
+    });
+  }, [products]);
   const sectionProducts = products.filter(p => p.category === title);
   const isNepal = useMemo(() => {
     try {

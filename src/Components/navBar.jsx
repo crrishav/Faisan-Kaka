@@ -29,7 +29,7 @@ const NavBar = () => {
   // state for show-on-scroll-up navbar
   // navbar always visible; no scroll state required
   const { items, currency, total, updateQuantity, removeItem } = useCart();
-  const allProducts = useProducts();
+  const { products: allProducts } = useProducts();
 
   // Desktop search state
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -276,6 +276,7 @@ const NavBar = () => {
     setActiveMenu(null);
   };
 
+  // eslint-disable-next-line no-unused-vars
   const scrollToProduct = (product) => {
     // Dispatch custom event to ProductSection or handle scroll globally
     const element = document.getElementById(`product-${product.slug}`);
@@ -300,7 +301,8 @@ const NavBar = () => {
     }
   };
 
-  const handleBlur = (e) => {
+  // eslint-disable-next-line no-unused-vars
+  const handleBlur = (_e) => {
       // Delay closing to allow click on results
       setTimeout(() => {
           if (!document.activeElement || document.activeElement !== searchInputRef.current) {

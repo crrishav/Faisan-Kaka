@@ -32,15 +32,15 @@ const ProductCard = ({ title, price, backImage, frontImage, slug }) => {
     >
       <div className="relative w-full aspect-[3/4] mb-3 overflow-hidden rounded-[24px]">
         <img 
-          src={backImage || frontImage} 
+          src={frontImage || backImage} 
           alt={title} 
           loading="eager"
           fetchpriority="high"
-          className={`absolute inset-0 w-full h-full object-cover transition-none ${hovered && frontImage ? 'opacity-0' : 'opacity-100'}`} 
+          className={`absolute inset-0 w-full h-full object-cover transition-none ${hovered && backImage ? 'opacity-0' : 'opacity-100'}`} 
         />
-        {frontImage && (
+        {backImage && (
           <img 
-            src={frontImage} 
+            src={backImage} 
             alt={title} 
             loading="eager"
             fetchpriority="high"

@@ -1,64 +1,69 @@
-import { useMemo } from 'react';
+import { useState, useEffect } from 'react';
+import { sanityClient } from '../lib/sanityClient';
 
 const useProducts = () => {
-  const products = useMemo(() => {
-    const files = import.meta.glob('/src/assets/Collection/**/*.{png,jpg,jpeg,webp}', { eager: true, as: 'url' });
-    const map = {};
-    for (const [path, url] of Object.entries(files)) {
-      const parts = path.split('/');
-      const idx = parts.indexOf('Collection');
-      const category = parts[idx + 1];
-      const filename = parts[parts.length - 1];
-      const cleaned = filename.replace(/\.(png|jpg|jpeg|webp)$/i, '').replace(/^\d+\.\s*/, '');
-      
-      // Enhanced regex to handle both formats: "Name (variant) (price1, price2)" and "Name (price1, price2)"
-      const rx = /^(.*?)(?:\s*\((front|back|Front|Back)\))?\s*\(([^,]+)\s*,\s*([^)]+)\)\s*$/i;
-      const m = cleaned.match(rx);
-      
-      let name, variant, priceINR, priceNPR;
-      
-      if (m) {
-        name = m[1].trim();
-        variant = (m[2] || '').toLowerCase();
-        priceINR = m[3].trim();
-        priceNPR = m[4].trim();
-      } else {
-        // Fallback for files without price info
-        name = cleaned.replace(/\s*\(.*\)\s*$/, '').trim();
-        variant = '';
-        priceINR = undefined;
-        priceNPR = undefined;
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const query = `*[_type == "product" && inStock == true]{
+          _id,
+          title,
+          category,
+          priceINR,
+          priceNPR,
+          description,
+          "mainImageUrl": mainImage.asset->url,
+          "images": images[].asset->url,
+          "slug": slug.current
+        }`;
+
+        const data = await sanityClient.fetch(query);
+
+        // Map Sanity data to match ProductCard expectations
+        const mappedProducts = data.map((item) => ({
+          _id: item._id,
+          name: item.title,
+          slug: item.slug || item.title.toLowerCase().replace(/\s+/g, '-'),
+          category: item.category,
+          priceINR: item.priceINR?.toString(),
+          priceNPR: item.priceNPR?.toString(),
+          description: item.description,
+          // Use mainImage as front, first additional image as back (or same if no additional)
+          frontImage: item.mainImageUrl,
+          backImage: item.images?.[0] || item.mainImageUrl,
+          // Preload all images
+          allImages: [item.mainImageUrl, ...(item.images || [])].filter(Boolean),
+        }));
+
+        // Consistent sorting (hash-based like original)
+        const hash = (s) => {
+          let h = 0;
+          for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+          return h;
+        };
+
+        const sortedProducts = mappedProducts.sort((a, b) => hash(a.slug) - hash(b.slug));
+
+        setProducts(sortedProducts);
+      } catch (err) {
+        console.error('Error fetching products from Sanity:', err);
+        setError(err.message || 'Failed to fetch products');
+      } finally {
+        setLoading(false);
       }
-      
-      const slug = name.toLowerCase().replace(/\s+/g, '-');
-      const key = `${category}:${slug}`;
-      
-      if (!map[key]) {
-        map[key] = { category, name, slug, priceINR: undefined, priceNPR: undefined, backImage: undefined, frontImage: undefined };
-      }
-      
-      if (priceINR && !map[key].priceINR) map[key].priceINR = priceINR;
-      if (priceNPR && !map[key].priceNPR) map[key].priceNPR = priceNPR;
-      
-      if (variant === 'front') {
-        map[key].frontImage = url;
-      } else if (variant === 'back') {
-        map[key].backImage = url;
-      } else {
-        map[key].backImage = map[key].backImage || url;
-      }
-    }
-    
-    const list = Object.values(map);
-    const hash = (s) => {
-      let h = 0;
-      for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
-      return h;
     };
-    return list.sort((a, b) => hash(a.slug) - hash(b.slug));
+
+    fetchProducts();
   }, []);
 
-  return products;
+  return { products, loading, error };
 };
 
 export default useProducts;

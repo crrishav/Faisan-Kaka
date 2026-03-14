@@ -1,4 +1,4 @@
-import { render, screen, act, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import NavBar from './navBar';
 import { BrowserRouter } from 'react-router-dom';
@@ -102,6 +102,7 @@ describe('NavBar Cart Dropdown Height', () => {
 
   it('remains fixed at top on mobile even after scrolling', () => {
     // simulate mobile viewport
+    // eslint-disable-next-line no-undef
     global.innerWidth = 375;
     window.dispatchEvent(new Event('resize'));
 

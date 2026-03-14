@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import logo from '../assets/logo.png';
+import logo from '../assets/logo.svg';
+import saurabhPfp from '../assets/pfp/saurabh.jpg';
+import rishavPfp from '../assets/pfp/rishav.jpg';
 import { useNavigate, useLocation } from 'react-router-dom';
 import useCart from './useCart.jsx';
 import useProducts from './useProducts.jsx';
@@ -342,7 +344,7 @@ const NavBar = () => {
             >
               About
             </a>
-            <img src={logo} alt="Logo" className="h-8 cursor-pointer" onClick={handleLogoClick} />
+            <img src={logo} alt="Logo" className="h-6 md:h-10 cursor-pointer" onClick={handleLogoClick} />
             
             {isSearchOpen ? (
                 <div className="flex-1 max-w-xs relative">
@@ -410,7 +412,7 @@ const NavBar = () => {
             <img
               src={logo}
               alt="Faisan Kaka"
-              className="h-6 md:h-8 cursor-pointer max-w-[50px] max-h-[50px] w-auto h-auto"
+              className="h-4 md:h-10 cursor-pointer max-w-[50px] max-h-[50px] w-auto h-auto"
               onClick={handleLogoClick}
             />
 
@@ -514,13 +516,13 @@ const NavBar = () => {
                   </a>
                 </div>
                 <div className="flex items-center justify-end gap-4 mt-6">
-                  <a href="https://instagram.com/saurabh" target="_blank" rel="noreferrer" className="flex flex-col items-center gap-1 cursor-pointer">
-                    <img src="https://i.pravatar.cc/96?img=12" alt="Saurabh" className="w-14 h-14 rounded-full border-2 border-black" />
+                  <a href="https://www.instagram.com/saurabhmaurya.___/" target="_blank" rel="noreferrer" className="flex flex-col items-center gap-1 cursor-pointer">
+                    <img src={saurabhPfp} alt="Saurabh" className="w-14 h-14 rounded-full border-2 border-black" />
                     <span className="text-xs font-bold text-black leading-tight">Saurabh</span>
                     <span className="text-[10px] text-black/70 leading-tight">Founder</span>
                   </a>
-                  <a href="https://instagram.com/rishavchaudhary" target="_blank" rel="noreferrer" className="flex flex-col items-center gap-1 cursor-pointer">
-                    <img src="https://i.pravatar.cc/96?img=15" alt="Rishav" className="w-14 h-14 rounded-full border-2 border-black" />
+                  <a href="https://www.instagram.com/crrishav/" target="_blank" rel="noreferrer" className="flex flex-col items-center gap-1 cursor-pointer">
+                    <img src={rishavPfp} alt="Rishav" className="w-14 h-14 rounded-full border-2 border-black" />
                     <span className="text-xs font-bold text-black leading-tight">Rishav</span>
                     <span className="text-[10px] text-black/70 leading-tight">Co-Founder</span>
                   </a>
@@ -698,13 +700,13 @@ const NavBar = () => {
                     </a>
                   </div>
                   <div className="flex gap-6 justify-center pt-1">
-                    <a href="https://instagram.com/saurabh" target="_blank" rel="noreferrer" className="flex flex-col items-center gap-1 cursor-pointer">
-                      <img src="https://i.pravatar.cc/96?img=12" alt="Saurabh" className="w-12 h-12 rounded-full border-2 border-black" />
+                    <a href="https://www.instagram.com/saurabhmaurya.___/" target="_blank" rel="noreferrer" className="flex flex-col items-center gap-1 cursor-pointer">
+                      <img src={saurabhPfp} alt="Saurabh" className="w-12 h-12 rounded-full border-2 border-black" />
                       <span className="text-xs font-bold text-black">Saurabh</span>
                       <span className="text-[10px] text-black/60">Founder</span>
                     </a>
-                    <a href="https://instagram.com/rishavchaudhary" target="_blank" rel="noreferrer" className="flex flex-col items-center gap-1 cursor-pointer">
-                      <img src="https://i.pravatar.cc/96?img=15" alt="Rishav" className="w-12 h-12 rounded-full border-2 border-black" />
+                    <a href="https://www.instagram.com/crrishav/" target="_blank" rel="noreferrer" className="flex flex-col items-center gap-1 cursor-pointer">
+                      <img src={rishavPfp} alt="Rishav" className="w-12 h-12 rounded-full border-2 border-black" />
                       <span className="text-xs font-bold text-black">Rishav</span>
                       <span className="text-[10px] text-black/60">Co-Founder</span>
                     </a>

@@ -4,12 +4,13 @@ import HomePage from './homePage.jsx';
 import ProductDetailsPage from './Pages/productDetailsPage.jsx';
 import CollectionsPage from './Components/CollectionsPage.jsx';
 import LoadingScreen from './Components/LoadingScreen.jsx';
+import ScrollToTop from './Components/ScrollToTop.jsx';
 import { Studio } from 'sanity';
 import config from '../sanity.config';
 
 function App() {
   const [isLoaded, setIsLoaded] = useState(false);
-
+  
   useEffect(() => {
     let animationTimer;
     let safetyTimer;
@@ -38,11 +39,12 @@ function App() {
       };
     }
   }, []);
-
+  
   return (
     <>
       <LoadingScreen isLoaded={isLoaded} />
       <BrowserRouter>
+        <ScrollToTop />
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/collections" element={<CollectionsPage />} />

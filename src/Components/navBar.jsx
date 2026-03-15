@@ -328,7 +328,7 @@ const NavBar = () => {
         style={{ height: (minHeight && typeof window !== 'undefined' && window.innerWidth >= 768) ? `${minHeight}px` : undefined }}
       >
         {/* Desktop Navigation */}
-        <div ref={headerRef} className="px-12 py-3 hidden md:block">
+        <div ref={headerRef} className="px-6 py-3 hidden md:block">
           <div className="flex items-center justify-between gap-8 text-black">
             <a
               onClick={() => navigate('/collections')}
@@ -390,7 +390,7 @@ const NavBar = () => {
         </div>
 
         {/* Mobile Navigation Bar */}
-        <div className="md:hidden px-4 py-3 relative z-[61] w-full max-w-[100vw] overflow-x-hidden">
+        <div className="md:hidden px-2 py-3 relative z-[61] w-full max-w-[100vw] overflow-x-hidden">
           <div className="flex items-center justify-between w-full gap-4">
             {/* Cart Icon */}
             <button

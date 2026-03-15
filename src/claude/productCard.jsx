@@ -56,9 +56,13 @@ const ProductCard = ({ title, price, backImage, frontImage, slug }) => {
       {/* CTA button */}
       <button
         className="w-full py-2.5 rounded-2xl bg-black text-white text-sm font-bold tracking-tight
+                   opacity-0 translate-y-2
+                   group-hover:opacity-100 group-hover:translate-y-0
                    transition-all duration-250 ease-out
                    hover:bg-neutral-800 active:scale-95
-                   cursor-pointer opacity-100 translate-y-0"
+                   md:opacity-0 md:translate-y-2
+                   /* always visible on touch devices */
+                   max-md:opacity-100 max-md:translate-y-0"
         onClick={(e) => { e.stopPropagation(); handleNavigate(); }}
         aria-label={`View ${title}`}
       >

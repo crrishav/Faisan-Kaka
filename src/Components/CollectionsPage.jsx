@@ -72,9 +72,9 @@ const CollectionsPage = () => {
   const heroRef = useRef(null);
   const heroInView = useInView(heroRef, { once: true, amount: 0.3 });
 
-  // Scroll to top on load
+  // Scroll to top on load handled by ScrollToTop component
   useEffect(() => {
-    window.scrollTo(0, 0);
+    // Keep internal state resets if any, but scroll is global now
   }, []);
 
   /* Nepal detection (mirrors productSection) */

@@ -109,7 +109,7 @@ const ProductSection = ({ title }) => {
         <motion.button
           variants={headerItemVariants}
           onClick={() => navigate('/collections')}
-          className="mt-3 md:mt-0 flex items-center gap-1.5 text-sm font-semibold text-black border border-black rounded-full px-4 py-1.5 hover:bg-black hover:text-white transition-colors duration-200 cursor-pointer"
+          className="mt-3 md:mt-0 flex items-center gap-1.5 text-sm font-semibold text-black border border-black rounded-full px-4 py-1.5 hover:bg-black hover:text-white transition-colors duration-200"
           whileHover={{ scale: 1.04 }}
           whileTap={{ scale: 0.97 }}
         >

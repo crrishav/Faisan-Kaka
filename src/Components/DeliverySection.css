@@ -2,7 +2,7 @@
    DeliverySection.css
    Layout + paint only. All motion is handled by
    Framer Motion in the JSX.
- ═══════════════════════════════════════════════════ */
+═══════════════════════════════════════════════════ */
 
 /* ─── Section shell ──────────────────────────────── */
 .delivery-section {
@@ -128,8 +128,8 @@
     flex-direction: column;
     height: auto;
     min-height: 100vh;
-    padding: clamp(2rem, 5vw, 3rem) clamp(1rem, 4vw, 2rem);
-    gap: clamp(1rem, 3vw, 2rem);
+    padding: clamp(3rem, 10vw, 5rem) clamp(1rem, 4vw, 2rem);
+    gap: clamp(2rem, 6vw, 3.5rem);
     justify-content: center;
   }
 
@@ -138,6 +138,7 @@
     max-width: 480px;
     align-items: center;
     text-align: center;
+    gap: 1.2rem;
   }
 
   .delivery-title {
@@ -147,19 +148,23 @@
   /* Map: fixed fraction of viewport height so it never overflows */
   .map-wrapper {
     width: 100%;
-    height: clamp(240px, 48vw, 420px);
+    height: clamp(300px, 60vw, 500px);
     flex: 0 0 auto;
   }
 }
 
 /* ─── Responsive: small phones ───────────────────── */
 @media (max-width: 480px) {
+  .delivery-container {
+    gap: 2.5rem;
+  }
+
   .delivery-title {
     font-size: clamp(1.6rem, 8vw, 2.2rem);
   }
 
   .map-wrapper {
-    height: clamp(220px, 52vw, 340px);
+    height: clamp(280px, 65vw, 400px);
   }
 
   .map-state {

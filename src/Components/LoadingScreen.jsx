@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import './LoadingScreen.css';
 
 // All 38 paths extracted directly from logo.svg
 const LOGO_PATHS = [

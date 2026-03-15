@@ -331,7 +331,7 @@ const NavBar = () => {
         <div ref={headerRef} className="px-12 py-3 hidden md:block">
           <div className="flex items-center justify-between gap-8 text-black">
             <a
-              href="#collection"
+              onClick={() => navigate('/collections')}
               className={`font-bold transition hover:opacity-70 text-black cursor-pointer ${isSearchOpen ? 'hidden md:block' : ''}`}
               onMouseEnter={() => openMenu('collection')}
               onMouseLeave={scheduleClose}

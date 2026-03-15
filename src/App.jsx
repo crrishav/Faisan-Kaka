@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import HomePage from './homePage.jsx';
 import ProductDetailsPage from './Pages/productDetailsPage.jsx';
+import CollectionsPage from './Components/CollectionsPage.jsx';
 import LoadingScreen from './Components/LoadingScreen.jsx';
 import { Studio } from 'sanity';
 import config from '../sanity.config';
@@ -44,6 +45,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/collections" element={<CollectionsPage />} />
           <Route path="/product/:slug" element={<ProductDetailsPage />} />
           <Route path="/studio/*" element={<Studio config={config} />} />
         </Routes>

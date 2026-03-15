@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence, useInView } from 'framer-motion';
 import NavBar from './navBar.jsx';
+import Footer from './footer.jsx';
 import ProductCard from './productCard.jsx';
 import useProducts from './useProducts.jsx';
 
@@ -263,6 +264,7 @@ const CollectionsPage = () => {
           )}
         </div>
       </div>
+      <Footer />
     </div>
   );
 };

@@ -1,0 +1,258 @@
+/* ─── DeliverySection ─────────────────────────────────────────── */
+
+.delivery-section {
+  width: 100%;
+  max-width: 100vw;
+  min-height: 100vh;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 0;
+  box-sizing: border-box;
+
+  /* Entry animation */
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.delivery-section--visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ─── Inner layout ─────────────────────────────────────────────── */
+
+.delivery-container {
+  width: 100%;
+  max-width: 1280px;
+  height: 100vh;
+  max-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  padding: 2.5rem 3rem;
+  box-sizing: border-box;
+}
+
+/* ─── Text column ──────────────────────────────────────────────── */
+
+.delivery-text {
+  flex: 0 0 auto;
+  max-width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+
+  opacity: 0;
+  transform: translateX(-20px);
+  transition: opacity 0.6s ease 0.2s, transform 0.6s ease 0.2s;
+}
+
+.delivery-section--visible .delivery-text {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.delivery-eyebrow {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #e74c3c;
+  margin: 0;
+}
+
+.delivery-title {
+  font-size: clamp(2rem, 3vw, 3.25rem);
+  font-weight: 900;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  color: #0d0d0d;
+  margin: 0;
+}
+
+.delivery-sub {
+  font-size: 0.875rem;
+  color: #666;
+  line-height: 1.6;
+  margin: 0;
+  max-width: 220px;
+}
+
+/* ─── Map column ───────────────────────────────────────────────── */
+
+.map-wrapper {
+  flex: 1 1 auto;
+  height: 100%;
+  max-height: calc(100vh - 5rem);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.svg-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.india-map-svg {
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  display: block;
+  overflow: visible;
+}
+
+/* ─── SVG path base state ──────────────────────────────────────── */
+
+/*
+  Each state starts invisible.
+  When .map-el--revealed is added via JS, it transitions
+  to filled with a short fade + scale-in.
+*/
+.map-el {
+  fill: #ddeef5;
+  stroke: #fff;
+  stroke-width: 1.5;
+  opacity: 0;
+  transform-origin: center;
+  transform: scale(0.96);
+  transition:
+    opacity 0.45s ease,
+    transform 0.45s ease,
+    fill 0.3s ease,
+    stroke 0.3s ease;
+  cursor: pointer;
+}
+
+.map-el--revealed {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* ─── Hover ────────────────────────────────────────────────────── */
+
+.map-el:hover {
+  fill: #3498db !important;
+  stroke: rgba(255,255,255,0.9);
+  stroke-width: 1.5;
+}
+
+/* Touch */
+@media (hover: none) and (pointer: coarse) {
+  .map-el:active {
+    fill: #3498db !important;
+  }
+}
+
+/* ─── Loading placeholder ──────────────────────────────────────── */
+
+.map-placeholder {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, #f0f7fb 25%, #e3f0f7 50%, #f0f7fb 75%);
+  background-size: 400% 400%;
+  animation: shimmer 1.6s ease infinite;
+  border-radius: 4px;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* ─── Responsive breakpoints ───────────────────────────────────── */
+
+/* Tablet portrait & small landscape: stack vertically */
+@media (max-width: 900px) {
+  .delivery-container {
+    flex-direction: column;
+    height: auto;
+    min-height: 100vh;
+    padding: 3rem 1.5rem 2rem;
+    gap: 1rem;
+    justify-content: flex-start;
+    align-items: center;
+  }
+
+  .delivery-text {
+    max-width: 100%;
+    text-align: center;
+    align-items: center;
+    transform: translateY(-12px);
+    flex: 0 0 auto;
+  }
+
+  .delivery-section--visible .delivery-text {
+    transform: translateY(0);
+  }
+
+  .delivery-sub {
+    max-width: 320px;
+  }
+
+  .map-wrapper {
+    flex: 1 1 auto;
+    width: 100%;
+    max-height: 55vh;
+  }
+}
+
+@media (max-width: 500px) {
+  .delivery-container {
+    padding: 2rem 1rem 1.5rem;
+  }
+
+  .delivery-title {
+    font-size: 2rem;
+  }
+
+  .map-wrapper {
+    max-height: 50vh;
+  }
+
+  .map-el {
+    stroke-width: 1;
+  }
+}
+
+/* Landscape phones */
+@media (max-height: 500px) and (orientation: landscape) {
+  .delivery-container {
+    flex-direction: row;
+    height: 100vh;
+    max-height: 100vh;
+    padding: 1rem 2rem;
+    min-height: unset;
+    gap: 1.5rem;
+  }
+
+  .delivery-text {
+    max-width: 200px;
+    text-align: left;
+    align-items: flex-start;
+  }
+
+  .delivery-title {
+    font-size: 1.5rem;
+  }
+
+  .delivery-sub {
+    font-size: 0.75rem;
+  }
+
+  .map-wrapper {
+    max-height: 90vh;
+  }
+}

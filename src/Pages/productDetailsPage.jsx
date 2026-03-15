@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import ProductDetails from '../Components/productDetails.jsx';
-import NavBar from '../Components/navBar.jsx';
 import Footer from '../Components/footer.jsx';
 import SmoothScroll from '../Components/smoothScroll.jsx';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -77,30 +76,12 @@ const ProductDetailsPage = () => {
     };
   }, [product, slug]);
 
-  // Loading state
-  if (loading) {
-    return (
-      <SmoothScroll>
-        <div className="min-h-screen flex flex-col bg-[#f5f5f5] overflow-x-hidden">
-          <NavBar />
-          <div className="flex-1 flex items-center justify-center pt-20">
-            <div className="text-center">
-              <div className="w-12 h-12 border-4 border-gray-300 border-t-black rounded-full animate-spin mx-auto mb-4"></div>
-              <p className="text-gray-600 font-medium">Loading product...</p>
-            </div>
-          </div>
-          <Footer />
-        </div>
-      </SmoothScroll>
-    );
-  }
 
   // Error state
   if (error || !productData) {
     return (
       <SmoothScroll>
         <div className="min-h-screen flex flex-col bg-[#f5f5f5] overflow-x-hidden">
-          <NavBar />
           <div className="flex-1 flex items-center justify-center pt-20 px-4">
             <div className="text-center max-w-md">
               <p className="text-red-500 font-medium mb-4">{error || 'Product not found'}</p>
@@ -124,7 +105,6 @@ const ProductDetailsPage = () => {
   return (
     <SmoothScroll>
       <div className="min-h-screen flex flex-col bg-[#f5f5f5] overflow-x-hidden">
-        <NavBar />
         
         {/* Main Content */}
         <div className="flex-1 px-4 sm:px-8 pt-8 md:pt-28 overflow-x-hidden flex items-center justify-center">

@@ -4,9 +4,24 @@ import HomePage from './homePage.jsx';
 import ProductDetailsPage from './Pages/productDetailsPage.jsx';
 import CollectionsPage from './Components/CollectionsPage.jsx';
 import LoadingScreen from './Components/LoadingScreen.jsx';
+import PageTransition from './Components/PageTransition.jsx';
+import NavBar from './Components/navBar.jsx';
 import ScrollToTop from './Components/ScrollToTop.jsx';
 import { Studio } from 'sanity';
 import config from '../sanity.config';
+
+const AppRoutes = () => {
+  return (
+    <PageTransition>
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/collections" element={<CollectionsPage />} />
+        <Route path="/product/:slug" element={<ProductDetailsPage />} />
+        <Route path="/studio/*" element={<Studio config={config} />} />
+      </Routes>
+    </PageTransition>
+  );
+};
 
 function App() {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -41,18 +56,11 @@ function App() {
   }, []);
   
   return (
-    <>
+    <BrowserRouter>
       <LoadingScreen isLoaded={isLoaded} />
-      <BrowserRouter>
-        <ScrollToTop />
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/collections" element={<CollectionsPage />} />
-          <Route path="/product/:slug" element={<ProductDetailsPage />} />
-          <Route path="/studio/*" element={<Studio config={config} />} />
-        </Routes>
-      </BrowserRouter>
-    </>
+      <NavBar />
+      <AppRoutes />
+    </BrowserRouter>
   );
 }
 

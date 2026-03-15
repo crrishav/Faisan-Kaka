@@ -1,5 +1,4 @@
 import React from 'react';
-import NavBar from './Components/navBar.jsx';
 import ProductSection from './Components/productSection.jsx';
 import Footer from './Components/footer.jsx';
 import DeliverySection from './Components/DeliverySection.jsx';
@@ -8,8 +7,6 @@ import PrintSection from './Components/PrintSection.jsx';
 const HomePage = () => {
   return (
     <div className="min-h-screen bg-white overflow-x-hidden max-w-[100vw]">
-      <NavBar />
-      
       {/* Hero Section (Empty for now) */}
       <div className="w-full h-screen flex items-center justify-center bg-white max-w-[100vw] overflow-x-hidden">
         {/* Placeholder for Hero content */}

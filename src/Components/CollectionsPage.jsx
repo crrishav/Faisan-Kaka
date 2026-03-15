@@ -1,6 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence, useInView } from 'framer-motion';
-import NavBar from './navBar.jsx';
 import Footer from './footer.jsx';
 import ProductCard from './productCard.jsx';
 import useProducts from './useProducts.jsx';
@@ -106,8 +105,6 @@ const CollectionsPage = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <NavBar />
-      
       <div className="pt-16 md:pt-20 transition-all duration-300">
         {/* ── Hero header ── */}
         <motion.div

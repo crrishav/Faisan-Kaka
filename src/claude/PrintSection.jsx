@@ -155,7 +155,7 @@ const PrintSection = () => {
             Custom Printing
           </motion.p>
           <motion.h2 className="print-title" variants={textItemVariants}>
-            Got a<br className="desktop-only-br" /><span className="mobile-space"> </span>Design?<br />We'll<br className="desktop-only-br" /><span className="mobile-space"> </span>Print It.
+            Got a<br />Design?<br />We'll<br />Print It.
           </motion.h2>
           <motion.p className="print-sub" variants={textItemVariants}>
             Upload your artwork and we'll handle the rest — high-fidelity prints, fast turnaround.

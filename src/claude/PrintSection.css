@@ -2,7 +2,7 @@
    PrintSection.css
    Layout + paint only. All motion via Framer Motion.
    Style tokens mirror DeliverySection.css.
- ═══════════════════════════════════════════════════ */
+═══════════════════════════════════════════════════ */
 
 /* ─── Section shell ──────────────────────────────── */
 .print-section {
@@ -14,7 +14,7 @@
 /* ─── Two-column layout (mirrors .delivery-container) */
 .print-container {
   display: flex;
-  flex-direction: row-reverse;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
   gap: clamp(1.5rem, 4vw, 4rem);
@@ -54,14 +54,6 @@
   line-height: 1.04;
   letter-spacing: -0.035em;
   color: #0a0a0a;
-}
-
-.desktop-only-br {
-  display: block;
-}
-
-.mobile-space {
-  display: none;
 }
 
 .print-sub {
@@ -282,14 +274,6 @@
 
   .print-title {
     font-size: clamp(1.8rem, 6vw, 2.8rem);
-  }
-
-  .desktop-only-br {
-    display: none;
-  }
-
-  .mobile-space {
-    display: inline;
   }
 
   .print-panel-wrapper {

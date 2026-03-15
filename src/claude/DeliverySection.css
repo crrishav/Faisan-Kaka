@@ -1,98 +1,98 @@
-/* ─── DeliverySection ─────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════
+   DeliverySection.css
+   Layout + paint only. All motion is handled by
+   Framer Motion in the JSX.
+═══════════════════════════════════════════════════ */
 
+/* ─── Section shell ──────────────────────────────── */
 .delivery-section {
   width: 100%;
-  max-width: 100vw;
-  min-height: 100vh;
-  background: #fff;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+/* ─── Two-column layout ──────────────────────────── */
+.delivery-container {
   display: flex;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
-  padding: 0;
-  box-sizing: border-box;
+  gap: clamp(1.5rem, 4vw, 4rem);
 
-  /* Entry animation */
-  opacity: 0;
-  transform: translateY(24px);
-  transition: opacity 0.7s ease, transform 0.7s ease;
-}
-
-.delivery-section--visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/* ─── Inner layout ─────────────────────────────────────────────── */
-
-.delivery-container {
-  width: 100%;
-  max-width: 1280px;
+  /* Fill exactly one viewport height, no more */
   height: 100vh;
   max-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 2rem;
-  padding: 2.5rem 3rem;
+  min-height: 480px;
+
+  padding: clamp(1.5rem, 4vh, 3rem) clamp(1.5rem, 5vw, 5rem);
   box-sizing: border-box;
+  margin: 0 auto;
+  max-width: 1400px;
 }
 
-/* ─── Text column ──────────────────────────────────────────────── */
-
+/* ─── Text column ────────────────────────────────── */
 .delivery-text {
   flex: 0 0 auto;
-  max-width: 280px;
+  width: min(260px, 30%);
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-
-  opacity: 0;
-  transform: translateX(-20px);
-  transition: opacity 0.6s ease 0.2s, transform 0.6s ease 0.2s;
-}
-
-.delivery-section--visible .delivery-text {
-  opacity: 1;
-  transform: translateX(0);
+  gap: 0.9rem;
 }
 
 .delivery-eyebrow {
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: #e74c3c;
   margin: 0;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #dc2626;
 }
 
 .delivery-title {
-  font-size: clamp(2rem, 3vw, 3.25rem);
-  font-weight: 900;
-  line-height: 1.05;
-  letter-spacing: -0.03em;
-  color: #0d0d0d;
   margin: 0;
+  font-size: clamp(1.75rem, 2.8vw, 3rem);
+  font-weight: 900;
+  line-height: 1.04;
+  letter-spacing: -0.035em;
+  color: #0a0a0a;
 }
 
 .delivery-sub {
-  font-size: 0.875rem;
-  color: #666;
-  line-height: 1.6;
   margin: 0;
-  max-width: 220px;
+  font-size: clamp(0.8rem, 1vw, 0.9rem);
+  color: #555;
+  line-height: 1.65;
 }
 
-/* ─── Map column ───────────────────────────────────────────────── */
+.delivery-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #333;
+  letter-spacing: 0.01em;
+  margin-top: 0.25rem;
+}
 
+.badge-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+  flex-shrink: 0;
+}
+
+/* ─── Map column ─────────────────────────────────── */
 .map-wrapper {
-  flex: 1 1 auto;
+  /* Take all remaining space but never overflow the row height */
+  flex: 1 1 0;
+  min-width: 0;
   height: 100%;
-  max-height: calc(100vh - 5rem);
   display: flex;
   align-items: center;
   justify-content: center;
-  position: relative;
   overflow: hidden;
 }
 
@@ -105,6 +105,7 @@
 }
 
 .india-map-svg {
+  /* Fill the available box while preserving aspect ratio */
   width: 100%;
   height: 100%;
   max-width: 100%;
@@ -113,146 +114,82 @@
   overflow: visible;
 }
 
-/* ─── SVG path base state ──────────────────────────────────────── */
-
-/*
-  Each state starts invisible.
-  When .map-el--revealed is added via JS, it transitions
-  to filled with a short fade + scale-in.
-*/
-.map-el {
-  fill: #ddeef5;
-  stroke: #fff;
-  stroke-width: 1.5;
-  opacity: 0;
-  transform-origin: center;
-  transform: scale(0.96);
-  transition:
-    opacity 0.45s ease,
-    transform 0.45s ease,
-    fill 0.3s ease,
-    stroke 0.3s ease;
-  cursor: pointer;
+/* ─── Individual state paths ─────────────────────── */
+.map-state {
+  fill: #bfdbfe;    /* blue-200 */
+  stroke: #ffffff;
+  stroke-width: 1.2;
+  stroke-linejoin: round;
 }
 
-.map-el--revealed {
-  opacity: 1;
-  transform: scale(1);
-}
-
-/* ─── Hover ────────────────────────────────────────────────────── */
-
-.map-el:hover {
-  fill: #3498db !important;
-  stroke: rgba(255,255,255,0.9);
-  stroke-width: 1.5;
-}
-
-/* Touch */
-@media (hover: none) and (pointer: coarse) {
-  .map-el:active {
-    fill: #3498db !important;
-  }
-}
-
-/* ─── Loading placeholder ──────────────────────────────────────── */
-
-.map-placeholder {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, #f0f7fb 25%, #e3f0f7 50%, #f0f7fb 75%);
-  background-size: 400% 400%;
-  animation: shimmer 1.6s ease infinite;
-  border-radius: 4px;
-}
-
-@keyframes shimmer {
-  0%   { background-position: 0% 50%; }
-  50%  { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-/* ─── Responsive breakpoints ───────────────────────────────────── */
-
-/* Tablet portrait & small landscape: stack vertically */
-@media (max-width: 900px) {
+/* ─── Responsive: tablet portrait ───────────────── */
+@media (max-width: 860px) {
   .delivery-container {
     flex-direction: column;
     height: auto;
     min-height: 100vh;
-    padding: 3rem 1.5rem 2rem;
-    gap: 1rem;
-    justify-content: flex-start;
-    align-items: center;
+    padding: clamp(2rem, 5vw, 3rem) clamp(1rem, 4vw, 2rem);
+    gap: clamp(1rem, 3vw, 2rem);
+    justify-content: center;
   }
 
   .delivery-text {
-    max-width: 100%;
-    text-align: center;
-    align-items: center;
-    transform: translateY(-12px);
-    flex: 0 0 auto;
-  }
-
-  .delivery-section--visible .delivery-text {
-    transform: translateY(0);
-  }
-
-  .delivery-sub {
-    max-width: 320px;
-  }
-
-  .map-wrapper {
-    flex: 1 1 auto;
     width: 100%;
-    max-height: 55vh;
-  }
-}
-
-@media (max-width: 500px) {
-  .delivery-container {
-    padding: 2rem 1rem 1.5rem;
+    max-width: 480px;
+    align-items: center;
+    text-align: center;
   }
 
   .delivery-title {
-    font-size: 2rem;
+    font-size: clamp(1.8rem, 6vw, 2.8rem);
   }
 
+  /* Map: fixed fraction of viewport height so it never overflows */
   .map-wrapper {
-    max-height: 50vh;
-  }
-
-  .map-el {
-    stroke-width: 1;
+    width: 100%;
+    height: clamp(240px, 48vw, 420px);
+    flex: 0 0 auto;
   }
 }
 
-/* Landscape phones */
-@media (max-height: 500px) and (orientation: landscape) {
+/* ─── Responsive: small phones ───────────────────── */
+@media (max-width: 480px) {
+  .delivery-title {
+    font-size: clamp(1.6rem, 8vw, 2.2rem);
+  }
+
+  .map-wrapper {
+    height: clamp(220px, 52vw, 340px);
+  }
+
+  .map-state {
+    stroke-width: 0.8;
+  }
+}
+
+/* ─── Landscape phone ────────────────────────────── */
+@media (max-height: 520px) and (orientation: landscape) {
   .delivery-container {
     flex-direction: row;
     height: 100vh;
     max-height: 100vh;
-    padding: 1rem 2rem;
     min-height: unset;
+    padding: 0.75rem 2rem;
     gap: 1.5rem;
   }
 
   .delivery-text {
-    max-width: 200px;
+    width: min(200px, 35%);
     text-align: left;
     align-items: flex-start;
   }
 
   .delivery-title {
-    font-size: 1.5rem;
+    font-size: clamp(1.2rem, 3vh, 1.8rem);
   }
 
-  .delivery-sub {
-    font-size: 0.75rem;
-  }
-
-  .map-wrapper {
-    max-height: 90vh;
+  .delivery-sub,
+  .delivery-badge {
+    display: none; /* hide to save vertical space in tight landscape */
   }
 }

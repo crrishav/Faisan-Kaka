@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { motion, useInView, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { usePrintContext } from './printContext.jsx';
 import './PrintSection.css';
 
 const ACCEPTED_TYPES = [
@@ -97,6 +98,7 @@ const PrintSection = () => {
   const sectionRef = useRef(null);
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
+  const { setPendingFile } = usePrintContext();
 
   const [isDragging, setIsDragging] = useState(false);
   const [uploadedFile, setUploadedFile] = useState(null);
@@ -288,7 +290,7 @@ const PrintSection = () => {
                 exit="exit"
                 whileHover={{ scale: 1.03, backgroundColor: '#1a1a1a' }}
                 whileTap={{ scale: 0.97 }}
-                onClick={() => navigate('/print', { state: { uploadedFile } })}
+                onClick={() => { setPendingFile(uploadedFile); navigate('/print'); }}
               >
                 Proceed to Print →
               </motion.button>

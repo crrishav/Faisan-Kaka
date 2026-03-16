@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
 import { colord } from 'colord';
 import Footer from '../Components/footer.jsx';
+import { usePrintContext } from '../Components/printContext.jsx';
 import tshirtFrontMock from '../assets/mock images/T-shirt (front).png';
 import tshirtBackMock from '../assets/mock images/T-shirt (back).png';
 import hoodieFrontMock from '../assets/mock images/hoodie (front).png';
@@ -212,6 +213,7 @@ const MockupStage = ({
 
 const PrintStudioPage = () => {
   const location = useLocation();
+  const { consumeFile } = usePrintContext();
   const inputRef = useRef(null);
   const routeFileHydratedRef = useRef(false);
   const artworksRef = useRef([]);
@@ -245,14 +247,22 @@ const PrintStudioPage = () => {
   }, []);
 
   useEffect(() => {
-    if (!routeFileHydratedRef.current && location.state?.uploadedFile instanceof File) {
-      routeFileHydratedRef.current = true;
-      const nextArtwork = createArtworkEntry(location.state.uploadedFile);
+    if (routeFileHydratedRef.current) return;
+    routeFileHydratedRef.current = true;
+
+    // Prefer file from context (works on Vercel / all hosts)
+    const contextFile = consumeFile();
+    const fileToLoad = contextFile instanceof File
+      ? contextFile
+      : (location.state?.uploadedFile instanceof File ? location.state.uploadedFile : null);
+
+    if (fileToLoad) {
+      const nextArtwork = createArtworkEntry(fileToLoad);
       setArtworks([nextArtwork]);
       setActiveArtworkId(nextArtwork.id);
       setError('');
     }
-  }, [location.state]);
+  }, []);
 
   useEffect(() => {
     if (artworks.length === 0) {

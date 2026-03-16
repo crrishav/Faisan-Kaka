@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { motion, useInView, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import './PrintSection.css';
 
 const ACCEPTED_TYPES = [
@@ -95,6 +96,7 @@ const CheckIcon = () => (
 const PrintSection = () => {
   const sectionRef = useRef(null);
   const fileInputRef = useRef(null);
+  const navigate = useNavigate();
 
   const [isDragging, setIsDragging] = useState(false);
   const [uploadedFile, setUploadedFile] = useState(null);
@@ -286,8 +288,9 @@ const PrintSection = () => {
                 exit="exit"
                 whileHover={{ scale: 1.03, backgroundColor: '#1a1a1a' }}
                 whileTap={{ scale: 0.97 }}
+                onClick={() => navigate('/print', { state: { uploadedFile } })}
               >
-                Submit Design →
+                Proceed to Print →
               </motion.button>
             )}
           </AnimatePresence>

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import useCart from './useCart.jsx';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -17,6 +17,11 @@ const ProductDetails = ({
   const [selectedColor, setSelectedColor] = useState(colors[0]);
   const [selectedSize, setSelectedSize] = useState(sizes[0]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const { addItem } = useCart();
   const isNepal = useMemo(() => {
     try {
@@ -31,14 +36,90 @@ const ProductDetails = ({
   }, []);
   const displayPrice = isNepal ? `Rs. ${priceNPR}` : `₹${priceINR}`;
   
-  const images = [frontImage, backImage].filter(Boolean);
+  const images = useMemo(() => {
+    const unique = [frontImage, backImage].filter(Boolean);
+    return [...new Set(unique)];
+  }, [frontImage, backImage]);
+
+  const clampZoom = (value) => Math.min(4, Math.max(1, value));
+
+  const resetViewerTransform = () => {
+    setZoomLevel(1);
+    setPan({ x: 0, y: 0 });
+  };
+
+  const openViewer = (index) => {
+    setCurrentImageIndex(index);
+    resetViewerTransform();
+    setIsViewerOpen(true);
+  };
+
+  const closeViewer = () => {
+    setIsViewerOpen(false);
+    setIsPanning(false);
+    resetViewerTransform();
+  };
   
   const handlePrevImage = () => {
     setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
+    resetViewerTransform();
   };
   
   const handleNextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % images.length);
+    resetViewerTransform();
+  };
+
+  const handleZoomIn = () => {
+    setZoomLevel((prev) => clampZoom(prev + 0.25));
+  };
+
+  const handleZoomOut = () => {
+    setZoomLevel((prev) => {
+      const next = clampZoom(prev - 0.25);
+      if (next === 1) {
+        setPan({ x: 0, y: 0 });
+      }
+      return next;
+    });
+  };
+
+  const handleViewerWheel = (e) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -0.2 : 0.2;
+    setZoomLevel((prev) => {
+      const next = clampZoom(prev + delta);
+      if (next === 1) {
+        setPan({ x: 0, y: 0 });
+      }
+      return next;
+    });
+  };
+
+  const handleViewerPointerDown = (e) => {
+    if (zoomLevel <= 1) return;
+    setIsPanning(true);
+    setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+  };
+
+  const handleViewerPointerMove = (e) => {
+    if (!isPanning || zoomLevel <= 1) return;
+    setPan({
+      x: e.clientX - panStart.x,
+      y: e.clientY - panStart.y,
+    });
+  };
+
+  const stopPanning = () => {
+    setIsPanning(false);
+  };
+
+  const handleViewerDoubleClick = () => {
+    if (zoomLevel > 1) {
+      resetViewerTransform();
+      return;
+    }
+    setZoomLevel(2);
   };
   
   const handleAddToCart = () => {
@@ -51,189 +132,135 @@ const ProductDetails = ({
     // Add buy now logic here
   };
 
+  useEffect(() => {
+    if (!isViewerOpen) return undefined;
+    document.body.style.overflow = 'hidden';
+    const onEsc = (e) => {
+      if (e.key === 'Escape') {
+        closeViewer();
+      }
+    };
+    window.addEventListener('keydown', onEsc);
+    return () => {
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', onEsc);
+    };
+  }, [isViewerOpen]);
+
   return (
     <>
-      {/* Desktop Layout - Hidden on Mobile */}
-      <div className="hidden md:block w-full max-w-[440px] bg-[#D9D9D9] rounded-[35px] overflow-hidden flex flex-col font-sans relative shadow-xl mx-auto">
-        {/* Top Section: Content */}
-        <div className="p-9 pt-10 pb-12 relative z-20 flex flex-col gap-5">
-          <div className="flex justify-between items-baseline">
-            <h2 className="text-lg font-bold text-black tracking-tight">{title}</h2>
-            <span className="text-lg font-bold text-black">{displayPrice}</span>
-          </div>
-          
-          <p className="text-[12px] text-black/90 leading-relaxed font-medium">
-            {description}
-          </p>
-
-          <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-between mt-1">
-                  <span className="text-sm font-bold text-black">Color:</span>
-                  <div className="flex gap-3">
-                      {colors.map((color, index) => (
-                      <div 
-                          key={index} 
-                          className="w-8 h-8 rounded-full cursor-pointer shadow-md border-2 border-transparent hover:border-black/10 transition-all"
-                          style={{ backgroundColor: color }}
-                      />
-                      ))}
-                  </div>
-              </div>
-          </div>
-
-          <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-between">
-                  <span className="text-sm font-bold text-black">Size:</span>
-                  <div className="flex gap-3">
-                      {sizes.map((size) => (
-                      <div 
-                          key={size} 
-                          className="w-8 h-8 rounded-full bg-[#808080] flex items-center justify-center text-white text-xs font-bold cursor-pointer hover:bg-[#707070] transition-colors"
-                      >
-                          {size}
-                      </div>
-                      ))}
-                  </div>
-              </div>
-          </div>
-        </div>
-
-        {/* Bottom Section: Cutout Action Bar */}
-        <div className="relative flex items-end">
-          <div className="bg-[#323232] w-[66%] h-20 rounded-tr-[40px] flex items-center px-7 relative shadow-[10px_0_20px_rgba(0,0,0,0.12)] z-10 before:content-[''] before:absolute before:left-[36px] before:-top-10 before:w-10 before:h-10 before:bg-[#D9D9D9] before:rounded-bl-[40px] after:content-[''] after:absolute after:-right-10 after:top-0 after:w-10 after:h-10 after:bg-[#D9D9D9] after:rounded-bl-[40px]">
-              <div className="flex items-center justify-between text-white z-20 w-full">
-                  <div className="flex items-center gap-5">
-                      <button 
-                          onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                          className="w-8 h-8 flex items-center justify-center text-xl font-bold hover:text-gray-400 transition-colors cursor-pointer"
-                      >
-                          -
-                      </button>
-                      <span className="text-lg font-bold w-8 text-center">{quantity}</span>
-                      <button 
-                          onClick={() => setQuantity(quantity + 1)}
-                          className="w-8 h-8 flex items-center justify-center text-xl font-bold hover:text-gray-400 transition-colors cursor-pointer"
-                      >
-                          +
-                      </button>
-                  </div>
-                  <button onClick={handleAddToCart} className="font-bold text-base whitespace-nowrap hover:opacity-80 transition-opacity cursor-pointer">
-                      Add To Cart
-                  </button>
-              </div>
-          </div>
-
-          <div className="flex-grow h-20 bg-transparent relative flex items-center justify-center">
-              <button 
-                  className="text-[#323232] px-12 py-4 rounded-[20px] font-bold text-base hover:opacity-80 transition-opacity z-20 leading-none cursor-pointer"
-              >
-                  Buy Now
-              </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile Layout - Only visible on screens ≤ 768px */}
-      <div className="md:hidden w-full max-w-[440px] bg-white rounded-[20px] overflow-hidden flex flex-col font-sans relative shadow-lg mx-auto">
-        {/* Product Name and Price on same line with pipe separator */}
-        <div className="px-4 pt-6 pb-2">
-          <div className="flex items-center justify-center gap-2 text-center">
-            <h2 className="text-lg font-bold text-black">{title}</h2>
-            <span className="text-black/50">|</span>
-            <span className="text-lg font-bold text-black">{displayPrice}</span>
-          </div>
-        </div>
-
-        {/* Description */}
-        <div className="px-4 pb-4">
-          <p className="text-sm text-black/80 leading-relaxed text-center">
-            {description}
-          </p>
-        </div>
-
-        {/* Interactive Image Gallery with Navigation */}
+      <div className="w-full max-w-[480px] rounded-[28px] md:rounded-none bg-[#ebebeb] md:bg-transparent border border-black/10 md:border-0 shadow-[0_16px_40px_rgba(0,0,0,0.08)] md:shadow-none overflow-hidden mx-auto">
         {images.length > 0 && (
-          <div className="px-4 pb-4">
-            <div className="relative w-full h-64 bg-gray-100 rounded-[15px] overflow-hidden">
-              <img 
-                src={images[currentImageIndex]} 
-                alt={`${title} - Image ${currentImageIndex + 1}`} 
-                className="w-full h-full object-cover"
-              />
-              
-              {/* Left Arrow */}
+          <div className="p-4 sm:p-5 pb-3 sm:pb-4 md:hidden">
+            <div className="relative rounded-[22px] bg-white/70 overflow-hidden border border-black/5">
+              <button
+                type="button"
+                className="block w-full cursor-pointer"
+                onClick={() => openViewer(currentImageIndex)}
+                aria-label="Open image viewer"
+              >
+                <img
+                  src={images[currentImageIndex]}
+                  alt={`${title} preview ${currentImageIndex + 1}`}
+                  className="w-full h-[300px] sm:h-[360px] object-cover"
+                />
+              </button>
+
               {images.length > 1 && (
-                <button
-                  onClick={handlePrevImage}
-                  className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 min-w-[44px] min-h-[44px] bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg touch-manipulation"
-                  aria-label="Previous image"
-                >
-                  <ChevronLeft size={20} className="text-black" />
-                </button>
+                <>
+                  <button
+                    type="button"
+                    onClick={handlePrevImage}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/85 backdrop-blur text-black flex items-center justify-center shadow-md cursor-pointer"
+                    aria-label="Previous image"
+                  >
+                    <ChevronLeft size={18} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleNextImage}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/85 backdrop-blur text-black flex items-center justify-center shadow-md cursor-pointer"
+                    aria-label="Next image"
+                  >
+                    <ChevronRight size={18} />
+                  </button>
+                </>
               )}
-              
-              {/* Right Arrow */}
-              {images.length > 1 && (
-                <button
-                  onClick={handleNextImage}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 min-w-[44px] min-h-[44px] bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg touch-manipulation"
-                  aria-label="Next image"
-                >
-                  <ChevronRight size={20} className="text-black" />
-                </button>
-              )}
-              
-              {/* Image Indicators */}
-              {images.length > 1 && (
-                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-                  {images.map((_, index) => (
-                    <div
-                      key={index}
-                      className={`w-2 h-2 rounded-full transition-colors ${
-                        index === currentImageIndex ? 'bg-black' : 'bg-black/30'
-                      }`}
-                    />
-                  ))}
-                </div>
-              )}
+
+              <button
+                type="button"
+                onClick={() => openViewer(currentImageIndex)}
+                className="absolute right-3 bottom-3 px-3 py-1.5 rounded-full bg-black/80 text-white text-xs font-semibold cursor-pointer"
+              >
+                Tap to Zoom
+              </button>
             </div>
+
+            {images.length > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-3">
+                {images.map((img, index) => (
+                  <button
+                    key={`${img}-${index}`}
+                    type="button"
+                    onClick={() => setCurrentImageIndex(index)}
+                    className={`w-12 h-12 rounded-lg overflow-hidden border-2 transition-all ${
+                      index === currentImageIndex
+                        ? 'border-black scale-105'
+                        : 'border-black/10 opacity-80 hover:opacity-100'
+                    } cursor-pointer`}
+                    aria-label={`Show image ${index + 1}`}
+                  >
+                    <img src={img} alt={`${title} thumbnail ${index + 1}`} className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
-        {/* Color Selection Options */}
-        <div className="px-4 pb-4">
-          <div className="flex flex-col items-center gap-3">
-            <span className="text-sm font-bold text-black">Color:</span>
-            <div className="flex gap-3">
+        <div className="px-5 sm:px-6 md:px-0 pb-6 sm:pb-7 pt-1 md:pt-0 flex flex-col gap-5 md:gap-6">
+          <div className="flex items-start justify-between gap-4">
+            <h2 className="text-xl sm:text-2xl md:text-4xl font-black text-black leading-tight">{title}</h2>
+            <span className="text-lg sm:text-xl md:text-3xl font-black text-black whitespace-nowrap">{displayPrice}</span>
+          </div>
+
+          <p className="text-sm md:text-[15px] text-black/70 leading-relaxed md:max-w-[420px]">
+            {description}
+          </p>
+
+          <div className="flex flex-col gap-3">
+            <span className="text-[0.72rem] tracking-[0.14em] uppercase font-bold text-black/45">Color</span>
+            <div className="flex flex-wrap gap-2.5 md:pl-2">
               {colors.map((color, index) => (
                 <button
-                  key={index}
+                  key={`${color}-${index}`}
+                  type="button"
                   onClick={() => setSelectedColor(color)}
-                  className={`w-10 h-10 min-w-[44px] min-h-[44px] rounded-full cursor-pointer shadow-md border-2 transition-all ${
-                    selectedColor === color ? 'border-black scale-110' : 'border-transparent hover:border-black/10'
-                  }`}
+                  className={`w-9 h-9 rounded-full border-2 transition-all ${
+                    selectedColor === color
+                      ? 'border-black scale-110'
+                      : 'border-transparent hover:border-black/20'
+                  } cursor-pointer`}
                   style={{ backgroundColor: color }}
                   aria-label={`Select color ${index + 1}`}
                 />
               ))}
             </div>
           </div>
-        </div>
 
-        {/* Size Selection Options */}
-        <div className="px-4 pb-4">
-          <div className="flex flex-col items-center gap-3">
-            <span className="text-sm font-bold text-black">Size:</span>
-            <div className="flex gap-3">
+          <div className="flex flex-col gap-3">
+            <span className="text-[0.72rem] tracking-[0.14em] uppercase font-bold text-black/45">Size</span>
+            <div className="flex flex-wrap gap-2.5">
               {sizes.map((size) => (
                 <button
                   key={size}
+                  type="button"
                   onClick={() => setSelectedSize(size)}
-                  className={`w-10 h-10 min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center text-sm font-bold cursor-pointer transition-all ${
-                    selectedSize === size 
-                      ? 'bg-black text-white scale-110' 
-                      : 'bg-gray-300 text-black hover:bg-gray-400'
-                  }`}
+                  className={`min-w-[44px] h-10 px-3 rounded-full text-sm font-bold transition-colors ${
+                    selectedSize === size
+                      ? 'bg-black text-white'
+                      : 'bg-black/10 text-black hover:bg-black/20'
+                  } cursor-pointer`}
                   aria-label={`Select size ${size}`}
                 >
                   {size}
@@ -241,49 +268,130 @@ const ProductDetails = ({
               ))}
             </div>
           </div>
-        </div>
 
-        {/* Quantity Selector and Action Buttons */}
-        <div className="px-4 pb-6">
-          <div className="flex flex-col gap-4">
-            {/* Quantity Selector with Add to Cart */}
-            <div className="flex items-center justify-center gap-4">
-              <div className="flex items-center gap-2 bg-gray-100 rounded-full px-2 py-1">
-                <button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-8 h-8 min-w-[44px] min-h-[44px] flex items-center justify-center text-lg font-bold text-black hover:bg-gray-200 rounded-full transition-colors touch-manipulation"
-                  aria-label="Decrease quantity"
-                >
-                  -
-                </button>
-                <span className="text-lg font-bold text-black w-8 text-center">{quantity}</span>
-                <button
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="w-8 h-8 min-w-[44px] min-h-[44px] flex items-center justify-center text-lg font-bold text-black hover:bg-gray-200 rounded-full transition-colors touch-manipulation"
-                  aria-label="Increase quantity"
-                >
-                  +
-                </button>
-              </div>
-              
+          <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-3 items-center md:pt-1">
+            <div className="h-11 rounded-full bg-black text-white flex items-center justify-between px-2">
               <button
-                onClick={handleAddToCart}
-                className="px-6 py-3 min-h-[44px] bg-black text-white font-bold rounded-full hover:bg-gray-800 transition-colors touch-manipulation"
+                type="button"
+                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                className="w-8 h-8 rounded-full hover:bg-white/20 cursor-pointer"
+                aria-label="Decrease quantity"
               >
-                Add to Cart
+                -
+              </button>
+              <span className="w-9 text-center font-bold">{quantity}</span>
+              <button
+                type="button"
+                onClick={() => setQuantity(quantity + 1)}
+                className="w-8 h-8 rounded-full hover:bg-white/20 cursor-pointer"
+                aria-label="Increase quantity"
+              >
+                +
               </button>
             </div>
-            
-            {/* Buy Now Button */}
+
             <button
-              onClick={handleBuyNow}
-              className="w-full py-3 min-h-[44px] bg-gray-200 text-black font-bold rounded-full hover:bg-gray-300 transition-colors touch-manipulation"
+              type="button"
+              onClick={handleAddToCart}
+              className="h-11 px-5 rounded-full bg-black text-white font-bold hover:bg-black/85 transition-colors cursor-pointer"
             >
-              Buy Now
+              Add To Cart
             </button>
           </div>
+
+          <button
+            type="button"
+            onClick={handleBuyNow}
+            className="h-11 rounded-full border border-black/20 text-black font-bold hover:bg-black/5 transition-colors cursor-pointer"
+          >
+            Buy Now
+          </button>
         </div>
       </div>
+
+      {isViewerOpen && images.length > 0 && (
+        <div className="fixed inset-0 z-[120] bg-black/90 flex items-center justify-center p-4" role="dialog" aria-modal="true">
+          <button
+            type="button"
+            onClick={closeViewer}
+            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/15 text-white text-2xl leading-none cursor-pointer"
+            aria-label="Close image viewer"
+          >
+            ×
+          </button>
+
+          <div className="absolute top-4 left-4 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleZoomOut}
+              className="w-10 h-10 rounded-full bg-white/15 text-white text-xl cursor-pointer"
+              aria-label="Zoom out"
+            >
+              -
+            </button>
+            <button
+              type="button"
+              onClick={handleZoomIn}
+              className="w-10 h-10 rounded-full bg-white/15 text-white text-xl cursor-pointer"
+              aria-label="Zoom in"
+            >
+              +
+            </button>
+            <button
+              type="button"
+              onClick={resetViewerTransform}
+              className="px-3 h-10 rounded-full bg-white/15 text-white text-sm font-semibold cursor-pointer"
+            >
+              Reset
+            </button>
+          </div>
+
+          {images.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={handlePrevImage}
+                className="absolute left-3 sm:left-6 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/15 text-white flex items-center justify-center cursor-pointer"
+                aria-label="Previous image"
+              >
+                <ChevronLeft size={22} />
+              </button>
+              <button
+                type="button"
+                onClick={handleNextImage}
+                className="absolute right-3 sm:right-6 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/15 text-white flex items-center justify-center cursor-pointer"
+                aria-label="Next image"
+              >
+                <ChevronRight size={22} />
+              </button>
+            </>
+          )}
+
+          <div
+            className="w-full max-w-5xl max-h-[85vh] overflow-hidden flex items-center justify-center"
+            onWheel={handleViewerWheel}
+            onPointerMove={handleViewerPointerMove}
+            onPointerUp={stopPanning}
+            onPointerLeave={stopPanning}
+          >
+            <img
+              src={images[currentImageIndex]}
+              alt={`${title} enlarged ${currentImageIndex + 1}`}
+              className="max-w-full max-h-[85vh] object-contain select-none"
+              style={{
+                transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoomLevel})`,
+                transformOrigin: 'center center',
+                cursor: zoomLevel > 1 ? (isPanning ? 'grabbing' : 'grab') : 'zoom-in',
+                touchAction: 'none',
+                transition: isPanning ? 'none' : 'transform 120ms ease-out',
+              }}
+              onPointerDown={handleViewerPointerDown}
+              onDoubleClick={handleViewerDoubleClick}
+              draggable={false}
+            />
+          </div>
+        </div>
+      )}
     </>
   );
 };

@@ -58,10 +58,16 @@ export const getProductsByCategory = async (category) => {
   }
 };
 
+const productCache = new Map();
+
 /**
  * GROQ Query: Fetch a single product by slug
  */
 export const getProductBySlug = async (slug) => {
+  if (productCache.has(slug)) {
+    return productCache.get(slug);
+  }
+
   const query = `*[_type == "product" && slug.current == $slug][0] {
     _id,
     title,
@@ -100,10 +106,19 @@ export const getProductBySlug = async (slug) => {
 
   try {
     const product = await sanityClient.fetch(query, { slug });
+    if (product) {
+      productCache.set(slug, product);
+    }
     return product;
   } catch (error) {
     console.error('Error fetching product:', error);
     return null;
+  }
+};
+
+export const prefetchProductBySlug = (slug) => {
+  if (!productCache.has(slug)) {
+    getProductBySlug(slug);
   }
 };
 

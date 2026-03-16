@@ -103,6 +103,7 @@ const Footer = () => {
           <div>
             <h3 className="font-bold text-[#e5e5e5]">Support</h3>
             <ul className="mt-2 space-y-1 text-[#d4d4d4]">
+              <li><button className="hover:text-white transition-colors cursor-pointer" onClick={() => navigate('/track-order')}>Track Your Order</button></li>
               <li><button className="hover:text-white transition-colors cursor-pointer" onClick={handleContactClick}>Contact</button></li>
               <li><button className="hover:text-white transition-colors cursor-pointer">Shipping</button></li>
               <li><button className="hover:text-white transition-colors cursor-pointer">Returns</button></li>

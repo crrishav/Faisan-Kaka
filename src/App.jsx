@@ -7,6 +7,8 @@ import LoadingScreen from './Components/LoadingScreen.jsx';
 import PageTransition from './Components/PageTransition.jsx';
 import NavBar from './Components/navBar.jsx';
 import ScrollToTop from './Components/ScrollToTop.jsx';
+import CheckoutForm from './Components/CheckoutForm.jsx';
+import OrderTrackingPage from './Pages/OrderTrackingPage.jsx';
 import { Studio } from 'sanity';
 import config from '../sanity.config';
 
@@ -17,6 +19,8 @@ const AppRoutes = () => {
         <Route path="/" element={<HomePage />} />
         <Route path="/collections" element={<CollectionsPage />} />
         <Route path="/product/:slug" element={<ProductDetailsPage />} />
+        <Route path="/checkout" element={<CheckoutForm />} />
+        <Route path="/track-order" element={<OrderTrackingPage />} />
         <Route path="/studio/*" element={<Studio config={config} />} />
       </Routes>
     </PageTransition>

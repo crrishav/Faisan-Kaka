@@ -45,10 +45,10 @@ const LOGO_PATHS = [
 ];
 
 // Animation timing constants
-const DRAW_DURATION = 2.0;   // seconds to draw each path stroke
-const FILL_DELAY = 1.8;      // seconds after mount before fill starts
-const FILL_DURATION = 0.6;   // seconds for fill to appear
-const STAGGER = 0.04;        // seconds between each path starting
+const DRAW_DURATION = 1.0;   // seconds to draw each path stroke
+const FILL_DELAY = 0.8;      // seconds after mount before fill starts
+const FILL_DURATION = 0.4;   // seconds for fill to appear
+const STAGGER = 0.02;        // seconds between each path starting
 
 const LoadingScreen = ({ isLoaded }) => {
   const [shouldRender, setShouldRender] = useState(true);
@@ -63,7 +63,7 @@ const LoadingScreen = ({ isLoaded }) => {
   // Remove from DOM after fade-out completes
   useEffect(() => {
     if (isLoaded) {
-      const timer = setTimeout(() => setShouldRender(false), 1000);
+      const timer = setTimeout(() => setShouldRender(false), 500);
       return () => clearTimeout(timer);
     }
   }, [isLoaded]);
@@ -72,7 +72,7 @@ const LoadingScreen = ({ isLoaded }) => {
 
   return (
     <div
-      className={`fixed inset-0 z-[10000] flex items-center justify-center bg-white transition-opacity duration-700 ${
+      className={`fixed inset-0 z-[10000] flex items-center justify-center bg-white transition-opacity duration-500 ${
         isLoaded ? 'opacity-0 pointer-events-none' : 'opacity-100'
       }`}
     >

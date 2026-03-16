@@ -148,8 +148,8 @@ const DeliverySection = () => {
               >
                 {svgElements.map(({ tag, attrs, id, revealOrder }) => {
                   const variants = stateVariants(revealOrder);
+                  const elementKey = `${tag}-${id}-${revealOrder}`;
                   const sharedProps = {
-                    key: id,
                     className: 'map-state',
                     variants,
                     initial: 'hidden',
@@ -164,6 +164,7 @@ const DeliverySection = () => {
 
                   return tag === 'circle' ? (
                     <motion.circle
+                      key={elementKey}
                       {...sharedProps}
                       cx={attrs.cx}
                       cy={attrs.cy}
@@ -171,6 +172,7 @@ const DeliverySection = () => {
                     />
                   ) : (
                     <motion.path
+                      key={elementKey}
                       {...sharedProps}
                       d={attrs.d}
                     />

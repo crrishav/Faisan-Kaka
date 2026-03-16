@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { prefetchProductBySlug } from '../lib/sanityClient.js';
 
 const ProductCard = ({ title, price, backImage, frontImage, slug }) => {
   const navigate = useNavigate();
@@ -12,12 +13,8 @@ const ProductCard = ({ title, price, backImage, frontImage, slug }) => {
 
   const handleNavigate = () => {
     if (!slug) return;
+    prefetchProductBySlug(slug);
     navigate(`/product/${slug}`);
-    if (window.lenis && typeof window.lenis.scrollTo === 'function') {
-      setTimeout(() => window.lenis.scrollTo(0, { immediate: true }), 0);
-    } else {
-      setTimeout(() => window.scrollTo({ top: 0, left: 0, behavior: 'auto' }), 0);
-    }
   };
 
   return (
@@ -33,7 +30,7 @@ const ProductCard = ({ title, price, backImage, frontImage, slug }) => {
           src={frontImage || backImage}
           alt={title}
           loading="eager"
-          fetchpriority="high"
+          fetchPriority="high"
           className={`absolute inset-0 w-full h-full object-cover transition-none ${hovered && backImage ? 'opacity-0' : 'opacity-100'}`}
         />
         {backImage && (
@@ -41,7 +38,7 @@ const ProductCard = ({ title, price, backImage, frontImage, slug }) => {
             src={backImage}
             alt={title}
             loading="eager"
-            fetchpriority="high"
+            fetchPriority="high"
             className={`absolute inset-0 w-full h-full object-cover transition-none ${hovered ? 'opacity-100' : 'opacity-0'}`}
           />
         )}

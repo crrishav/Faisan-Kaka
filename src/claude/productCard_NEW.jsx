@@ -38,6 +38,7 @@ const ProductCard = ({ title, price, backImage, frontImage, slug, priceINR, pric
   const resolvedPriceNPR = toNumber(priceNPR || (currency === 'NPR' ? price : 0));
 
   const handleMouseEnter = () => {
+    // Reset selections every time user re-hovers
     setSelectedSize(null);
     setSelectedColor(null);
     setAddedFlash(false);
@@ -120,10 +121,10 @@ const ProductCard = ({ title, price, backImage, frontImage, slug, priceINR, pric
         <p className="text-gray-700 font-semibold">{price}</p>
       </div>
 
-      {/* CTA - fixed height container so card never resizes */}
+      {/* CTA — fixed height container so card never resizes */}
       <div className="w-full relative" style={{ height: '42px' }}>
 
-        {/* "View Product" button - fades out on hover (desktop only) */}
+        {/* "View Product" button — fades out on hover (desktop only) */}
         <button
           className="absolute inset-0 w-full py-2.5 rounded-2xl bg-black text-white text-sm font-bold tracking-tight hover:bg-neutral-800 active:scale-95 cursor-pointer hidden md:block"
           style={{
@@ -147,7 +148,7 @@ const ProductCard = ({ title, price, backImage, frontImage, slug, priceINR, pric
           View Product
         </button>
 
-        {/* Quick-pick panel - fades in on hover, same fixed height */}
+        {/* Quick-pick panel — fades in on hover, same fixed height */}
         <div
           className="absolute inset-0 hidden md:flex flex-col justify-between"
           style={{

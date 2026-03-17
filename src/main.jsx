@@ -4,16 +4,19 @@ import './index.css'
 import App from './App.jsx'
 import SmoothScroll from './Components/smoothScroll.jsx'
 import { CartProvider } from './Components/cartContext.jsx'
+import { CurrencyProvider } from './Components/currencyContext.jsx'
 import { PrintProvider } from './Components/printContext.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <SmoothScroll>
-      <CartProvider>
-        <PrintProvider>
-          <App />
-        </PrintProvider>
-      </CartProvider>
+      <CurrencyProvider>
+        <CartProvider>
+          <PrintProvider>
+            <App />
+          </PrintProvider>
+        </CartProvider>
+      </CurrencyProvider>
     </SmoothScroll>
   </StrictMode>,
 )

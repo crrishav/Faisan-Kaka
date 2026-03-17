@@ -1,6 +1,9 @@
 import React, { useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Footer from './footer.jsx';
+import useCart from './useCart.jsx';
+import useProducts from './useProducts.jsx';
 
 /* ─── Validation ────────────────────────────────────────────────── */
 
@@ -15,7 +18,7 @@ const validate = (fields) => {
   if (!fields.area.trim())                  errors.area      = 'Required';
   if (!fields.city.trim())                  errors.city      = 'Required';
   if (!fields.pincode.trim())               errors.pincode   = 'Required';
-  else if (!/^\d{6}$/.test(fields.pincode)) errors.pincode   = 'Must be 6 digits';
+  else if (!/^\d{6}$/.test(fields.pincode)) errors.pincode   = 'Faisan Kaka currently only ships within India. Nepal coming soon!';
   return errors;
 };
 
@@ -78,24 +81,65 @@ const inputCls = (hasError) =>
 
 const INITIAL = {
   fullName: '', email: '', phone: '',
-  house: '', area: '', city: '', pincode: '',
+  house: '', area: '', landmark: '', city: '', pincode: '',
 };
 
-const CheckoutForm = ({ cartItems = [], total = 0, currency = 'INR' }) => {
+const CheckoutForm = ({ cartItems, total, currency }) => {
+  const cart = useCart();
+  const { products: allProducts } = useProducts();
   const [fields, setFields]   = useState(INITIAL);
   const [errors, setErrors]   = useState({});
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [hasAcceptedPolicies, setHasAcceptedPolicies] = useState(false);
 
-  const isNepal = currency === 'NPR';
-  const displayTotal = isNepal ? `Rs. ${total.toFixed(2)}` : `₹${total.toFixed(2)}`;
+  const effectiveCartItems = cartItems ?? cart.items;
+  const effectiveTotal = total ?? cart.total;
+  const effectiveCurrency = currency ?? cart.currency;
+  const isNepal = effectiveCurrency === 'NPR';
+  const displayTotal = isNepal ? `Rs. ${effectiveTotal.toFixed(2)}` : `₹${effectiveTotal.toFixed(2)}`;
+
+  const resolveCartItemImage = useCallback((item) => {
+    if (item.frontImage || item.backImage) {
+      return item.frontImage || item.backImage;
+    }
+
+    const key = String(item.slug || item.id || '').trim().toLowerCase();
+    const normalizedTitle = String(item.title || '').trim().toLowerCase();
+
+    const matchedProduct = allProducts.find((product) => {
+      const productSlug = String(product.slug || '').trim().toLowerCase();
+      const productName = String(product.name || '').trim().toLowerCase();
+      return productSlug === key || productName === normalizedTitle;
+    });
+
+    return matchedProduct?.frontImage || matchedProduct?.backImage || '';
+  }, [allProducts]);
 
   const handleChange = useCallback((e) => {
     const { name, value } = e.target;
-    setFields(prev => ({ ...prev, [name]: value }));
-    // Clear error on change
+    const nextValue = name === 'phone' || name === 'pincode'
+      ? value.replace(/\D/g, '')
+      : value;
+
+    setFields(prev => ({ ...prev, [name]: nextValue }));
+
+    if (name === 'pincode') {
+      setErrors((prev) => ({
+        ...prev,
+        pincode: nextValue && !/^\d{6}$/.test(nextValue)
+          ? 'Faisan Kaka currently only ships within India. Nepal coming soon!'
+          : undefined,
+      }));
+      return;
+    }
+
     if (errors[name]) setErrors(prev => ({ ...prev, [name]: undefined }));
   }, [errors]);
+
+  const togglePolicies = () => {
+    setHasAcceptedPolicies((prev) => !prev);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -112,7 +156,7 @@ const CheckoutForm = ({ cartItems = [], total = 0, currency = 'INR' }) => {
 
     const payload = {
       customer: { ...fields },
-      order: { items: cartItems, total, currency },
+      order: { items: effectiveCartItems, total: effectiveTotal, currency: effectiveCurrency },
       timestamp: new Date().toISOString(),
     };
 
@@ -301,6 +345,19 @@ const CheckoutForm = ({ cartItems = [], total = 0, currency = 'INR' }) => {
                 />
               </Field>
 
+              <Field label="Landmark (Optional)" error={errors.landmark}>
+                <input
+                  name="landmark"
+                  type="text"
+                  value={fields.landmark}
+                  onChange={handleChange}
+                  placeholder="Near City Mall or Metro Gate 2"
+                  autoComplete="off"
+                  data-error={!!errors.landmark}
+                  className={inputCls(!!errors.landmark)}
+                />
+              </Field>
+
               <Field label="City" error={errors.city}>
                 <input
                   name="city"
@@ -329,9 +386,34 @@ const CheckoutForm = ({ cartItems = [], total = 0, currency = 'INR' }) => {
               </Field>
             </div>
 
+            <motion.div
+              className="rounded-3xl border border-black/10 bg-[#f5f5f5] px-4 py-4 md:px-5 md:py-5 mb-10"
+              variants={fieldVariants}
+            >
+              <label className="flex items-start gap-3 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={hasAcceptedPolicies}
+                  onChange={togglePolicies}
+                  className="mt-1 h-4 w-4 rounded border-black/30 text-black focus:ring-black"
+                />
+                <span className="text-sm font-medium text-black/75 leading-relaxed">
+                  I agree to the{' '}
+                  <Link to="/terms-of-service" className="font-bold text-black underline underline-offset-4 hover:opacity-70">
+                    Terms of Service
+                  </Link>{' '}
+                  and understand the{' '}
+                  <Link to="/shipping-returns" className="font-bold text-black underline underline-offset-4 hover:opacity-70">
+                    Shipping & Return Policy
+                  </Link>
+                  .
+                </span>
+              </label>
+            </motion.div>
+
             {/* Pay Now — mobile only (shows below form on small screens) */}
             <motion.div className="lg:hidden" variants={fieldVariants}>
-              <PayButton loading={loading} displayTotal={displayTotal} />
+              <PayButton loading={loading} displayTotal={displayTotal} disabled={!hasAcceptedPolicies} />
             </motion.div>
           </motion.form>
 
@@ -349,14 +431,14 @@ const CheckoutForm = ({ cartItems = [], total = 0, currency = 'INR' }) => {
 
               {/* Items */}
               <div className="flex flex-col gap-3">
-                {cartItems.length > 0 ? (
-                  cartItems.map((item, i) => (
+                {effectiveCartItems.length > 0 ? (
+                  effectiveCartItems.map((item, i) => (
                     <div key={i} className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
-                        {(item.frontImage || item.backImage) && (
+                        {resolveCartItemImage(item) && (
                           <div className="w-10 h-10 rounded-xl bg-black/10 overflow-hidden flex-shrink-0">
                             <img
-                              src={item.frontImage || item.backImage}
+                              src={resolveCartItemImage(item)}
                               alt={item.title}
                               className="w-full h-full object-cover"
                             />
@@ -402,6 +484,7 @@ const CheckoutForm = ({ cartItems = [], total = 0, currency = 'INR' }) => {
                 <PayButton
                   loading={loading}
                   displayTotal={displayTotal}
+                  disabled={!hasAcceptedPolicies}
                   onClick={handleSubmit}
                 />
               </div>
@@ -429,14 +512,14 @@ const CheckoutForm = ({ cartItems = [], total = 0, currency = 'INR' }) => {
 
 /* ─── Pay button (shared between mobile + sidebar) ──────────────── */
 
-const PayButton = ({ loading, displayTotal, onClick }) => (
+const PayButton = ({ loading, displayTotal, disabled = false, onClick }) => (
   <motion.button
     type={onClick ? 'button' : 'submit'}
     onClick={onClick}
-    disabled={loading}
-    className="w-full py-4 rounded-2xl bg-black text-white text-sm font-bold tracking-tight flex items-center justify-center gap-2 disabled:opacity-60"
-    whileHover={!loading ? { scale: 1.02, backgroundColor: '#1a1a1a' } : {}}
-    whileTap={!loading ? { scale: 0.98 } : {}}
+    disabled={loading || disabled}
+    className="w-full py-4 rounded-2xl bg-black text-white text-sm font-bold tracking-tight flex items-center justify-center gap-2 disabled:opacity-45 disabled:cursor-not-allowed"
+    whileHover={!loading && !disabled ? { scale: 1.02, backgroundColor: '#1a1a1a' } : {}}
+    whileTap={!loading && !disabled ? { scale: 0.98 } : {}}
     transition={{ duration: 0.18 }}
   >
     {loading ? (
@@ -447,6 +530,10 @@ const PayButton = ({ loading, displayTotal, onClick }) => (
           transition={{ duration: 0.7, repeat: Infinity, ease: 'linear' }}
         />
         Processing…
+      </>
+    ) : disabled ? (
+      <>
+        Accept Policies to Continue
       </>
     ) : (
       <>

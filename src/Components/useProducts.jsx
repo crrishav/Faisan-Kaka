@@ -18,6 +18,7 @@ const useProducts = () => {
           category,
           priceINR,
           priceNPR,
+          stock,
           description,
           "mainImageUrl": mainImage.asset->url,
           "images": images[].asset->url,
@@ -34,6 +35,7 @@ const useProducts = () => {
           category: item.category,
           priceINR: item.priceINR?.toString(),
           priceNPR: item.priceNPR?.toString(),
+          stock: typeof item.stock === 'number' ? item.stock : null,
           description: item.description,
           // Use mainImage as front, first additional image as back (or same if no additional)
           frontImage: item.mainImageUrl,

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import ProductDetails from '../Components/productDetails.jsx';
 import Footer from '../Components/footer.jsx';
 import SmoothScroll from '../Components/smoothScroll.jsx';
@@ -167,6 +168,7 @@ const ProductDetailsPage = () => {
       title: normalizedTitle,
       priceINR: product.priceINR?.toString() || '0',
       priceNPR: product.priceNPR?.toString() || '0',
+      stock: typeof product.stock === 'number' ? product.stock : null,
       description: normalizedDescription,
       colors: normalizedColors.length > 0 ? normalizedColors : ["#3D5443", "#4D3434", "#4A4A4A"],
       sizes: normalizedSizes.length > 0 ? normalizedSizes : ["M", "L", "S"],
@@ -175,7 +177,7 @@ const ProductDetailsPage = () => {
       backImage,
       images: [frontImage, backImage, ...additionalImages.slice(1)].filter(Boolean),
       category: product.category,
-      inStock: product.inStock,
+      inStock: product.inStock !== false && (typeof product.stock !== 'number' || product.stock > 0),
     };
   }, [product, slug]);
 
@@ -365,13 +367,22 @@ const ProductDetailsPage = () => {
               <div className="mt-4 flex justify-center md:justify-start">
                 {productData.inStock !== false ? (
                   <span className="px-4 py-2 bg-green-100 text-green-700 rounded-full text-sm font-medium">
-                    In Stock
+                    {typeof productData.stock === 'number' ? `${productData.stock} in stock` : 'In Stock'}
                   </span>
                 ) : (
                   <span className="px-4 py-2 bg-red-100 text-red-700 rounded-full text-sm font-medium">
                     Out of Stock
                   </span>
                 )}
+              </div>
+
+              <div className="mt-4 flex justify-center md:justify-start">
+                <Link
+                  to="/sizing-guide"
+                  className="inline-flex items-center rounded-full border border-black/15 bg-white px-4 py-2 text-xs font-bold tracking-wide text-black transition-colors hover:bg-black hover:text-white"
+                >
+                  Not sure about fit? View Sizing Guide
+                </Link>
               </div>
             </div>
           </div>

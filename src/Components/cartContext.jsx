@@ -1,10 +1,12 @@
 import React, { createContext, useEffect, useMemo, useState, useCallback } from 'react';
+import useCurrency from './currencyContext.jsx';
 
 const CartContext = createContext(null);
 
 const STORAGE_KEY = 'fk_cart';
 
 export const CartProvider = ({ children }) => {
+  const { currency } = useCurrency();
   const [items, setItems] = useState(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -27,7 +29,11 @@ export const CartProvider = ({ children }) => {
       const idx = prev.findIndex((i) => i.id === item.id);
       if (idx >= 0) {
         const next = [...prev];
-        next[idx] = { ...next[idx], quantity: next[idx].quantity + (item.quantity || 1) };
+        next[idx] = {
+          ...next[idx],
+          ...item,
+          quantity: next[idx].quantity + (item.quantity || 1),
+        };
         return next;
       }
       return [...prev, { ...item, quantity: item.quantity || 1 }];
@@ -43,20 +49,6 @@ export const CartProvider = ({ children }) => {
   }, []);
 
   const clear = useCallback(() => setItems([]), []);
-
-  const isNepal = useMemo(() => {
-    try {
-      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
-      const langs = navigator.languages || [navigator.language || ''];
-      const langNepal = langs.some((l) => /-NP$/i.test(l));
-      const tzNepal = /Asia\/Kathmandu/i.test(tz);
-      return langNepal || tzNepal;
-    } catch {
-      return false;
-    }
-  }, []);
-
-  const currency = isNepal ? 'NPR' : 'INR';
 
   const total = useMemo(() => {
     return items.reduce((sum, i) => {

@@ -43,6 +43,7 @@ export const getProductsByCategory = async (category) => {
     },
     priceINR,
     priceNPR,
+    stock,
     sizes,
     colors,
     featured,
@@ -98,6 +99,7 @@ export const getProductBySlug = async (slug) => {
     },
     priceINR,
     priceNPR,
+    stock,
     sizes,
     colors,
     featured,
@@ -141,6 +143,7 @@ export const getFeaturedProducts = async () => {
     },
     priceINR,
     priceNPR,
+    stock,
     featured
   }`;
 
@@ -188,6 +191,7 @@ export const subscribeToProducts = (category, callback) => {
     },
     priceINR,
     priceNPR,
+    stock,
     inStock
   }`;
 

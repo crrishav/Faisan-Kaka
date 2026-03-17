@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import useCart from './useCart.jsx';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import useCurrency from './currencyContext.jsx';
 
 const ProductDetails = ({ 
   title = "T-Shirt (White)", 
@@ -23,17 +24,7 @@ const ProductDetails = ({
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const { addItem } = useCart();
-  const isNepal = useMemo(() => {
-    try {
-      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
-      const langs = navigator.languages || [navigator.language || ''];
-      const langNepal = langs.some(l => /-NP$/i.test(l));
-      const tzNepal = /Asia\/Kathmandu/i.test(tz);
-      return langNepal || tzNepal;
-    } catch {
-      return false;
-    }
-  }, []);
+  const { isNepal } = useCurrency();
   const displayPrice = isNepal ? `Rs. ${priceNPR}` : `₹${priceINR}`;
   
   const images = useMemo(() => {
@@ -124,7 +115,7 @@ const ProductDetails = ({
   
   const handleAddToCart = () => {
     const id = slug || title.toLowerCase().replace(/\s+/g, '-');
-    addItem({ id, title, priceINR, priceNPR, quantity });
+    addItem({ id, title, priceINR, priceNPR, quantity, frontImage, backImage, slug: id });
   };
   
   const handleBuyNow = () => {

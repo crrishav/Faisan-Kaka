@@ -312,7 +312,7 @@ const OrderTrackingPage = () => {
                 setFields(INITIAL);
                 setTrackingData(null);
               }}
-              className="px-6 py-3 rounded-2xl bg-black text-white text-sm font-bold hover:bg-black/90 transition-colors"
+              className="px-6 py-3 rounded-2xl bg-black text-white text-sm font-bold hover:bg-black/90 transition-colors cursor-pointer"
             >
               Search Another Order
             </button>
@@ -389,7 +389,7 @@ const OrderTrackingPage = () => {
 
           {/* ── Info sidebar ── */}
           <motion.div
-            className="w-full lg:w-[320px] lg:sticky lg:top-8 lg:-mt-8 flex-shrink-0"
+            className="w-full lg:w-[320px] lg:sticky lg:top-24 flex-shrink-0"
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{
@@ -493,7 +493,7 @@ const TrackButton = ({ loading, onClick }) => (
     type={onClick ? 'button' : 'submit'}
     onClick={onClick}
     disabled={loading}
-    className="w-full py-4 rounded-2xl bg-black text-white text-sm font-bold tracking-tight flex items-center justify-center gap-2 disabled:opacity-60"
+    className="w-full py-4 rounded-2xl bg-black text-white text-sm font-bold tracking-tight flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
     whileHover={!loading ? { scale: 1.02, backgroundColor: '#1a1a1a' } : {}}
     whileTap={!loading ? { scale: 0.98 } : {}}
     transition={{ duration: 0.18 }}

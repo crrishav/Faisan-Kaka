@@ -2,6 +2,7 @@ import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence, useInView } from 'framer-motion';
 import Footer from './footer.jsx';
 import ProductCard from './productCard.jsx';
+import useCurrency from './currencyContext.jsx';
 import useProducts from './useProducts.jsx';
 
 /* ─── Constants ────────────────────────────────────────────────── */
@@ -71,19 +72,11 @@ const CollectionsPage = () => {
   const gridRef = useRef(null);
   const heroRef = useRef(null);
   const heroInView = useInView(heroRef, { once: true, amount: 0.3 });
+  const { isNepal } = useCurrency();
 
-  // Scroll to top on load handled by ScrollToTop component
+  // Scroll position is managed centrally during route transitions.
   useEffect(() => {
     // Keep internal state resets if any, but scroll is global now
-  }, []);
-
-  /* Nepal detection (mirrors productSection) */
-  const isNepal = useMemo(() => {
-    try {
-      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
-      const langs = navigator.languages || [navigator.language || ''];
-      return langs.some((l) => /-NP$/i.test(l)) || /Asia\/Kathmandu/i.test(tz);
-    } catch { return false; }
   }, []);
 
   /* Filtered + searched products */
@@ -248,6 +241,8 @@ const CollectionsPage = () => {
                               ? (product.priceNPR ? `Rs. ${product.priceNPR}` : 'Rs. —')
                               : (product.priceINR ? `₹${product.priceINR}` : '₹—')
                           }
+                          priceINR={product.priceINR}
+                          priceNPR={product.priceNPR}
                           backImage={product.backImage}
                           frontImage={product.frontImage}
                           slug={product.slug}

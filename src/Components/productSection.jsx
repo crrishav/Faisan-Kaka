@@ -1,8 +1,9 @@
-import React, { useRef, useMemo, useEffect } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { motion, useInView } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import ProductCard from './productCard.jsx';
 import ArrowButton from './arrowButton.jsx';
+import useCurrency from './currencyContext.jsx';
 import useProducts from './useProducts.jsx';
 
 /* ─── Variants ─────────────────────────────────────────────────── */
@@ -62,6 +63,7 @@ const ProductSection = ({ title }) => {
   };
 
   const { products, loading, error } = useProducts();
+  const { isNepal } = useCurrency();
 
   useEffect(() => {
     products.forEach((product) => {
@@ -74,16 +76,6 @@ const ProductSection = ({ title }) => {
   }, [products]);
 
   const sectionProducts = products.filter((p) => p.category === title);
-
-  const isNepal = useMemo(() => {
-    try {
-      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
-      const langs = navigator.languages || [navigator.language || ''];
-      const langNepal = langs.some((l) => /-NP$/i.test(l));
-      const tzNepal = /Asia\/Kathmandu/i.test(tz);
-      return langNepal || tzNepal;
-    } catch { return false; }
-  }, []);
 
   return (
     <section
@@ -154,6 +146,8 @@ const ProductSection = ({ title }) => {
                     ? (product.priceNPR ? `Rs. ${product.priceNPR}` : 'Rs. —')
                     : (product.priceINR ? `₹${product.priceINR}` : '₹—')
                 }
+                priceINR={product.priceINR}
+                priceNPR={product.priceNPR}
                 backImage={product.backImage}
                 frontImage={product.frontImage}
                 slug={product.slug}

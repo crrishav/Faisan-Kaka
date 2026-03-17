@@ -93,6 +93,15 @@ export const product = defineType({
     }),
 
     defineField({
+      name: 'stock',
+      title: 'Stock Quantity',
+      type: 'number',
+      initialValue: 0,
+      validation: (Rule) => Rule.required().integer().min(0),
+      description: 'Number of units currently available',
+    }),
+
+    defineField({
       name: 'sizes',
       title: 'Available Sizes',
       type: 'array',

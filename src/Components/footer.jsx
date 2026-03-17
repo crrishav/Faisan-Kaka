@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import logo from '../assets/logo.svg';
 
 const Footer = () => {
+  const PENDING_CATEGORY_KEY = 'fk_pending_category_scroll';
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -22,21 +23,14 @@ const Footer = () => {
 
   const handleShopItemClick = (category) => {
     const scrollToPosition = () => {
-      // Find the section based on category
-      const titleMap = {
-        'T-Shirts': 'T-Shirts',
-        'Hoodies': 'Hoodies',
-        'Pants': 'Pants'
-      };
-      
-      // Find ProductSection with matching title
       const sections = document.querySelectorAll('[data-product-section]');
       for (const section of sections) {
-        if (section.textContent.includes(titleMap[category])) {
+        const titleElement = section.querySelector('h2');
+        if (titleElement && titleElement.textContent.trim() === category) {
           const rect = section.getBoundingClientRect();
-          const top = window.scrollY + rect.top - 100; // Offset for navbar
+          const top = window.scrollY + rect.top - 100;
           performScroll(top);
-          break;
+          return;
         }
       }
     };
@@ -44,8 +38,12 @@ const Footer = () => {
     if (location.pathname === '/') {
       scrollToPosition();
     } else {
+      try {
+        window.sessionStorage.setItem(PENDING_CATEGORY_KEY, category);
+      } catch {
+        // Ignore storage failures; navigation still proceeds.
+      }
       navigate('/');
-      setTimeout(scrollToPosition, 300);
     }
   };
 
@@ -53,10 +51,34 @@ const Footer = () => {
     // Dispatch custom event to expand About dropdown in navbar
     const event = new CustomEvent('expand-navbar-about');
     window.dispatchEvent(event);
-    
-    if (location.pathname !== '/') {
-      navigate('/');
+  };
+
+  const handleHomeClick = () => {
+    if (location.pathname === '/') {
+      performScroll(0);
+      return;
     }
+    navigate('/');
+  };
+
+  const handleCollectionsClick = () => {
+    navigate('/collections');
+  };
+
+  const handlePrintStudioClick = () => {
+    navigate('/print');
+  };
+
+  const handleTermsClick = () => {
+    navigate('/terms-of-service');
+  };
+
+  const handleShippingReturnsClick = () => {
+    navigate('/shipping-returns');
+  };
+
+  const handleSizingGuideClick = () => {
+    navigate('/sizing-guide');
   };
 
   return (
@@ -92,7 +114,17 @@ const Footer = () => {
 
         <div className="flex flex-wrap gap-10 text-sm">
           <div>
-            <h3 className="font-bold text-[#e5e5e5]">Shop</h3>
+            <h3 className="font-bold text-[#e5e5e5]">Site Map</h3>
+            <ul className="mt-2 space-y-1 text-[#d4d4d4]">
+              <li><button className="hover:text-white transition-colors cursor-pointer" onClick={handleHomeClick}>Home</button></li>
+              <li><button className="hover:text-white transition-colors cursor-pointer" onClick={handleCollectionsClick}>Collections</button></li>
+              <li><button className="hover:text-white transition-colors cursor-pointer" onClick={handlePrintStudioClick}>Print Studio</button></li>
+              <li><button className="hover:text-white transition-colors cursor-pointer" onClick={() => navigate('/track-order')}>Track Your Order</button></li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="font-bold text-[#e5e5e5]">Collections</h3>
             <ul className="mt-2 space-y-1 text-[#d4d4d4]">
               <li><button className="hover:text-white transition-colors cursor-pointer" onClick={() => handleShopItemClick('T-Shirts')}>T-Shirts</button></li>
               <li><button className="hover:text-white transition-colors cursor-pointer" onClick={() => handleShopItemClick('Hoodies')}>Hoodies</button></li>
@@ -103,10 +135,10 @@ const Footer = () => {
           <div>
             <h3 className="font-bold text-[#e5e5e5]">Support</h3>
             <ul className="mt-2 space-y-1 text-[#d4d4d4]">
-              <li><button className="hover:text-white transition-colors cursor-pointer" onClick={() => navigate('/track-order')}>Track Your Order</button></li>
               <li><button className="hover:text-white transition-colors cursor-pointer" onClick={handleContactClick}>Contact</button></li>
-              <li><button className="hover:text-white transition-colors cursor-pointer">Shipping</button></li>
-              <li><button className="hover:text-white transition-colors cursor-pointer">Returns</button></li>
+              <li><button className="hover:text-white transition-colors cursor-pointer" onClick={handleSizingGuideClick}>Sizing Guide</button></li>
+              <li><button className="hover:text-white transition-colors cursor-pointer" onClick={handleTermsClick}>Terms Of Service</button></li>
+              <li><button className="hover:text-white transition-colors cursor-pointer" onClick={handleShippingReturnsClick}>Shipping & Returns</button></li>
             </ul>
           </div>
         </div>

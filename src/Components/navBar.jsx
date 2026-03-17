@@ -191,11 +191,23 @@ const NavBar = () => {
   // Listen for expand-navbar-about event from footer
   useEffect(() => {
     const handleExpandAbout = () => {
+      if (window.innerWidth < 768) {
+        setIsMobileMenuOpen(true);
+        setIsMobileCartOpen(false);
+        setMobileSubmenu('about');
+        return;
+      }
       openMenu('about');
     };
     window.addEventListener('expand-navbar-about', handleExpandAbout);
     return () => window.removeEventListener('expand-navbar-about', handleExpandAbout);
   }, []);
+
+  const handleCheckoutClick = () => {
+    setActiveMenu(null);
+    closeMobileMenus();
+    navigate('/checkout');
+  };
 
   const isMobileDevice = () => {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -501,7 +513,7 @@ const NavBar = () => {
               </div>
               <div className="flex flex-col justify-center h-full p-2 text-white">
                 <div className="flex flex-col gap-3 items-stretch">
-                  <a href="#instagram" className="flex items-center gap-3 rounded-2xl bg-black font-bold px-5 py-3 transition hover:opacity-90 w-full cursor-pointer">
+                  <a href="https://www.instagram.com/faisankaka/" target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-2xl bg-black font-bold px-5 py-3 transition hover:opacity-90 w-full cursor-pointer">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.5" y2="6.5"/></svg>
                     Instagram
                   </a>
@@ -601,7 +613,8 @@ const NavBar = () => {
                   </div>
                   <div className="flex items-center justify-center">
                     <button
-                      className="rounded-xl bg-black text-black font-bold px-6 py-3 transition hover:opacity-90"
+                      className="rounded-xl bg-black text-white font-bold px-6 py-3 transition hover:opacity-90 cursor-pointer"
+                      onClick={handleCheckoutClick}
                     >
                       Checkout
                     </button>
@@ -688,7 +701,7 @@ const NavBar = () => {
                     with a focus on quality, comfort, and clean silhouettes.
                   </p>
                   <div className="flex flex-col gap-2">
-                    <a href="#instagram" className="flex items-center gap-3 rounded-2xl bg-black text-white font-bold px-5 py-3 min-h-[48px] active:opacity-70 transition-opacity cursor-pointer">
+                    <a href="https://www.instagram.com/faisankaka/" target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-2xl bg-black text-white font-bold px-5 py-3 min-h-[48px] active:opacity-70 transition-opacity cursor-pointer">
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.5" y2="6.5"/></svg>
                       Instagram
                     </a>
@@ -852,7 +865,8 @@ const NavBar = () => {
                   </div>
                   <div className="flex items-center justify-center">
                     <button
-                      className="rounded-xl bg-black text-white font-bold px-4 py-2 transition hover:opacity-90 text-sm"
+                      className="rounded-xl bg-black text-white font-bold px-4 py-2 transition hover:opacity-90 text-sm cursor-pointer"
+                      onClick={handleCheckoutClick}
                     >
                       Checkout
                     </button>

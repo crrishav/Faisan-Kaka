@@ -8,6 +8,7 @@ import tshirtFrontMock from '../assets/mock images/T-shirt (front).png';
 import tshirtBackMock from '../assets/mock images/T-shirt (back).png';
 import hoodieFrontMock from '../assets/mock images/hoodie (front).png';
 import hoodieBackMock from '../assets/mock images/hoodie (back).png';
+import mockBackground from '../assets/mock images/background.png';
 
 const ACCEPTED_TYPES = [
   'image/png',
@@ -113,7 +114,7 @@ const MockupStage = ({
 }) => {
   return (
     <div
-      className={`relative rounded-2xl bg-gradient-to-b from-white to-[#e8e8e8] border border-black/10 overflow-hidden ${heightClassName}`}
+      className={`relative rounded-2xl bg-[#e8e8e8] border border-black/10 overflow-hidden ${heightClassName}`}
       onPointerMove={onStagePointerMove}
       onPointerUp={onStagePointerUp}
       onPointerLeave={onStagePointerUp}
@@ -129,10 +130,17 @@ const MockupStage = ({
       >
         <div className="absolute inset-2 sm:inset-3 rounded-xl overflow-hidden isolate" onPointerDown={onStagePointerDown}>
           <img
+            src={mockBackground}
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 h-full w-full object-cover object-center pointer-events-none select-none"
+            draggable={false}
+          />
+          <img
             src={activeMockup}
             alt="Garment mockup"
             className="h-full w-full object-cover object-center scale-[1.24] sm:scale-[1.14] md:scale-[1.08] select-none"
-            style={{ filter: 'grayscale(1) contrast(1.45) brightness(0.46)' }}
+            style={{ filter: 'grayscale(1) contrast(1.32) brightness(1.03)' }}
             draggable={false}
           />
           <div
@@ -141,13 +149,16 @@ const MockupStage = ({
               backgroundColor: garmentColor,
               WebkitMaskImage: `url(${activeMockup})`,
               maskImage: `url(${activeMockup})`,
+              WebkitMaskSourceType: 'luminance',
+              maskMode: 'luminance',
               WebkitMaskSize: 'cover',
               maskSize: 'cover',
               WebkitMaskRepeat: 'no-repeat',
               maskRepeat: 'no-repeat',
               WebkitMaskPosition: 'center',
               maskPosition: 'center',
-              opacity: 0.98,
+              mixBlendMode: 'normal',
+              opacity: 1,
             }}
           />
           <img
@@ -155,7 +166,7 @@ const MockupStage = ({
             alt=""
             aria-hidden="true"
             className="absolute inset-0 h-full w-full object-cover object-center scale-[1.24] sm:scale-[1.14] md:scale-[1.08] pointer-events-none select-none"
-            style={{ filter: 'grayscale(1) contrast(1.45) brightness(1.18)', opacity: 0.34, mixBlendMode: 'screen' }}
+            style={{ filter: 'grayscale(1) contrast(1.2) brightness(1.18)', opacity: 0.18, mixBlendMode: 'screen' }}
             draggable={false}
           />
         </div>
@@ -239,7 +250,7 @@ const PrintStudioPage = () => {
   );
 
   useEffect(() => {
-    const mockups = Object.values(MOCK_IMAGE_MAP).flatMap((entry) => Object.values(entry));
+    const mockups = [...Object.values(MOCK_IMAGE_MAP).flatMap((entry) => Object.values(entry)), mockBackground];
     mockups.forEach((src) => {
       const image = new Image();
       image.src = src;

@@ -6,9 +6,9 @@
   "scripts": {
     "dev": "vite",
     "dev:all": "concurrently \"npm run dev\" \"npm run studio\"",
-    "build": "npm run build:studio-static && npm run build:web",
+    "build": "npm run build:web && npm run build:studio-static",
     "build:web": "vite build",
-    "build:studio-static": "sanity build public/studio -y",
+    "build:studio-static": "sanity build dist/studio --base-path /studio -y",
     "lint": "eslint .",
     "preview": "vite preview",
     "studio": "sanity dev",

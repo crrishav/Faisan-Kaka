@@ -1,5 +1,9 @@
 {
   "rewrites": [
-    { "source": "/((?!studio/).*)", "destination": "/index.html" }
+    { "source": "/studio/static/:path*", "destination": "/studio/static/:path*" },
+    { "source": "/static/:path*", "destination": "/studio/static/:path*" },
+    { "source": "/studio", "destination": "/studio/index.html" },
+    { "source": "/studio/:path*", "destination": "/studio/index.html" },
+    { "source": "/((?!studio/|static/).*)", "destination": "/index.html" }
   ]
 }

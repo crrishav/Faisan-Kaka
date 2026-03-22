@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import useCart from './useCart.jsx';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import useCurrency from './currencyContext.jsx';
@@ -240,7 +241,15 @@ const ProductDetails = ({
           </div>
 
           <div className="flex flex-col gap-3">
-            <span className="text-[0.72rem] tracking-[0.14em] uppercase font-bold text-black/45">Size</span>
+            <div className="flex items-center justify-between">
+              <span className="text-[0.72rem] tracking-[0.14em] uppercase font-bold text-black/45">Size</span>
+              <Link
+                to="/sizing-guide"
+                className="text-xs font-semibold text-black/60 hover:text-black underline underline-offset-2 transition-colors"
+              >
+                Not sure about fit? View Sizing Guide
+              </Link>
+            </div>
             <div className="flex flex-wrap gap-2.5">
               {sizes.map((size) => (
                 <button

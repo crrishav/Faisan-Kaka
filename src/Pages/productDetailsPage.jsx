@@ -375,15 +375,6 @@ const ProductDetailsPage = () => {
                   </span>
                 )}
               </div>
-
-              <div className="mt-4 flex justify-center md:justify-start">
-                <Link
-                  to="/sizing-guide"
-                  className="inline-flex items-center rounded-full border border-black/15 bg-white px-4 py-2 text-xs font-bold tracking-wide text-black transition-colors hover:bg-black hover:text-white"
-                >
-                  Not sure about fit? View Sizing Guide
-                </Link>
-              </div>
             </div>
           </div>
             </div>

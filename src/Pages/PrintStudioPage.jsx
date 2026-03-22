@@ -2,12 +2,18 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
 import { colord } from 'colord';
+import { Stage, Layer, Image as KonvaImage, Transformer, Group, Rect, Text } from 'react-konva';
+import useImage from 'use-image';
 import Footer from '../Components/footer.jsx';
 import { usePrintContext } from '../Components/printContext.jsx';
 import tshirtFrontMock from '../assets/mock images/T-shirt (front).png';
 import tshirtBackMock from '../assets/mock images/T-shirt (back).png';
 import hoodieFrontMock from '../assets/mock images/hoodie (front).png';
 import hoodieBackMock from '../assets/mock images/hoodie (back).png';
+import jeansFrontMock from '../assets/mock images/Jeans (front).png';
+import jeansBackMock from '../assets/mock images/Jeans (back).png';
+import jeansFrontBlueMock from '../assets/mock images/Jeans (front) (blue).png';
+import jeansBackBlueMock from '../assets/mock images/Jeans (back) (blue).png';
 import mockBackground from '../assets/mock images/background.png';
 
 const ACCEPTED_TYPES = [
@@ -61,9 +67,17 @@ const MOCK_IMAGE_MAP = {
     front: hoodieFrontMock,
     back: hoodieBackMock,
   },
+  jeans_default: {
+    front: jeansFrontMock,
+    back: jeansBackMock,
+  },
+  jeans_blue: {
+    front: jeansFrontBlueMock,
+    back: jeansBackBlueMock,
+  },
 };
 
-const DEFAULT_TRANSFORM = { x: 0, y: 0, scale: 1 };
+const DEFAULT_TRANSFORM = { x: 0, y: 0, scale: 1, rotation: 0 };
 const COLOR_PRESETS = ['#111111', '#2F2F2F', '#545454', '#888888', '#D9D9D9', '#0F3D2E', '#1E3A8A', '#7C2D12', '#7F1D1D', '#5B21B6'];
 
 const isValidFile = (file) => {
@@ -94,27 +108,190 @@ const createArtworkEntry = (file) => ({
 
 const clampStageZoom = (value) => Math.min(3.5, Math.max(1, value));
 
+const ArtworkNode = ({ artwork, isSelected, onSelect, onChange, activeSide, centerX, centerY, onContextMenu }) => {
+  const transform = artwork.transforms[activeSide];
+  const [img] = useImage(artwork.previewUrl);
+  const shapeRef = useRef(null);
+  const trRef = useRef(null);
+
+  useEffect(() => {
+    if (isSelected && trRef.current && shapeRef.current) {
+      trRef.current.nodes([shapeRef.current]);
+      trRef.current.getLayer().batchDraw();
+    }
+  }, [isSelected, img, artwork.isPdf]);
+
+  const absX = centerX + transform.x;
+  const absY = centerY + transform.y;
+
+  const handleDragEnd = (e) => {
+    onChange({
+      ...transform,
+      x: e.target.x() - centerX,
+      y: e.target.y() - centerY,
+    });
+  };
+
+  const handleTransformEnd = (e) => {
+    const node = shapeRef.current;
+    if (!node) return;
+    onChange({
+      ...transform,
+      x: node.x() - centerX,
+      y: node.y() - centerY,
+      scale: node.scaleX(),
+      rotation: node.rotation(),
+    });
+  };
+
+  return (
+    <React.Fragment>
+      {artwork.isPdf ? (
+        <Group
+          ref={shapeRef}
+          x={absX}
+          y={absY}
+          offsetX={48}
+          offsetY={48}
+          scaleX={transform.scale}
+          scaleY={transform.scale}
+          rotation={transform.rotation || 0}
+          draggable
+          onClick={onSelect}
+          onTap={onSelect}
+          onDragEnd={handleDragEnd}
+          onTransformEnd={handleTransformEnd}
+          onContextMenu={onContextMenu}
+        >
+          <Rect width={96} height={96} fill="black" cornerRadius={12} stroke="rgba(255,255,255,0.2)" strokeWidth={1} shadowColor="black" shadowBlur={10} shadowOpacity={0.25} shadowOffsetY={10} />
+          <Text text="PDF" width={96} height={96} fill="white" fontStyle="900" fontSize={12} align="center" verticalAlign="middle" />
+        </Group>
+      ) : (img && (
+        <KonvaImage
+          image={img}
+          ref={shapeRef}
+          x={absX}
+          y={absY}
+          offsetX={img ? img.width / 2 : 0}
+          offsetY={img ? img.height / 2 : 0}
+          scaleX={transform.scale}
+          scaleY={transform.scale}
+          rotation={transform.rotation || 0}
+          draggable
+          onClick={onSelect}
+          onTap={onSelect}
+          onDragEnd={handleDragEnd}
+          onTransformEnd={handleTransformEnd}
+          onContextMenu={onContextMenu}
+        />
+      ))}
+      {isSelected && (
+        <Transformer
+          ref={trRef}
+          boundBoxFunc={(oldBox, newBox) => {
+            if (Math.abs(newBox.width) < 10 || Math.abs(newBox.height) < 10) {
+              return oldBox;
+            }
+            return newBox;
+          }}
+        />
+      )}
+    </React.Fragment>
+  );
+};
+
 const MockupStage = ({
   activeMockup,
   garmentColor,
   artworks,
   activeArtworkId,
   activeSide,
-  onArtworkPointerDown,
+  updateArtworkTransform,
+  onSelectArtwork,
   onStagePointerDown,
   onStagePointerMove,
   onStagePointerUp,
   onStageWheel,
-  onSelectArtwork,
   stageZoom,
   stagePan,
   emptyLabel,
   heightClassName,
-  artworkClassName,
+  isJeans,
+  onContextMenu
 }) => {
+  const containerRef = useRef(null);
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const observer = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        setDimensions({
+          width: entry.contentRect.width,
+          height: entry.contentRect.height,
+        });
+      }
+    });
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  const lastCenter = useRef(null);
+  const lastDist = useRef(0);
+
+  const handleTouchMove = (e) => {
+    if (e.evt.touches.length !== 2) return;
+    e.evt.preventDefault();
+    const touch1 = e.evt.touches[0];
+    const touch2 = e.evt.touches[1];
+
+    if (touch1 && touch2) {
+      const dist = Math.sqrt(
+        Math.pow(touch2.clientX - touch1.clientX, 2) + Math.pow(touch2.clientY - touch1.clientY, 2)
+      );
+
+      if (!lastCenter.current) {
+        lastCenter.current = {
+          x: (touch1.clientX + touch2.clientX) / 2,
+          y: (touch1.clientY + touch2.clientY) / 2,
+        };
+        lastDist.current = dist;
+        return;
+      }
+
+      const scaleFactor = dist / lastDist.current;
+      
+      if (activeArtworkId) {
+        const artwork = artworks.find(a => a.id === activeArtworkId);
+        if (artwork) {
+          const transform = artwork.transforms[activeSide];
+          updateArtworkTransform(activeArtworkId, activeSide, (t) => ({
+            ...t,
+            scale: Math.max(0.1, t.scale * scaleFactor)
+          }));
+        }
+      }
+
+      lastDist.current = dist;
+    }
+  };
+
+  const handleTouchEnd = () => {
+    lastCenter.current = null;
+    lastDist.current = 0;
+  };
+
+  const checkDeselect = (e) => {
+    const clickedOnEmpty = e.target === e.target.getStage();
+    if (clickedOnEmpty) {
+      onSelectArtwork(null);
+    }
+  };
+
   return (
     <div
       className={`relative rounded-2xl bg-[#e8e8e8] border border-black/10 overflow-hidden ${heightClassName}`}
+      ref={containerRef}
       onPointerMove={onStagePointerMove}
       onPointerUp={onStagePointerUp}
       onPointerLeave={onStagePointerUp}
@@ -128,7 +305,7 @@ const MockupStage = ({
           transition: stageZoom === 1 && stagePan.x === 0 && stagePan.y === 0 ? 'transform 140ms ease-out' : 'none',
         }}
       >
-        <div className="absolute inset-2 sm:inset-3 rounded-xl overflow-hidden isolate" onPointerDown={onStagePointerDown}>
+        <div className="absolute inset-2 sm:inset-3 rounded-xl overflow-hidden isolate" onPointerDown={onStagePointerDown} >
           <img
             src={mockBackground}
             alt=""
@@ -139,84 +316,76 @@ const MockupStage = ({
           <img
             src={activeMockup}
             alt="Garment mockup"
-            className="h-full w-full object-cover object-center scale-[1.24] sm:scale-[1.14] md:scale-[1.08] select-none"
-            style={{ filter: 'grayscale(1) contrast(1.32) brightness(1.03)' }}
+            className={`absolute inset-0 h-full w-full pointer-events-none select-none ${isJeans ? 'object-contain scale-[0.85]' : 'object-contain object-center scale-[0.95]'}`}
+            style={{ filter: !isJeans ? 'grayscale(1) contrast(1.32) brightness(1.03)' : 'none' }}
             draggable={false}
           />
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              backgroundColor: garmentColor,
-              WebkitMaskImage: `url(${activeMockup})`,
-              maskImage: `url(${activeMockup})`,
-              WebkitMaskSourceType: 'luminance',
-              maskMode: 'luminance',
-              WebkitMaskSize: 'cover',
-              maskSize: 'cover',
-              WebkitMaskRepeat: 'no-repeat',
-              maskRepeat: 'no-repeat',
-              WebkitMaskPosition: 'center',
-              maskPosition: 'center',
-              mixBlendMode: 'normal',
-              opacity: 1,
-            }}
-          />
-          <img
-            src={activeMockup}
-            alt=""
-            aria-hidden="true"
-            className="absolute inset-0 h-full w-full object-cover object-center scale-[1.24] sm:scale-[1.14] md:scale-[1.08] pointer-events-none select-none"
-            style={{ filter: 'grayscale(1) contrast(1.2) brightness(1.18)', opacity: 0.18, mixBlendMode: 'screen' }}
-            draggable={false}
-          />
+          {!isJeans && (
+            <div
+              className={`absolute inset-0 pointer-events-none h-full w-full object-contain object-center scale-[0.95]`}
+              style={{
+                backgroundColor: garmentColor,
+                WebkitMaskImage: `url("${activeMockup}")`,
+                maskImage: `url("${activeMockup}")`,
+                WebkitMaskSize: 'contain',
+                maskSize: 'contain',
+                WebkitMaskRepeat: 'no-repeat',
+                maskRepeat: 'no-repeat',
+                WebkitMaskPosition: 'center',
+                maskPosition: 'center',
+                mixBlendMode: 'multiply',
+              }}
+            />
+          )}
+          {!isJeans && (
+            <img
+              src={activeMockup}
+              alt=""
+              aria-hidden="true"
+              className={`absolute inset-0 h-full w-full pointer-events-none select-none object-contain object-center scale-[0.95]`}
+              style={{ filter: 'grayscale(1) contrast(1.2) brightness(1.18)', opacity: 0.18, mixBlendMode: 'screen' }}
+              draggable={false}
+            />
+          )}
         </div>
 
         {artworks.length === 0 && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
             <p className="text-xs font-semibold tracking-wide uppercase text-black/35 bg-white/70 px-3 py-1.5 rounded-full border border-black/10">
               {emptyLabel}
             </p>
           </div>
         )}
 
-        {artworks.map((artwork) => {
-          const transform = artwork.transforms[activeSide];
-          const isActive = artwork.id === activeArtworkId;
-
-          return (
-            <div
-              key={artwork.id}
-              role="button"
-              tabIndex={0}
-              className="absolute left-1/2 top-[46%] select-none"
-              onPointerDown={(e) => onArtworkPointerDown(e, artwork.id)}
-              onClick={() => onSelectArtwork(artwork.id)}
-              onKeyDown={() => {}}
-              style={{
-                transform: `translate(calc(-50% + ${transform.x}px), calc(-50% + ${transform.y}px)) scale(${transform.scale})`,
-                cursor: isActive ? 'grab' : 'pointer',
-                touchAction: 'none',
-                zIndex: isActive ? 20 : 10,
-              }}
-              aria-label={`Move artwork ${artwork.name}`}
-            >
-              <div className={`relative ${isActive ? 'ring-2 ring-black/30 ring-offset-4 ring-offset-transparent rounded-xl' : ''}`}>
-                {artwork.isPdf ? (
-                  <div className="min-w-24 h-24 px-3 rounded-xl bg-black text-white text-xs font-black flex items-center justify-center border border-white/20 shadow-lg">
-                    PDF
-                  </div>
-                ) : (
-                  <img
-                    src={artwork.previewUrl}
-                    alt={artwork.name}
-                    className={`${artworkClassName} object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.25)]`}
-                    draggable={false}
+        <div className="absolute inset-0 z-20">
+          <Stage
+            width={dimensions.width}
+            height={dimensions.height}
+            onMouseDown={checkDeselect}
+            onTouchStart={checkDeselect}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            style={{ position: 'absolute', top: 0, left: 0 }}
+          >
+            <Layer>
+              {artworks.map((artwork) => {
+                return (
+                  <ArtworkNode
+                    key={artwork.id}
+                    artwork={artwork}
+                    isSelected={artwork.id === activeArtworkId}
+                    onSelect={() => onSelectArtwork(artwork.id)}
+                    onChange={(newProps) => updateArtworkTransform(artwork.id, activeSide, () => newProps)}
+                    activeSide={activeSide}
+                    centerX={dimensions.width / 2}
+                    centerY={dimensions.height * 0.46}
+                    onContextMenu={(e) => onContextMenu && onContextMenu(e, artwork.id)}
                   />
-                )}
-              </div>
-            </div>
-          );
-        })}
+                );
+              })}
+            </Layer>
+          </Stage>
+        </div>
       </div>
     </div>
   );
@@ -229,6 +398,7 @@ const PrintStudioPage = () => {
   const routeFileHydratedRef = useRef(false);
   const artworksRef = useRef([]);
   const [garment, setGarment] = useState('tshirt');
+  const [jeansType, setJeansType] = useState('default');
   const [activeSide, setActiveSide] = useState('front');
   const [error, setError] = useState('');
   const [artworks, setArtworks] = useState([]);
@@ -242,8 +412,11 @@ const PrintStudioPage = () => {
   const [stagePan, setStagePan] = useState({ x: 0, y: 0 });
   const [isStagePanning, setIsStagePanning] = useState(false);
   const [stagePanStart, setStagePanStart] = useState({ x: 0, y: 0 });
+  const [contextMenu, setContextMenu] = useState(null);
 
-  const activeMockup = MOCK_IMAGE_MAP[garment][activeSide];
+  const isJeans = garment === 'jeans';
+  const activeMockupKey = isJeans ? (jeansType === 'default' ? 'jeans_default' : 'jeans_blue') : garment;
+  const activeMockup = MOCK_IMAGE_MAP[activeMockupKey][activeSide];
   const activeArtwork = useMemo(
     () => artworks.find((artwork) => artwork.id === activeArtworkId) || artworks[0] || null,
     [artworks, activeArtworkId]
@@ -314,6 +487,12 @@ const PrintStudioPage = () => {
       window.removeEventListener('keydown', onEsc);
     };
   }, [isFullscreenOpen]);
+
+  useEffect(() => {
+    const handleGlobalClick = () => setContextMenu(null);
+    window.addEventListener('click', handleGlobalClick);
+    return () => window.removeEventListener('click', handleGlobalClick);
+  }, []);
 
   const addFiles = useCallback((fileList) => {
     const incomingFiles = Array.from(fileList || []);
@@ -400,30 +579,7 @@ const PrintStudioPage = () => {
     }));
   };
 
-  const handleArtworkPointerDown = (e, artworkId) => {
-    const artwork = artworks.find((item) => item.id === artworkId);
-    if (!artwork) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const transform = artwork.transforms[activeSide];
-    setActiveArtworkId(artworkId);
-    setDragMeta({
-      artworkId,
-      offsetX: e.clientX - transform.x,
-      offsetY: e.clientY - transform.y,
-    });
-  };
-
   const handleStagePointerMove = (e) => {
-    if (dragMeta) {
-      updateArtworkTransform(dragMeta.artworkId, activeSide, (transform) => ({
-        ...transform,
-        x: e.clientX - dragMeta.offsetX,
-        y: e.clientY - dragMeta.offsetY,
-      }));
-      return;
-    }
-
     if (isStagePanning && stageZoom > 1) {
       setStagePan({
         x: e.clientX - stagePanStart.x,
@@ -494,8 +650,33 @@ const PrintStudioPage = () => {
 
   const hasUploads = artworks.length > 0;
 
+  const handleStageContextMenu = useCallback((e, artworkId) => {
+    e.evt.preventDefault();
+    setActiveArtworkId(artworkId);
+    setContextMenu({ 
+      x: e.evt.clientX, 
+      y: e.evt.clientY, 
+      artworkId 
+    });
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col bg-[#f5f5f5] overflow-x-hidden">
+
+      {/* ── Context Menu ── */}
+      {contextMenu && (
+        <div
+          className="fixed z-[300] bg-white rounded-xl shadow-2xl border border-black/10 py-1.5 w-40 flex flex-col overflow-hidden"
+          style={{ left: contextMenu.x, top: contextMenu.y }}
+          onClick={(e) => e.stopPropagation()}
+          onContextMenu={(e) => e.preventDefault()}
+        >
+          <button onClick={() => { removeArtwork(contextMenu.artworkId); setContextMenu(null); }} className="text-left px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-50 transition-colors flex items-center justify-between">
+            Delete Artwork
+          </button>
+        </div>
+      )}
+
       <main className="flex-1 px-4 sm:px-8 pt-28 pb-16">
         <motion.div
           className="max-w-7xl mx-auto"
@@ -623,6 +804,15 @@ const PrintStudioPage = () => {
                 >
                   Hoodie
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setGarment('jeans')}
+                  className={`px-4 h-10 rounded-full text-sm font-bold transition-colors cursor-pointer ${
+                    garment === 'jeans' ? 'bg-black text-white' : 'bg-black/10 text-black hover:bg-black/20'
+                  }`}
+                >
+                  Jeans
+                </button>
               </div>
 
               <div className="mt-3 flex flex-wrap gap-2.5">
@@ -688,7 +878,7 @@ const PrintStudioPage = () => {
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-sm font-bold text-black/80">Mockup Preview</p>
-                  <p className="mt-1 text-xs text-black/50">Now editing: {garment === 'hoodie' ? 'Hoodie' : 'T-Shirt'} {activeSide}</p>
+                  <p className="mt-1 text-xs text-black/50">Now editing: {garment === 'hoodie' ? 'Hoodie' : garment === 'jeans' ? 'Jeans' : 'T-Shirt'} {activeSide}</p>
                 </div>
                 <button
                   type="button"
@@ -709,75 +899,88 @@ const PrintStudioPage = () => {
                   artworks={artworks}
                   activeArtworkId={activeArtworkId}
                   activeSide={activeSide}
-                  onArtworkPointerDown={handleArtworkPointerDown}
+                  updateArtworkTransform={updateArtworkTransform}
+                  onSelectArtwork={setActiveArtworkId}
                   onStagePointerDown={() => {}}
                   onStagePointerMove={handleStagePointerMove}
                   onStagePointerUp={stopPointerInteractions}
                   onStageWheel={() => {}}
-                  onSelectArtwork={setActiveArtworkId}
                   stageZoom={1}
                   stagePan={{ x: 0, y: 0 }}
                   emptyLabel="Upload artwork to preview"
                   heightClassName="h-[540px] sm:h-[580px]"
-                  artworkClassName="max-w-[180px] max-h-[180px]"
+                  isJeans={isJeans}
+                  onContextMenu={handleStageContextMenu}
                 />
               </div>
 
               <div className="mt-4">
-                <div className="flex items-center justify-between gap-4">
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-black/55">Garment Color</p>
-                  <button
-                    type="button"
-                    onClick={resetGarmentColor}
-                    className="text-xs font-bold text-black/55 hover:text-black transition-colors cursor-pointer"
-                  >
-                    Reset Color
-                  </button>
-                </div>
+                {isJeans ? (
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-black/55">Jeans Wash</p>
+                    <div className="mt-3 flex gap-4">
+                       <button onClick={() => setJeansType('default')} className={`px-4 h-10 rounded-full text-sm font-bold transition-colors cursor-pointer ${jeansType === 'default' ? 'bg-black text-white' : 'bg-black/10 text-black hover:bg-black/20'}`}>Default</button>
+                       <button onClick={() => setJeansType('blue')} className={`px-4 h-10 rounded-full text-sm font-bold transition-colors cursor-pointer ${jeansType === 'blue' ? 'bg-blue-600 text-white' : 'bg-blue-600/10 text-blue-600 hover:bg-blue-600/20'}`}>Blue Wash</button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between gap-4">
+                      <p className="text-xs font-bold uppercase tracking-[0.16em] text-black/55">Garment Color</p>
+                      <button
+                        type="button"
+                        onClick={resetGarmentColor}
+                        className="text-xs font-bold text-black/55 hover:text-black transition-colors cursor-pointer"
+                      >
+                        Reset Color
+                      </button>
+                    </div>
 
-                <div className="mt-2 grid grid-cols-[1fr_auto_auto] gap-2.5 items-center">
-                  <input
-                    type="text"
-                    value={garmentColorInput}
-                    onChange={handleGarmentColorInputChange}
-                    onBlur={() => commitGarmentColor(garmentColorInput.trim())}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        commitGarmentColor(garmentColorInput.trim());
-                      }
-                    }}
-                    placeholder="#111111"
-                    className="h-10 rounded-xl border border-black/20 bg-white px-3 text-sm font-semibold text-black outline-none focus:border-black/45"
-                    aria-label="Garment color hex code"
-                  />
-                  <input
-                    type="color"
-                    value={garmentColor}
-                    onChange={(e) => handleGarmentColorPreset(colord(e.target.value).toHex())}
-                    className="h-10 w-14 rounded-xl border border-black/20 bg-white p-1 cursor-pointer"
-                    aria-label="Pick garment color"
-                  />
-                  <span className="w-10 h-10 rounded-xl border border-black/20" style={{ backgroundColor: garmentColor }} aria-hidden="true" />
-                </div>
+                    <div className="mt-2 grid grid-cols-[1fr_auto_auto] gap-2.5 items-center">
+                      <input
+                        type="text"
+                        value={garmentColorInput}
+                        onChange={handleGarmentColorInputChange}
+                        onBlur={() => commitGarmentColor(garmentColorInput.trim())}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            commitGarmentColor(garmentColorInput.trim());
+                          }
+                        }}
+                        placeholder="#111111"
+                        className="h-10 rounded-xl border border-black/20 bg-white px-3 text-sm font-semibold text-black outline-none focus:border-black/45"
+                        aria-label="Garment color hex code"
+                      />
+                      <input
+                        type="color"
+                        value={garmentColor}
+                        onChange={(e) => handleGarmentColorPreset(colord(e.target.value).toHex())}
+                        className="h-10 w-14 rounded-xl border border-black/20 bg-white p-1 cursor-pointer"
+                        aria-label="Pick garment color"
+                      />
+                      <span className="w-10 h-10 rounded-xl border border-black/20" style={{ backgroundColor: garmentColor }} aria-hidden="true" />
+                    </div>
 
-                {garmentColorError && (
-                  <p className="mt-2 text-xs font-semibold text-red-600">{garmentColorError}</p>
+                    {garmentColorError && (
+                      <p className="mt-2 text-xs font-semibold text-red-600">{garmentColorError}</p>
+                    )}
+
+                    <div className="mt-3 grid grid-cols-5 sm:grid-cols-10 gap-2.5">
+                      {COLOR_PRESETS.map((hex) => (
+                        <button
+                          key={hex}
+                          type="button"
+                          onClick={() => handleGarmentColorPreset(hex)}
+                          className={`aspect-square rounded-xl border-2 transition-transform hover:scale-105 cursor-pointer ${
+                            garmentColor === hex ? 'border-black' : 'border-white'
+                          }`}
+                          style={{ backgroundColor: hex }}
+                          aria-label={`Set garment color ${hex}`}
+                        />
+                      ))}
+                    </div>
+                  </>
                 )}
-
-                <div className="mt-3 grid grid-cols-5 sm:grid-cols-10 gap-2.5">
-                  {COLOR_PRESETS.map((hex) => (
-                    <button
-                      key={hex}
-                      type="button"
-                      onClick={() => handleGarmentColorPreset(hex)}
-                      className={`aspect-square rounded-xl border-2 transition-transform hover:scale-105 cursor-pointer ${
-                        garmentColor === hex ? 'border-black' : 'border-white'
-                      }`}
-                      style={{ backgroundColor: hex }}
-                      aria-label={`Set garment color ${hex}`}
-                    />
-                  ))}
-                </div>
               </div>
             </div>
           </motion.div>
@@ -831,17 +1034,18 @@ const PrintStudioPage = () => {
               artworks={artworks}
               activeArtworkId={activeArtworkId}
               activeSide={activeSide}
-              onArtworkPointerDown={handleArtworkPointerDown}
+              updateArtworkTransform={updateArtworkTransform}
+              onSelectArtwork={setActiveArtworkId}
               onStagePointerDown={handleStagePointerDown}
               onStagePointerMove={handleStagePointerMove}
               onStagePointerUp={stopPointerInteractions}
               onStageWheel={handleStageWheel}
-              onSelectArtwork={setActiveArtworkId}
               stageZoom={stageZoom}
               stagePan={stagePan}
               emptyLabel="Upload artwork to preview"
               heightClassName="h-[78vh]"
-              artworkClassName="max-w-[260px] max-h-[260px] sm:max-w-[320px] sm:max-h-[320px]"
+              isJeans={isJeans}
+              onContextMenu={handleStageContextMenu}
             />
           </div>
         </div>

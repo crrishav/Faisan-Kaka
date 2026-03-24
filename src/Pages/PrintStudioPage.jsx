@@ -227,9 +227,11 @@ const MockupCanvas = ({
     if (onStagePinch) {
       onStagePinch(factor);
     } else if (activeArtworkId) {
-      updateArtworkTransform(activeArtworkId, activeSide, (t) => ({
-        ...t, scale: Math.max(0.05, t.scale * factor),
-      }));
+      updateArtworkTransform(activeArtworkId, activeSide, (t) => {
+        // dampen the factor slightly so pinch to zoom is more controlled
+        const dampedFactor = 1 + (factor - 1) * 0.6;
+        return { ...t, scale: Math.max(0.05, t.scale * dampedFactor) };
+      });
     }
     lastDist.current = dist;
   };
@@ -420,6 +422,8 @@ const PrintStudioPage = () => {
     return () => window.removeEventListener('click', handleGlobalClick);
   }, []);
 
+
+
   // ── File ops ──
   const addFiles = useCallback((fileList) => {
     const files = Array.from(fileList || []);
@@ -549,6 +553,19 @@ const PrintStudioPage = () => {
 
   const garmentName = GARMENT_LABELS[garment];
 
+  // ── Keyboard ops ──
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      if ((e.key === 'Backspace' || e.key === 'Delete') && activeArtworkId) {
+        removeArtwork(activeArtworkId);
+        showToast('Design deleted');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeArtworkId, removeArtwork]);
+
   // ────────────────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen flex flex-col bg-[#f5f5f5] overflow-x-hidden">
@@ -646,6 +663,25 @@ const PrintStudioPage = () => {
         {isFullscreen && (
           <motion.div className="fixed inset-0 z-[130] bg-black/93 flex flex-col"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                        {/* ── Mobile fullscreen toolbar ── */}
+            <div className="flex lg:hidden items-center justify-between gap-2 px-3 py-3 border-b border-white/10 shrink-0 bg-black">
+              <div className="flex items-center gap-2">
+                <button onClick={() => { setIsFullscreen(false); stopPan(); }}
+                  className="w-9 h-9 rounded-full bg-white/10 text-white flex items-center justify-center active:scale-95 transition">
+                  <Icons.X />
+                </button>
+                <button disabled={!activeArtworkOnThisSide} onClick={scaleDown} className="px-3 h-9 rounded-full bg-white/10 text-white text-xs font-bold active:bg-white/20 transition disabled:opacity-20 disabled:pointer-events-none">−</button>
+                <button disabled={!activeArtworkOnThisSide} onClick={scaleUp} className="px-3 h-9 rounded-full bg-white/10 text-white text-xs font-bold active:bg-white/20 transition disabled:opacity-20 disabled:pointer-events-none">+</button>
+              </div>
+              <div className="flex items-center gap-2">
+                <button disabled={!activeArtworkOnThisSide} onClick={centerArtwork} className="px-3 h-9 rounded-full bg-white/10 text-white text-xs font-bold active:bg-white/20 transition disabled:opacity-20 disabled:pointer-events-none">Center</button>
+                <button disabled={!activeArtworkOnThisSide} onClick={() => { if(activeArtworkOnThisSide) { removeArtwork(activeArtworkOnThisSide.id); showToast('Deleted'); setIsFullscreen(false); } }}
+                  className="w-9 h-9 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center active:bg-red-500/40 transition disabled:opacity-20 disabled:pointer-events-none">
+                  <Icons.Trash />
+                </button>
+              </div>
+            </div>
+
             {/* desktop toolbar */}
             <div className="hidden lg:flex items-center justify-between gap-2 px-4 py-3 flex-wrap shrink-0">
               <div className="flex items-center gap-2">
@@ -708,7 +744,8 @@ const PrintStudioPage = () => {
                 onStagePointerMove={handlePointerMove}
                 onStagePointerUp={stopPan}
                 onStageWheel={handleWheel}
-                onStagePinch={handleStagePinch}
+                // Only pass handleStagePinch on desktop. On mobile, let pinch zoom the design!
+                onStagePinch={typeof window !== 'undefined' && window.innerWidth >= 1024 ? handleStagePinch : undefined}
                 heightClass="h-full"
                 emptyLabel="Upload artwork to preview"
               />

@@ -6,14 +6,14 @@ import { Stage, Layer, Image as KonvaImage, Transformer, Group, Rect, Text } fro
 import useImage from 'use-image';
 import Footer from '../Components/footer.jsx';
 import { usePrintContext } from '../Components/printContext.jsx';
-import tshirtFrontMock from '../assets/mock images/T-shirt (front).png';
-import tshirtBackMock from '../assets/mock images/T-shirt (back).png';
-import hoodieFrontMock from '../assets/mock images/hoodie (front).png';
-import hoodieBackMock from '../assets/mock images/hoodie (back).png';
-import jeansFrontMock from '../assets/mock images/Jeans (front).png';
-import jeansBackMock from '../assets/mock images/Jeans (back).png';
-import jeansFrontBlueMock from '../assets/mock images/Jeans (front) (blue).png';
-import jeansBackBlueMock from '../assets/mock images/Jeans (back) (blue).png';
+import tshirtFrontMock from '../assets/mock images/T-shirt (front).svg';
+import tshirtBackMock from '../assets/mock images/T-shirt (back).svg';
+import hoodieFrontMock from '../assets/mock images/hoodie (front).svg';
+import hoodieBackMock from '../assets/mock images/hoodie (back).svg';
+import jeansFrontMock from '../assets/mock images/Jeans (front).svg';
+import jeansBackMock from '../assets/mock images/Jeans (back).svg';
+import jeansFrontBlueMock from '../assets/mock images/Jeans (front) (blue).svg';
+import jeansBackBlueMock from '../assets/mock images/Jeans (back) (blue).svg';
 import mockBackground from '../assets/mock images/background.png';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -38,7 +38,15 @@ const COLOR_PRESETS = [
   { hex: '#1E40AF', label: 'Royal Blue' },
 ];
 
-const MOCK_IMAGE_MAP = {
+const GARMENT_IMAGE_MAP = {
+  tshirt:        { front: tshirtFrontMock,    back: tshirtBackMock    },
+  hoodie:        { front: hoodieFrontMock,    back: hoodieBackMock    },
+  jeans_default: { front: jeansFrontMock,     back: jeansBackMock     },
+  jeans_blue:    { front: jeansFrontBlueMock, back: jeansBackBlueMock },
+};
+
+// Keep mask assets independently mapped so you can swap dedicated cutout SVGs later.
+const GARMENT_MASK_MAP = {
   tshirt:        { front: tshirtFrontMock,    back: tshirtBackMock    },
   hoodie:        { front: hoodieFrontMock,    back: hoodieBackMock    },
   jeans_default: { front: jeansFrontMock,     back: jeansBackMock     },
@@ -46,6 +54,13 @@ const MOCK_IMAGE_MAP = {
 };
 
 const GARMENT_LABELS = { tshirt: 'T-Shirt', hoodie: 'Hoodie', jeans: 'Jeans' };
+const DESIGN_ANCHOR_MAP = {
+  tshirt: { x: 0.5, y: 0.46 },
+  hoodie: { x: 0.5, y: 0.46 },
+  jeans:  { x: 0.5, y: 0.5  },
+};
+const MIN_NORM_SCALE = 0.04;
+const MAX_NORM_SCALE = 1.2;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const isValidFile = (file) => {
@@ -70,6 +85,106 @@ const createArtworkEntry = (file) => ({
 });
 
 const clampZoom = (v) => Math.min(3.5, Math.max(1, v));
+const clampNormScale = (v) => Math.min(MAX_NORM_SCALE, Math.max(MIN_NORM_SCALE, v));
+
+const parseSvgLength = (raw) => {
+  if (!raw) return null;
+  const match = String(raw).trim().match(/^([0-9]*\.?[0-9]+)/);
+  if (!match) return null;
+  const n = Number(match[1]);
+  return Number.isFinite(n) && n > 0 ? n : null;
+};
+
+const parseSvgIntrinsicSize = (svgText) => {
+  const viewBoxMatch = svgText.match(/viewBox\s*=\s*["']([^"']+)["']/i);
+  if (viewBoxMatch) {
+    const parts = viewBoxMatch[1].trim().split(/[\s,]+/).map(Number);
+    if (parts.length === 4 && Number.isFinite(parts[2]) && Number.isFinite(parts[3]) && parts[2] > 0 && parts[3] > 0) {
+      return { width: parts[2], height: parts[3] };
+    }
+  }
+
+  const widthMatch = svgText.match(/width\s*=\s*["']([^"']+)["']/i);
+  const heightMatch = svgText.match(/height\s*=\s*["']([^"']+)["']/i);
+  const width = parseSvgLength(widthMatch?.[1]);
+  const height = parseSvgLength(heightMatch?.[1]);
+  if (width && height) return { width, height };
+
+  return null;
+};
+
+const loadIntrinsicSize = async (imageSrc) => {
+  // SVG files can report default 300x150 natural size on some browsers.
+  // Prefer viewBox/width/height for accurate object-contain letterboxing math.
+  if (/\.svg(?:$|\?)/i.test(imageSrc)) {
+    try {
+      const res = await fetch(imageSrc, { credentials: 'same-origin' });
+      if (res.ok) {
+        const text = await res.text();
+        const parsed = parseSvgIntrinsicSize(text);
+        if (parsed) return parsed;
+      }
+    } catch {
+      // Fall back to image decode below.
+    }
+  }
+
+  const img = new Image();
+  await new Promise((resolve, reject) => {
+    img.onload = resolve;
+    img.onerror = reject;
+    img.src = imageSrc;
+  });
+  return { width: img.naturalWidth || 0, height: img.naturalHeight || 0 };
+};
+
+const useContainedImageRect = (containerRef, imageSrc) => {
+  const [natural, setNatural] = useState({ width: 0, height: 0 });
+  const [rect, setRect] = useState(null);
+
+  useEffect(() => {
+    let alive = true;
+    if (!imageSrc) { setNatural({ width: 0, height: 0 }); return; }
+
+    loadIntrinsicSize(imageSrc)
+      .then((size) => {
+        if (!alive) return;
+        setNatural({ width: size.width || 0, height: size.height || 0 });
+      })
+      .catch(() => {
+        if (!alive) return;
+        setNatural({ width: 0, height: 0 });
+      });
+
+    return () => { alive = false; };
+  }, [imageSrc]);
+
+  const measure = useCallback(() => {
+    const wrap = containerRef.current;
+    if (!wrap || !natural.width || !natural.height) return;
+    const cW = wrap.clientWidth;
+    const cH = wrap.clientHeight;
+    const scale = Math.min(cW / natural.width, cH / natural.height);
+    const rW = natural.width * scale;
+    const rH = natural.height * scale;
+    setRect({ top: (cH - rH) / 2, left: (cW - rW) / 2, width: rW, height: rH });
+  }, [containerRef, natural.width, natural.height]);
+
+  useEffect(() => {
+    setRect(null);
+    measure();
+  }, [measure]);
+
+  useEffect(() => {
+    const wrap = containerRef.current;
+    if (!wrap) return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(wrap);
+    return () => ro.disconnect();
+  }, [containerRef, measure]);
+
+  return rect;
+};
 
 // ─── Motion variants ──────────────────────────────────────────────────────────
 const fadeUp  = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] } } };
@@ -121,12 +236,20 @@ const CtrlBtn = ({ onClick, disabled, children, danger = false, className = '' }
 );
 
 // ─── ArtworkNode (Konva) ──────────────────────────────────────────────────────
-const ArtworkNode = ({ artwork, isSelected, onSelect, onChange, activeSide, centerX, centerY, onContextMenu }) => {
+const ArtworkNode = ({ artwork, isSelected, onSelect, onChange, activeSide, centerX, centerY, garmentBox, onContextMenu }) => {
   const transform = artwork.transforms[activeSide];
   const isVisible = artwork.visible ? artwork.visible[activeSide] !== false : true;
   const [img] = useImage(artwork.previewUrl);
   const shapeRef = useRef(null);
   const trRef    = useRef(null);
+  const boxWidth = Math.max(garmentBox?.width || 1, 1);
+  const boxHeight = Math.max(garmentBox?.height || 1, 1);
+  const normX = Number.isFinite(transform.x) ? transform.x : 0;
+  const normY = Number.isFinite(transform.y) ? transform.y : 0;
+  const normScale = clampNormScale(Number.isFinite(transform.scale) ? transform.scale : DEFAULT_TRANSFORM.scale);
+  const baseWidth = artwork.isPdf ? 96 : Math.max(img?.width || 0, 1);
+  const displayWidth = Math.max(8, boxWidth * normScale);
+  const nodeScale = displayWidth / baseWidth;
 
   useEffect(() => {
     if (isSelected && trRef.current && shapeRef.current) {
@@ -135,27 +258,33 @@ const ArtworkNode = ({ artwork, isSelected, onSelect, onChange, activeSide, cent
     }
   }, [isSelected, img, artwork.isPdf]);
 
-  const absX = centerX + transform.x;
-  const absY = centerY + transform.y;
+  const absX = centerX + normX * boxWidth;
+  const absY = centerY + normY * boxHeight;
 
   if (!isVisible) return null;
 
-  const handleDragEnd    = (e) => onChange({ ...transform, x: e.target.x() - centerX, y: e.target.y() - centerY });
+  const handleDragEnd = (e) => onChange({
+    ...transform,
+    x: (e.target.x() - centerX) / boxWidth,
+    y: (e.target.y() - centerY) / boxHeight,
+  });
+
   const handleTransformEnd = () => {
     const node = shapeRef.current;
     if (!node) return;
+    const renderedWidth = baseWidth * Math.abs(node.scaleX());
     onChange({ 
       ...transform, 
-      x: node.x() - centerX, 
-      y: node.y() - centerY, 
-      scale: node.scaleX(), 
+      x: (node.x() - centerX) / boxWidth,
+      y: (node.y() - centerY) / boxHeight,
+      scale: clampNormScale(renderedWidth / boxWidth),
       rotation: node.rotation() 
     });
   };
 
   const common = {
     ref: shapeRef, x: absX, y: absY,
-    scaleX: transform.scale, scaleY: transform.scale,
+    scaleX: nodeScale, scaleY: nodeScale,
     rotation: transform.rotation || 0,
     opacity: artwork.opacity?.[activeSide] ?? 1,
     draggable: true, onClick: onSelect, onTap: onSelect,
@@ -188,25 +317,94 @@ const ArtworkNode = ({ artwork, isSelected, onSelect, onChange, activeSide, cent
   );
 };
 
+// ─── GarmentLayers — uses a shared measured garment rect so recolor/cutout
+//     layers and design transforms are locked to the same coordinate space.
+const GarmentLayers = ({ activeGarmentImage, activeMaskImage, garmentColor, isJeans, garmentRect }) => {
+  return (
+    <div className="absolute inset-0 w-full h-full pointer-events-none select-none">
+      {/* Garment image — greyscale filter for non-jeans */}
+      <img
+        src={activeGarmentImage}
+        alt="" aria-hidden draggable={false}
+        className="absolute inset-0 w-full h-full object-contain pointer-events-none select-none"
+        style={!isJeans ? { filter: 'grayscale(1) contrast(1.32) brightness(1.03)' } : undefined}
+      />
+
+      {/* Color overlay — precisely overlaid on the rendered image rect */}
+      {!isJeans && garmentRect && (
+        <div
+          className="absolute pointer-events-none mix-blend-multiply"
+          style={{
+            top: garmentRect.top, left: garmentRect.left,
+            width: garmentRect.width, height: garmentRect.height,
+            backgroundColor: garmentColor,
+            WebkitMaskImage: `url("${activeMaskImage}")`,
+            maskImage:        `url("${activeMaskImage}")`,
+            WebkitMaskSize:   '100% 100%',
+            maskSize:         '100% 100%',
+            WebkitMaskPosition: 'center center',
+            maskPosition:       'center center',
+            WebkitMaskRepeat: 'no-repeat',
+            maskRepeat:       'no-repeat',
+          }}
+        />
+      )}
+
+      {/* Highlight sheen — same rect */}
+      {!isJeans && garmentRect && (
+        <img
+          src={activeGarmentImage}
+          alt="" aria-hidden draggable={false}
+          className="absolute pointer-events-none select-none mix-blend-screen opacity-20"
+          style={{
+            top: garmentRect.top, left: garmentRect.left,
+            width: garmentRect.width, height: garmentRect.height,
+            filter: 'grayscale(1) contrast(1.2) brightness(1.18)',
+          }}
+        />
+      )}
+    </div>
+  );
+};
+
 // ─── MockupCanvas ─────────────────────────────────────────────────────────────
 const MockupCanvas = ({
-  activeMockup, garmentColor, artworks, activeArtworkId, activeSide,
+  activeGarmentImage, activeMaskImage, garmentColor, artworks, activeArtworkId, activeSide,
   updateArtworkTransform, onSelectArtwork,
   stageZoom, stagePan,
   onStagePointerDown, onStagePointerMove, onStagePointerUp, onStageWheel,
-  heightClass, emptyLabel, isJeans, onContextMenu, onStagePinch,
+  heightClass, emptyLabel, isJeans, onContextMenu, onStagePinch, garmentType,
 }) => {
-  const containerRef = useRef(null);
+  const frameRef = useRef(null);
   const [dim, setDim] = useState({ width: 0, height: 0 });
   const lastDist = useRef(0);
   const lastCenter = useRef(null);
+  const garmentRect = useContainedImageRect(frameRef, activeGarmentImage);
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (!frameRef.current) return;
     const ro = new ResizeObserver(([e]) => setDim({ width: e.contentRect.width, height: e.contentRect.height }));
-    ro.observe(containerRef.current);
+    ro.observe(frameRef.current);
     return () => ro.disconnect();
   }, []);
+
+  const anchor = DESIGN_ANCHOR_MAP[garmentType] || DESIGN_ANCHOR_MAP.tshirt;
+  const garmentBox = useMemo(() => {
+    if (garmentRect) return garmentRect;
+    return {
+      left: dim.width * 0.15,
+      top: dim.height * 0.1,
+      width: dim.width * 0.7,
+      height: dim.height * 0.8,
+    };
+  }, [dim.height, dim.width, garmentRect]);
+
+  const designCenter = useMemo(() => {
+    return {
+      x: garmentBox.left + garmentBox.width * anchor.x,
+      y: garmentBox.top + garmentBox.height * anchor.y,
+    };
+  }, [anchor.x, anchor.y, garmentBox]);
 
   const handleTouchMove = (e) => {
     if (e.evt.touches.length !== 2) return;
@@ -230,7 +428,7 @@ const MockupCanvas = ({
       updateArtworkTransform(activeArtworkId, activeSide, (t) => {
         // dampen the factor slightly so pinch to zoom is more controlled
         const dampedFactor = 1 + (factor - 1) * 0.6;
-        return { ...t, scale: Math.max(0.05, t.scale * dampedFactor) };
+        return { ...t, scale: clampNormScale(t.scale * dampedFactor) };
       });
     }
     lastDist.current = dist;
@@ -239,7 +437,7 @@ const MockupCanvas = ({
   const checkDeselect  = (e) => { if (e.target === e.target.getStage()) onSelectArtwork(null); };
 
   return (
-    <div ref={containerRef}
+    <div
       className={`relative rounded-2xl overflow-hidden bg-[#e8e8e8] border border-black/10 ${heightClass}`}
       onPointerMove={onStagePointerMove}
       onPointerUp={onStagePointerUp}
@@ -252,44 +450,40 @@ const MockupCanvas = ({
           transformOrigin: 'center center',
           transition: stageZoom === 1 && stagePan.x === 0 && stagePan.y === 0 ? 'transform 140ms ease-out' : 'none',
         }}>
-        <div className="absolute inset-2 sm:inset-3 rounded-xl overflow-hidden isolate" onPointerDown={onStagePointerDown}>
+        <div ref={frameRef} className="absolute inset-2 rounded-xl overflow-hidden isolate" onPointerDown={onStagePointerDown}>
           {/* background */}
           <img src={mockBackground} alt="" aria-hidden
             className="absolute inset-0 h-full w-full object-cover object-center pointer-events-none select-none" draggable={false} />
 
-          {/* scale wrapper to ensure all layers perfectly align, especially resolving mobile masked recolor bugs */}
-          <div className={`absolute inset-0 w-full h-full flex items-center justify-center pointer-events-none ${isJeans ? 'scale-[0.85]' : 'scale-[0.95]'}`}>
-            {/* greyscale garment */}
-            <img src={activeMockup} alt="Garment mockup"
-              className="absolute inset-0 w-full h-full object-contain object-center pointer-events-none select-none"
-              style={!isJeans ? { filter: 'grayscale(1) contrast(1.32) brightness(1.03)' } : {}}
-              draggable={false} />
+          {/* garment + responsive color overlay — always pixel-perfect aligned */}
+          <GarmentLayers
+            activeGarmentImage={activeGarmentImage}
+            activeMaskImage={activeMaskImage}
+            garmentColor={garmentColor}
+            isJeans={isJeans}
+            garmentRect={garmentRect}
+          />
 
-            {/* color overlay — masked to garment cutout only, same scale as garment img */}
-            {!isJeans && (
-              <div
-                className="absolute inset-0 w-full h-full pointer-events-none mix-blend-multiply"
-                style={{
-                  backgroundColor: garmentColor,
-                  WebkitMaskImage: `url("${activeMockup}")`,
-                  maskImage: `url("${activeMockup}")`,
-                  WebkitMaskSize: 'contain',
-                  maskSize: 'contain',
-                  WebkitMaskRepeat: 'no-repeat',
-                  maskRepeat: 'no-repeat',
-                  WebkitMaskPosition: 'center',
-                  maskPosition: 'center',
-                }}
-              />
-            )}
-
-            {/* highlight sheen */}
-            {!isJeans && (
-              <img src={activeMockup} alt="" aria-hidden
-                className="absolute inset-0 w-full h-full object-contain object-center pointer-events-none select-none mix-blend-screen opacity-20"
-                style={{ filter: 'grayscale(1) contrast(1.2) brightness(1.18)' }}
-                draggable={false} />
-            )}
+          <div className="absolute inset-0 z-20">
+            <Stage width={dim.width} height={dim.height}
+              onMouseDown={checkDeselect} onTouchStart={checkDeselect}
+              onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}
+              style={{ position: 'absolute', top: 0, left: 0 }}>
+              <Layer>
+                {artworks.map((aw) => (
+                  <ArtworkNode key={aw.id} artwork={aw}
+                    isSelected={aw.id === activeArtworkId}
+                    onSelect={() => onSelectArtwork(aw.id)}
+                    onChange={(t) => updateArtworkTransform(aw.id, activeSide, () => t)}
+                    activeSide={activeSide}
+                    centerX={designCenter.x}
+                    centerY={designCenter.y}
+                    garmentBox={garmentBox}
+                    onContextMenu={(e) => onContextMenu && onContextMenu(e, aw.id)}
+                  />
+                ))}
+              </Layer>
+            </Stage>
           </div>
         </div>
 
@@ -300,27 +494,6 @@ const MockupCanvas = ({
             </p>
           </div>
         )}
-
-        <div className="absolute inset-0 z-20">
-          <Stage width={dim.width} height={dim.height}
-            onMouseDown={checkDeselect} onTouchStart={checkDeselect}
-            onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}
-            style={{ position: 'absolute', top: 0, left: 0 }}>
-            <Layer>
-              {artworks.map((aw) => (
-                <ArtworkNode key={aw.id} artwork={aw}
-                  isSelected={aw.id === activeArtworkId}
-                  onSelect={() => onSelectArtwork(aw.id)}
-                  onChange={(t) => updateArtworkTransform(aw.id, activeSide, () => t)}
-                  activeSide={activeSide}
-                  centerX={dim.width / 2}
-                  centerY={dim.height * 0.46}
-                  onContextMenu={(e) => onContextMenu && onContextMenu(e, aw.id)}
-                />
-              ))}
-            </Layer>
-          </Stage>
-        </div>
       </div>
     </div>
   );
@@ -360,7 +533,8 @@ const PrintStudioPage = () => {
   // ── Derived ──
   const isJeans      = garment === 'jeans';
   const mockKey      = isJeans ? (jeansType === 'blue' ? 'jeans_blue' : 'jeans_default') : garment;
-  const activeMockup = MOCK_IMAGE_MAP[mockKey][activeSide];
+  const activeGarmentImage = GARMENT_IMAGE_MAP[mockKey][activeSide];
+  const activeMaskImage = GARMENT_MASK_MAP[mockKey][activeSide];
   // artworks visible on this side
   const sideArtworks = useMemo(() => artworks.filter((a) => !a.visible || a.visible[activeSide] !== false), [artworks, activeSide]);
   const activeArtwork = useMemo(() => artworks.find((a) => a.id === activeArtworkId) || null, [artworks, activeArtworkId]);
@@ -371,7 +545,7 @@ const PrintStudioPage = () => {
 
   // ── Preload mockup images ──
   useEffect(() => {
-    [...Object.values(MOCK_IMAGE_MAP).flatMap((e) => Object.values(e)), mockBackground]
+    [...Object.values(GARMENT_IMAGE_MAP).flatMap((e) => Object.values(e)), ...Object.values(GARMENT_MASK_MAP).flatMap((e) => Object.values(e)), mockBackground]
       .forEach((src) => { const i = new Image(); i.src = src; });
   }, []);
 
@@ -474,8 +648,8 @@ const PrintStudioPage = () => {
       const copy = { ...src, id: `${id}-copy-${Math.random().toString(36).slice(2,6)}`,
         visible: { front: true, back: true },
         transforms: {
-          front: { ...src.transforms.front, x: src.transforms.front.x + 8, y: src.transforms.front.y + 8 },
-          back:  { ...src.transforms.back,  x: src.transforms.back.x  + 8, y: src.transforms.back.y  + 8 },
+          front: { ...src.transforms.front, x: src.transforms.front.x + 0.015, y: src.transforms.front.y + 0.015 },
+          back:  { ...src.transforms.back,  x: src.transforms.back.x  + 0.015, y: src.transforms.back.y  + 0.015 },
         }};
       const idx = p.findIndex((a) => a.id === id);
       const n = [...p]; n.splice(idx + 1, 0, copy);
@@ -501,8 +675,8 @@ const PrintStudioPage = () => {
 
   const upActive = (fn) => { if (!activeArtworkOnThisSide) return; updateArtworkTransform(activeArtworkOnThisSide.id, activeSide, fn); };
   const centerArtwork  = () => upActive((t) => ({ ...t, x: 0, y: 0 }));
-  const scaleUp        = () => upActive((t) => ({ ...t, scale: Math.min(4, +(t.scale + 0.05).toFixed(3)) }));
-  const scaleDown      = () => upActive((t) => ({ ...t, scale: Math.max(0.05, +(t.scale - 0.05).toFixed(3)) }));
+  const scaleUp        = () => upActive((t) => ({ ...t, scale: clampNormScale(+(t.scale + 0.03).toFixed(3)) }));
+  const scaleDown      = () => upActive((t) => ({ ...t, scale: clampNormScale(+(t.scale - 0.03).toFixed(3)) }));
   const rotateCW       = () => upActive((t) => ({ ...t, rotation: ((t.rotation || 0) + 15) % 360 }));
   const rotateCCW      = () => upActive((t) => ({ ...t, rotation: ((t.rotation || 0) - 15 + 360) % 360 }));
   const resetTransform = () => upActive(() => ({ ...DEFAULT_TRANSFORM }));
@@ -534,8 +708,9 @@ const PrintStudioPage = () => {
 
   // ── Shared canvas props ──
   const canvasProps = {
-    activeMockup, garmentColor, artworks: sideArtworks, activeArtworkId, activeSide,
+    activeGarmentImage, activeMaskImage, garmentColor, artworks: sideArtworks, activeArtworkId, activeSide,
     updateArtworkTransform, onSelectArtwork: setActiveArtworkId, isJeans,
+    garmentType: garment,
     onContextMenu: useCallback((e, id) => {
       e.evt.preventDefault();
       setActiveArtworkId(id);

@@ -331,12 +331,12 @@ const NavBar = () => {
   return (
     <nav
         ref={navRef}
-        className="fixed top-0 z-[60] md:z-50 w-full max-w-[100vw] px-4 pt-2 overflow-x-hidden lg:flex lg:justify-center"
+        className="fixed top-0 z-[60] md:z-50 w-full max-w-[100vw] px-3 pt-1 md:px-4 md:pt-2 overflow-x-hidden flex justify-center"
         onMouseLeave={scheduleClose}
       >
       <div
         ref={containerRef}
-        className="w-[90vw] md:w-[900px] max-w-[90vw] rounded-3xl bg-white/10 backdrop-blur-md border border-black/10 shadow-md overflow-hidden transition-all duration-300 ease-out"
+        className="w-full max-w-[92vw] md:w-[900px] md:max-w-[90vw] mx-auto rounded-3xl bg-white/10 backdrop-blur-md border border-black/10 shadow-md overflow-hidden transition-all duration-300 ease-out"
         style={{ height: (minHeight && typeof window !== 'undefined' && window.innerWidth >= 768) ? `${minHeight}px` : undefined }}
       >
         {/* Desktop Navigation */}
@@ -402,7 +402,7 @@ const NavBar = () => {
         </div>
 
         {/* Mobile Navigation Bar */}
-        <div className="md:hidden px-2 py-3 relative z-[61] w-full max-w-[100vw] overflow-x-hidden">
+        <div className="md:hidden px-3 py-2.5 relative z-[61] w-full max-w-[100vw] overflow-x-hidden">
           <div className="flex items-center justify-between w-full gap-4">
             {/* Cart Icon */}
             <button
@@ -410,7 +410,7 @@ const NavBar = () => {
               aria-label="Open cart"
               aria-expanded={isMobileCartOpen}
               aria-controls="mobile-cart-panel"
-              className="p-3 min-w-[44px] min-h-[44px] flex items-center justify-center text-black relative touch-manipulation"
+              className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-black relative touch-manipulation"
             >
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M9 2L6 9H3l3 7h12l3-7h-3l-3-7z"/>
@@ -426,7 +426,7 @@ const NavBar = () => {
             <img
               src={logo}
               alt="Faisan Kaka"
-              className="h-4 md:h-10 cursor-pointer max-w-[50px] max-h-[50px] w-auto h-auto md:ml-0 md:pr-0"
+              className="h-5 md:h-10 cursor-pointer max-w-[50px] max-h-[50px] w-auto shrink-0"
               onClick={handleLogoClick}
             />
 
@@ -436,7 +436,7 @@ const NavBar = () => {
               aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
               aria-expanded={isMobileMenuOpen}
               aria-controls="mobile-menu-panel"
-              className="p-3 min-w-[44px] min-h-[44px] flex items-center justify-center text-black touch-manipulation transition-transform duration-200"
+              className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-black touch-manipulation transition-transform duration-200"
             >
               {isMobileMenuOpen ? (
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">

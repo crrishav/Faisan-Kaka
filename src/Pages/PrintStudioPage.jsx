@@ -66,7 +66,7 @@ const createArtworkEntry = (file) => ({
   transforms: { front: { ...DEFAULT_TRANSFORM }, back: { ...DEFAULT_TRANSFORM } },
   // per-side visibility so removing from front doesn't affect back
   visible: { front: true, back: true },
-  opacity: 1,
+  opacity: { front: 1, back: 1 },
 });
 
 const clampZoom = (v) => Math.min(3.5, Math.max(1, v));
@@ -157,7 +157,7 @@ const ArtworkNode = ({ artwork, isSelected, onSelect, onChange, activeSide, cent
     ref: shapeRef, x: absX, y: absY,
     scaleX: transform.scale, scaleY: transform.scale,
     rotation: transform.rotation || 0,
-    opacity: artwork.opacity ?? 1,
+    opacity: artwork.opacity?.[activeSide] ?? 1,
     draggable: true, onClick: onSelect, onTap: onSelect,
     onDragEnd: handleDragEnd, onTransformEnd: handleTransformEnd, onContextMenu,
   };
@@ -238,27 +238,6 @@ const MockupCanvas = ({
   const handleTouchEnd = () => { lastCenter.current = null; lastDist.current = 0; };
   const checkDeselect  = (e) => { if (e.target === e.target.getStage()) onSelectArtwork(null); };
 
-  const scaleClass = isJeans
-    ? 'object-contain scale-[0.85]'
-    : 'object-contain object-center scale-[0.95]';
-
-  // Color overlay: must use same object-fit + scale as the greyscale garment img
-  // We wrap in an outer div for mixBlendMode isolation, inner div carries the mask + scale
-  const maskStyle = !isJeans ? {
-    backgroundColor: garmentColor,
-    WebkitMaskImage: `url("${activeMockup}")`,
-    maskImage: `url("${activeMockup}")`,
-    WebkitMaskSize: 'contain',
-    maskSize: 'contain',
-    WebkitMaskRepeat: 'no-repeat',
-    maskRepeat: 'no-repeat',
-    WebkitMaskPosition: 'center',
-    maskPosition: 'center',
-    mixBlendMode: 'multiply',
-    transform: 'scale(0.95)',
-    transformOrigin: 'center center',
-  } : {};
-
   return (
     <div ref={containerRef}
       className={`relative rounded-2xl overflow-hidden bg-[#e8e8e8] border border-black/10 ${heightClass}`}
@@ -278,27 +257,40 @@ const MockupCanvas = ({
           <img src={mockBackground} alt="" aria-hidden
             className="absolute inset-0 h-full w-full object-cover object-center pointer-events-none select-none" draggable={false} />
 
-          {/* greyscale garment */}
-          <img src={activeMockup} alt="Garment mockup"
-            className={`absolute inset-0 h-full w-full pointer-events-none select-none ${scaleClass}`}
-            style={!isJeans ? { filter: 'grayscale(1) contrast(1.32) brightness(1.03)' } : {}}
-            draggable={false} />
-
-          {/* color overlay — masked to garment cutout only, same scale as garment img */}
-          {!isJeans && (
-            <div
-              className="absolute inset-0 pointer-events-none"
-              style={maskStyle}
-            />
-          )}
-
-          {/* highlight sheen */}
-          {!isJeans && (
-            <img src={activeMockup} alt="" aria-hidden
-              className={`absolute inset-0 h-full w-full pointer-events-none select-none ${scaleClass}`}
-              style={{ filter: 'grayscale(1) contrast(1.2) brightness(1.18)', opacity: 0.18, mixBlendMode: 'screen' }}
+          {/* scale wrapper to ensure all layers perfectly align, especially resolving mobile masked recolor bugs */}
+          <div className={`absolute inset-0 w-full h-full flex items-center justify-center pointer-events-none ${isJeans ? 'scale-[0.85]' : 'scale-[0.95]'}`}>
+            {/* greyscale garment */}
+            <img src={activeMockup} alt="Garment mockup"
+              className="absolute inset-0 w-full h-full object-contain object-center pointer-events-none select-none"
+              style={!isJeans ? { filter: 'grayscale(1) contrast(1.32) brightness(1.03)' } : {}}
               draggable={false} />
-          )}
+
+            {/* color overlay — masked to garment cutout only, same scale as garment img */}
+            {!isJeans && (
+              <div
+                className="absolute inset-0 w-full h-full pointer-events-none mix-blend-multiply"
+                style={{
+                  backgroundColor: garmentColor,
+                  WebkitMaskImage: `url("${activeMockup}")`,
+                  maskImage: `url("${activeMockup}")`,
+                  WebkitMaskSize: 'contain',
+                  maskSize: 'contain',
+                  WebkitMaskRepeat: 'no-repeat',
+                  maskRepeat: 'no-repeat',
+                  WebkitMaskPosition: 'center',
+                  maskPosition: 'center',
+                }}
+              />
+            )}
+
+            {/* highlight sheen */}
+            {!isJeans && (
+              <img src={activeMockup} alt="" aria-hidden
+                className="absolute inset-0 w-full h-full object-contain object-center pointer-events-none select-none mix-blend-screen opacity-20"
+                style={{ filter: 'grayscale(1) contrast(1.2) brightness(1.18)' }}
+                draggable={false} />
+            )}
+          </div>
         </div>
 
         {artworks.length === 0 && (
@@ -514,7 +506,7 @@ const PrintStudioPage = () => {
   const rotateCW       = () => upActive((t) => ({ ...t, rotation: ((t.rotation || 0) + 15) % 360 }));
   const rotateCCW      = () => upActive((t) => ({ ...t, rotation: ((t.rotation || 0) - 15 + 360) % 360 }));
   const resetTransform = () => upActive(() => ({ ...DEFAULT_TRANSFORM }));
-  const setOpacity     = (id, v) => setArtworks((p) => p.map((a) => a.id !== id ? a : { ...a, opacity: v }));
+  const setOpacity     = (id, v) => setArtworks((p) => p.map((a) => a.id !== id ? a : { ...a, opacity: { ...a.opacity, [activeSide]: v } }));
 
   // ── Color ops ──
   const commitColor = useCallback((raw) => {
@@ -730,24 +722,43 @@ const PrintStudioPage = () => {
                   </button>
                 ))}
               </div>
-              {activeArtworkOnThisSide && (
-                <div className="flex items-center gap-2 flex-wrap">
-                  <button onClick={centerArtwork} className="px-3 h-8 rounded-full bg-white/12 text-white text-xs font-bold hover:bg-white/20 transition cursor-pointer">Center</button>
-                  <button onClick={rotateCCW} className="w-8 h-8 rounded-full bg-white/12 text-white flex items-center justify-center hover:bg-white/20 transition cursor-pointer"><Icons.RotateCW /></button>
-                  <button onClick={rotateCW} className="w-8 h-8 rounded-full bg-white/12 text-white flex items-center justify-center hover:bg-white/20 transition cursor-pointer" style={{ transform: 'scaleX(-1)' }}><Icons.RotateCW /></button>
-                  <button onClick={scaleDown} className="px-3 h-8 rounded-full bg-white/12 text-white text-xs font-bold hover:bg-white/20 transition cursor-pointer">−</button>
-                  <button onClick={scaleUp} className="px-3 h-8 rounded-full bg-white/12 text-white text-xs font-bold hover:bg-white/20 transition cursor-pointer">+</button>
-                  <button onClick={resetTransform} className="px-3 h-8 rounded-full bg-white/12 text-white text-xs font-bold hover:bg-white/20 transition cursor-pointer">Reset</button>
-                  <div className="w-px h-5 bg-white/15 mx-1" />
-                  <div className="flex items-center gap-1.5 px-3 h-8 rounded-full bg-white/12 text-white text-xs font-bold">
-                    <Icons.Opacity />
-                    <input type="range" min="0.1" max="1" step="0.05"
-                      value={activeArtworkOnThisSide.opacity ?? 1}
-                      onChange={(e) => setOpacity(activeArtworkOnThisSide.id, parseFloat(e.target.value))}
-                      className="w-16 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-white" />
+              <div className="flex items-center gap-2 flex-wrap">
+                {activeArtworkOnThisSide && (
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <button onClick={() => moveLayer(activeArtworkOnThisSide.id, 'up')} className="px-3 h-8 rounded-full bg-white/12 text-white text-xs font-bold hover:bg-white/20 transition cursor-pointer flex items-center gap-1"><Icons.LayerUp /> Up</button>
+                    <button onClick={() => moveLayer(activeArtworkOnThisSide.id, 'down')} className="px-3 h-8 rounded-full bg-white/12 text-white text-xs font-bold hover:bg-white/20 transition cursor-pointer flex items-center gap-1"><Icons.LayerDn /> Down</button>
+                    <div className="w-px h-5 bg-white/15 mx-1" />
+                    <button onClick={centerArtwork} className="px-3 h-8 rounded-full bg-white/12 text-white text-xs font-bold hover:bg-white/20 transition cursor-pointer">Center</button>
+                    <button onClick={rotateCCW} className="w-8 h-8 rounded-full bg-white/12 text-white flex items-center justify-center hover:bg-white/20 transition cursor-pointer"><Icons.RotateCW /></button>
+                    <button onClick={rotateCW} className="w-8 h-8 rounded-full bg-white/12 text-white flex items-center justify-center hover:bg-white/20 transition cursor-pointer" style={{ transform: 'scaleX(-1)' }}><Icons.RotateCW /></button>
+                    <button onClick={scaleDown} className="px-3 h-8 rounded-full bg-white/12 text-white text-xs font-bold hover:bg-white/20 transition cursor-pointer">−</button>
+                    <button onClick={scaleUp} className="px-3 h-8 rounded-full bg-white/12 text-white text-xs font-bold hover:bg-white/20 transition cursor-pointer">+</button>
+                    <button onClick={resetTransform} className="px-3 h-8 rounded-full bg-white/12 text-white text-xs font-bold hover:bg-white/20 transition cursor-pointer">Reset</button>
+                    <div className="w-px h-5 bg-white/15 mx-1" />
+                    <div className="flex items-center gap-1.5 px-3 h-8 rounded-full bg-white/12 text-white text-xs font-bold">
+                      <Icons.Opacity />
+                      <input type="range" min="0.1" max="1" step="0.05"
+                        value={activeArtworkOnThisSide.opacity?.[activeSide] ?? 1}
+                        onChange={(e) => setOpacity(activeArtworkOnThisSide.id, parseFloat(e.target.value))}
+                        className="w-16 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-white" />
+                    </div>
+                    <div className="w-px h-5 bg-white/15 mx-1" />
                   </div>
-                </div>
-              )}
+                )}
+                {!isJeans ? (
+                  <div className="flex items-center gap-1.5 px-2 h-8 rounded-full bg-white/12 text-white text-xs font-bold">
+                    <span className="pl-1">Color</span>
+                    <input type="color" value={garmentColor}
+                      onChange={(e) => applyPreset(colord(e.target.value).toHex())}
+                      className="w-5 h-5 rounded cursor-pointer border-0 p-0 bg-transparent" />
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1 bg-white/12 rounded-full p-0.5 h-8">
+                    <button onClick={() => setJeansType('default')} className={`px-2 h-full rounded-full text-[10px] font-bold ${jeansType === 'default' ? 'bg-white text-black' : 'text-white/60 hover:bg-white/10 transition cursor-pointer'}`}>Default</button>
+                    <button onClick={() => setJeansType('blue')} className={`px-2 h-full rounded-full text-[10px] font-bold ${jeansType === 'blue' ? 'bg-white text-black' : 'text-white/60 hover:bg-white/10 transition cursor-pointer'}`}>Blue</button>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* canvas area */}
@@ -773,16 +784,15 @@ const PrintStudioPage = () => {
             <div className="flex lg:hidden flex-col gap-3 px-3 py-3 pb-6 sm:pb-8 border-t border-white/10 shrink-0 bg-black">
               {/* Transform controls row */}
               <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+                 <button disabled={!activeArtworkOnThisSide} onClick={() => moveLayer(activeArtworkOnThisSide?.id, 'up')} className="px-3 h-10 shrink-0 rounded-full bg-white/10 text-white text-[11px] font-bold active:bg-white/20 transition disabled:opacity-20 disabled:pointer-events-none flex items-center gap-1"><Icons.LayerUp /> Up</button>
+                 <button disabled={!activeArtworkOnThisSide} onClick={() => moveLayer(activeArtworkOnThisSide?.id, 'down')} className="px-3 h-10 shrink-0 rounded-full bg-white/10 text-white text-[11px] font-bold active:bg-white/20 transition disabled:opacity-20 disabled:pointer-events-none flex items-center gap-1"><Icons.LayerDn /> Down</button>
+                 <div className="w-px h-6 bg-white/15 shrink-0 mx-0.5" />
                  <button disabled={!activeArtworkOnThisSide} onClick={rotateCCW} className="w-10 h-10 shrink-0 rounded-full bg-white/10 text-white flex items-center justify-center active:bg-white/20 transition disabled:opacity-20 disabled:pointer-events-none"><Icons.RotateCW /></button>
                  <button disabled={!activeArtworkOnThisSide} onClick={rotateCW} className="w-10 h-10 shrink-0 rounded-full bg-white/10 text-white flex items-center justify-center active:bg-white/20 transition disabled:opacity-20 disabled:pointer-events-none" style={{ transform: 'scaleX(-1)' }}><Icons.RotateCW /></button>
                  <button disabled={!activeArtworkOnThisSide} onClick={centerArtwork} className="px-3 h-10 shrink-0 rounded-full bg-white/10 text-white text-[11px] font-bold active:bg-white/20 transition disabled:opacity-20 disabled:pointer-events-none">Center</button>
                  <button disabled={!activeArtworkOnThisSide} onClick={resetTransform} className="px-3 h-10 shrink-0 rounded-full bg-white/10 text-white text-[11px] font-bold active:bg-white/20 transition disabled:opacity-20 disabled:pointer-events-none">Reset</button>
                  <button disabled={!activeArtworkOnThisSide} onClick={scaleDown} className="w-10 h-10 shrink-0 rounded-full bg-white/10 text-white text-base font-bold active:bg-white/20 transition disabled:opacity-20 disabled:pointer-events-none">−</button>
                  <button disabled={!activeArtworkOnThisSide} onClick={scaleUp} className="w-10 h-10 shrink-0 rounded-full bg-white/10 text-white text-base font-bold active:bg-white/20 transition disabled:opacity-20 disabled:pointer-events-none">+</button>
-                 <button disabled={!activeArtworkOnThisSide} onClick={() => { if(activeArtworkOnThisSide) { removeArtwork(activeArtworkOnThisSide.id); showToast('Deleted'); setIsFullscreen(false); } }}
-                    className="w-10 h-10 shrink-0 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center active:bg-red-500/40 transition disabled:opacity-20 disabled:pointer-events-none">
-                    <Icons.Trash />
-                  </button>
               </div>
 
               {/* Opacity Row */}
@@ -790,12 +800,28 @@ const PrintStudioPage = () => {
                 <div className="text-white/60"><Icons.Opacity /></div>
                 <input type="range" min="0.1" max="1" step="0.05"
                     disabled={!activeArtworkOnThisSide}
-                    value={activeArtworkOnThisSide?.opacity ?? 1}
+                    value={activeArtworkOnThisSide?.opacity?.[activeSide] ?? 1}
                     onChange={(e) => { if(activeArtworkOnThisSide) setOpacity(activeArtworkOnThisSide.id, parseFloat(e.target.value)) }}
                     className="flex-1 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-white disabled:opacity-20" />
                 <span className="text-white/60 text-[10px] font-bold w-10 text-right">
-                   {activeArtworkOnThisSide ? Math.round((activeArtworkOnThisSide.opacity ?? 1) * 100) + '%' : '---'}
+                   {activeArtworkOnThisSide ? Math.round((activeArtworkOnThisSide.opacity?.[activeSide] ?? 1) * 100) + '%' : '---'}
                 </span>
+                <div className="w-px h-6 bg-white/15 mx-1 shrink-0" />
+                {!isJeans ? (
+                  <div className="flex items-center gap-2 pl-2 pr-1 shrink-0 bg-white/10 rounded-full h-8 cursor-pointer">
+                    <span className="text-white text-[10px] font-bold pointer-events-none">Color</span>
+                    <input type="color" value={garmentColor} onChange={(e) => applyPreset(colord(e.target.value).toHex())} className="w-6 h-6 rounded-full cursor-pointer border-0 p-0 bg-transparent" />
+                  </div>
+                ) : (
+                  <div className="flex bg-white/10 rounded-full p-0.5 shrink-0 items-center h-8">
+                    <button onClick={() => setJeansType('default')} className={`px-2 h-7 rounded-full text-[10px] font-bold ${jeansType === 'default' ? 'bg-white text-black' : 'text-white/60'}`}>Default</button>
+                    <button onClick={() => setJeansType('blue')} className={`px-2 h-7 rounded-full text-[10px] font-bold ${jeansType === 'blue' ? 'bg-white text-black' : 'text-white/60'}`}>Blue</button>
+                  </div>
+                )}
+                <button disabled={!activeArtworkOnThisSide} onClick={() => { if(activeArtworkOnThisSide) { removeArtwork(activeArtworkOnThisSide.id); showToast('Deleted'); setIsFullscreen(false); } }}
+                    className="w-8 h-8 shrink-0 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center active:bg-red-500/40 transition disabled:opacity-20 disabled:pointer-events-none ml-1">
+                    <Icons.Trash />
+                </button>
               </div>
             </div>
           </motion.div>
@@ -986,11 +1012,11 @@ const PrintStudioPage = () => {
                         <Icons.Opacity /> Opacity
                       </p>
                       <span className="text-xs font-bold text-black/55">
-                        {Math.round((activeArtwork.opacity ?? 1) * 100)}%
+                        {Math.round((activeArtwork.opacity?.[activeSide] ?? 1) * 100)}%
                       </span>
                     </div>
                     <input type="range" min={10} max={100} step={5}
-                      value={Math.round((activeArtwork.opacity ?? 1) * 100)}
+                      value={Math.round((activeArtwork.opacity?.[activeSide] ?? 1) * 100)}
                       onChange={(e) => setOpacity(activeArtwork.id, Number(e.target.value) / 100)}
                       className="w-full accent-black h-1.5 cursor-pointer" />
                   </div>
@@ -1136,7 +1162,7 @@ const PrintStudioPage = () => {
           </button>
 
           <button disabled={!hasUploads} onClick={() => setShowOrder(true)}
-            className={`flex-[1.5] h-full rounded-2xl flex flex-col items-center justify-center transition-all shadow-md ${hasUploads ? 'bg-[#ff3b30] text-white active:scale-95 hover:bg-[#ff2b20]' : 'bg-black/10 text-black/30 cursor-not-allowed'}`}>
+            className={`flex-[1.5] h-full rounded-2xl flex flex-col items-center justify-center transition-all shadow-md ${hasUploads ? 'bg-black text-white active:scale-95 hover:bg-black/85' : 'bg-black/10 text-black/30 cursor-not-allowed'}`}>
             <span className="text-[13px] font-black leading-tight">Order</span>
             <span className="text-[9px] font-semibold opacity-80 mt-0.5">Ready →</span>
           </button>
@@ -1301,10 +1327,10 @@ const PrintStudioPage = () => {
                         <div className="bg-black/4 border border-black/5 rounded-2xl p-4 mt-2">
                           <div className="flex justify-between items-center mb-3">
                             <p className="text-[11px] font-black uppercase tracking-wide text-black/60 flex items-center gap-1.5"><Icons.Opacity /> Opacity</p>
-                            <span className="text-xs font-black bg-white px-2 py-0.5 rounded-md shadow-sm">{Math.round((activeArtworkOnThisSide.opacity ?? 1) * 100)}%</span>
+                            <span className="text-xs font-black bg-white px-2 py-0.5 rounded-md shadow-sm">{Math.round((activeArtworkOnThisSide.opacity?.[activeSide] ?? 1) * 100)}%</span>
                           </div>
                           <input type="range" min={10} max={100} step={5}
-                            value={Math.round((activeArtworkOnThisSide.opacity ?? 1) * 100)}
+                            value={Math.round((activeArtworkOnThisSide.opacity?.[activeSide] ?? 1) * 100)}
                             onChange={(e) => setOpacity(activeArtworkOnThisSide.id, Number(e.target.value) / 100)}
                             className="w-full accent-black h-2.5 cursor-pointer rounded-full bg-black/10" />
                         </div>
@@ -1376,7 +1402,7 @@ const PrintStudioPage = () => {
           </React.Fragment>
         )}
       </AnimatePresence>
-\n\n      <Footer />
+      <Footer />
     </div>
   );
 };

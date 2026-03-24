@@ -663,22 +663,36 @@ const PrintStudioPage = () => {
         {isFullscreen && (
           <motion.div className="fixed inset-0 z-[130] bg-black/93 flex flex-col"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                        {/* ── Mobile fullscreen toolbar ── */}
-            <div className="flex lg:hidden items-center justify-between gap-2 px-3 py-3 border-b border-white/10 shrink-0 bg-black">
-              <div className="flex items-center gap-2">
-                <button onClick={() => { setIsFullscreen(false); stopPan(); }}
-                  className="w-9 h-9 rounded-full bg-white/10 text-white flex items-center justify-center active:scale-95 transition">
-                  <Icons.X />
-                </button>
-                <button disabled={!activeArtworkOnThisSide} onClick={scaleDown} className="px-3 h-9 rounded-full bg-white/10 text-white text-xs font-bold active:bg-white/20 transition disabled:opacity-20 disabled:pointer-events-none">−</button>
-                <button disabled={!activeArtworkOnThisSide} onClick={scaleUp} className="px-3 h-9 rounded-full bg-white/10 text-white text-xs font-bold active:bg-white/20 transition disabled:opacity-20 disabled:pointer-events-none">+</button>
-              </div>
-              <div className="flex items-center gap-2">
-                <button disabled={!activeArtworkOnThisSide} onClick={centerArtwork} className="px-3 h-9 rounded-full bg-white/10 text-white text-xs font-bold active:bg-white/20 transition disabled:opacity-20 disabled:pointer-events-none">Center</button>
-                <button disabled={!activeArtworkOnThisSide} onClick={() => { if(activeArtworkOnThisSide) { removeArtwork(activeArtworkOnThisSide.id); showToast('Deleted'); setIsFullscreen(false); } }}
-                  className="w-9 h-9 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center active:bg-red-500/40 transition disabled:opacity-20 disabled:pointer-events-none">
-                  <Icons.Trash />
-                </button>
+            {/* ── Mobile fullscreen top toolbar ── */}
+            <div className="flex lg:hidden flex-col gap-2 px-3 py-3 border-b border-white/10 shrink-0 bg-black">
+              <div className="flex items-center justify-between gap-2 overflow-x-auto no-scrollbar">
+                <div className="flex items-center gap-2 shrink-0">
+                  <button onClick={() => { setIsFullscreen(false); stopPan(); }}
+                    className="w-9 h-9 rounded-full bg-white/10 text-white flex items-center justify-center active:scale-95 transition">
+                    <Icons.X />
+                  </button>
+                  <button onClick={resetView}
+                    className="px-3 h-9 rounded-full bg-white/10 text-white text-[10px] font-bold active:bg-white/20 transition">Reset View</button>
+                </div>
+                
+                <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex bg-white/10 rounded-full p-1">
+                    {['tshirt','hoodie','jeans'].map((g) => (
+                      <button key={g} onClick={() => setGarment(g)}
+                        className={`px-2.5 h-6 rounded-full text-[10px] font-bold transition-all ${garment === g ? 'bg-white text-black' : 'text-white/60'}`}>
+                        {g === 'tshirt' ? 'Tee' : g === 'hoodie' ? 'Hoodie' : 'Jeans'}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex bg-white/10 rounded-full p-1">
+                    {['front','back'].map((s) => (
+                      <button key={s} onClick={() => setActiveSide(s)}
+                        className={`px-2.5 h-6 rounded-full text-[10px] font-bold transition-all uppercase ${activeSide === s ? 'bg-white text-black' : 'text-white/60'}`}>
+                        {s.charAt(0)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -754,6 +768,36 @@ const PrintStudioPage = () => {
             <p className="text-center text-white/25 text-[11px] font-medium pb-3 shrink-0 hidden lg:block">
               Scroll to zoom · Drag to pan · Corner anchors to resize · Esc to exit
             </p>
+
+            {/* ── Mobile Fullscreen Bottom Tools ── */}
+            <div className="flex lg:hidden flex-col gap-3 px-3 py-3 pb-6 sm:pb-8 border-t border-white/10 shrink-0 bg-black">
+              {/* Transform controls row */}
+              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+                 <button disabled={!activeArtworkOnThisSide} onClick={rotateCCW} className="w-10 h-10 shrink-0 rounded-full bg-white/10 text-white flex items-center justify-center active:bg-white/20 transition disabled:opacity-20 disabled:pointer-events-none"><Icons.RotateCW /></button>
+                 <button disabled={!activeArtworkOnThisSide} onClick={rotateCW} className="w-10 h-10 shrink-0 rounded-full bg-white/10 text-white flex items-center justify-center active:bg-white/20 transition disabled:opacity-20 disabled:pointer-events-none" style={{ transform: 'scaleX(-1)' }}><Icons.RotateCW /></button>
+                 <button disabled={!activeArtworkOnThisSide} onClick={centerArtwork} className="px-3 h-10 shrink-0 rounded-full bg-white/10 text-white text-[11px] font-bold active:bg-white/20 transition disabled:opacity-20 disabled:pointer-events-none">Center</button>
+                 <button disabled={!activeArtworkOnThisSide} onClick={resetTransform} className="px-3 h-10 shrink-0 rounded-full bg-white/10 text-white text-[11px] font-bold active:bg-white/20 transition disabled:opacity-20 disabled:pointer-events-none">Reset</button>
+                 <button disabled={!activeArtworkOnThisSide} onClick={scaleDown} className="w-10 h-10 shrink-0 rounded-full bg-white/10 text-white text-base font-bold active:bg-white/20 transition disabled:opacity-20 disabled:pointer-events-none">−</button>
+                 <button disabled={!activeArtworkOnThisSide} onClick={scaleUp} className="w-10 h-10 shrink-0 rounded-full bg-white/10 text-white text-base font-bold active:bg-white/20 transition disabled:opacity-20 disabled:pointer-events-none">+</button>
+                 <button disabled={!activeArtworkOnThisSide} onClick={() => { if(activeArtworkOnThisSide) { removeArtwork(activeArtworkOnThisSide.id); showToast('Deleted'); setIsFullscreen(false); } }}
+                    className="w-10 h-10 shrink-0 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center active:bg-red-500/40 transition disabled:opacity-20 disabled:pointer-events-none">
+                    <Icons.Trash />
+                  </button>
+              </div>
+
+              {/* Opacity Row */}
+              <div className="flex items-center gap-3 px-2">
+                <div className="text-white/60"><Icons.Opacity /></div>
+                <input type="range" min="0.1" max="1" step="0.05"
+                    disabled={!activeArtworkOnThisSide}
+                    value={activeArtworkOnThisSide?.opacity ?? 1}
+                    onChange={(e) => { if(activeArtworkOnThisSide) setOpacity(activeArtworkOnThisSide.id, parseFloat(e.target.value)) }}
+                    className="flex-1 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-white disabled:opacity-20" />
+                <span className="text-white/60 text-[10px] font-bold w-10 text-right">
+                   {activeArtworkOnThisSide ? Math.round((activeArtworkOnThisSide.opacity ?? 1) * 100) + '%' : '---'}
+                </span>
+              </div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

@@ -8,7 +8,7 @@ import PageTransition from './Components/PageTransition.jsx';
 import NavBar from './Components/navBar.jsx';
 import CheckoutForm from './Components/CheckoutForm.jsx';
 import OrderTrackingPage from './Pages/OrderTrackingPage.jsx';
-import PrintStudioPage from './claude/PrintStudioPage.jsx';
+import PrintStudioPage from './Pages/PrintStudioPage.jsx';
 import ShippingReturnsPage from './Pages/ShippingReturnsPage.jsx';
 import SizingGuidePage from './Pages/SizingGuidePage.jsx';
 import TermsOfServicePage from './Pages/TermsOfServicePage.jsx';

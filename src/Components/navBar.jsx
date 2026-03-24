@@ -426,7 +426,7 @@ const NavBar = () => {
             <img
               src={logo}
               alt="Faisan Kaka"
-              className="h-4 md:h-10 cursor-pointer max-w-[50px] max-h-[50px] w-auto h-auto -ml-2 pr-2 md:ml-0 md:pr-0"
+              className="h-4 md:h-10 cursor-pointer max-w-[50px] max-h-[50px] w-auto h-auto md:ml-0 md:pr-0"
               onClick={handleLogoClick}
             />
 

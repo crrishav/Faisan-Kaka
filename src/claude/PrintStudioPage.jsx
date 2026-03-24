@@ -189,7 +189,7 @@ const MockupCanvas = ({
   updateArtworkTransform, onSelectArtwork,
   stageZoom, stagePan,
   onStagePointerDown, onStagePointerMove, onStagePointerUp, onStageWheel,
-  heightClass, emptyLabel, isJeans, onContextMenu,
+  heightClass, emptyLabel, isJeans, onContextMenu, onStagePinch,
 }) => {
   const containerRef = useRef(null);
   const [dim, setDim] = useState({ width: 0, height: 0 });
@@ -208,9 +208,20 @@ const MockupCanvas = ({
     e.evt.preventDefault();
     const [t1, t2] = [e.evt.touches[0], e.evt.touches[1]];
     const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
-    if (!lastCenter.current) { lastCenter.current = true; lastDist.current = dist; return; }
+    
+    const touchCenterX = (t1.clientX + t2.clientX) / 2;
+    const touchCenterY = (t1.clientY + t2.clientY) / 2;
+
+    if (!lastCenter.current) { 
+      lastCenter.current = { x: touchCenterX, y: touchCenterY }; 
+      lastDist.current = dist; 
+      return; 
+    }
     const factor = dist / lastDist.current;
-    if (activeArtworkId) {
+    
+    if (onStagePinch) {
+      onStagePinch(factor);
+    } else if (activeArtworkId) {
       updateArtworkTransform(activeArtworkId, activeSide, (t) => ({
         ...t, scale: Math.max(0.05, t.scale * factor),
       }));
@@ -253,17 +264,16 @@ const MockupCanvas = ({
 
           {/* color overlay — masked to garment cutout only */}
           {!isJeans && (
-            <div className="absolute inset-0 pointer-events-none" style={{ mixBlendMode: 'multiply' }}>
-              <div className={`absolute inset-0 ${maskScaleClass}`}
-                style={{
-                  backgroundColor: garmentColor,
-                  WebkitMaskImage: `url("${activeMockup}")`,
-                  maskImage: `url("${activeMockup}")`,
-                  WebkitMaskSize: 'contain', maskSize: 'contain',
-                  WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat',
-                  WebkitMaskPosition: 'center', maskPosition: 'center',
-                }} />
-            </div>
+            <div className={`absolute inset-0 pointer-events-none ${maskScaleClass}`}
+              style={{
+                backgroundColor: garmentColor,
+                WebkitMaskImage: `url("${activeMockup}")`,
+                maskImage: `url("${activeMockup}")`,
+                WebkitMaskSize: 'contain', maskSize: 'contain',
+                WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat',
+                WebkitMaskPosition: 'center', maskPosition: 'center',
+                mixBlendMode: 'multiply',
+              }} />
           )}
 
           {/* highlight sheen */}
@@ -485,6 +495,10 @@ const PrintStudioPage = () => {
     e.preventDefault();
     setStageZoom((p) => { const n = clampZoom(p + (e.deltaY > 0 ? -0.12 : 0.12)); if (n === 1) setStagePan({ x: 0, y: 0 }); return n; });
   };
+  const handleStagePinch = useCallback((factor) => {
+    if (!isFullscreen) return;
+    setStageZoom((p) => clampZoom(p * factor));
+  }, [isFullscreen]);
   const resetView = () => { setStageZoom(1); setStagePan({ x: 0, y: 0 }); stopPan(); };
 
   // ── Shared canvas props ──
@@ -635,6 +649,8 @@ const PrintStudioPage = () => {
               {activeArtwork && (
                 <div className="flex items-center gap-2 flex-wrap">
                   <button onClick={centerArtwork}  className="px-3 h-8 rounded-full bg-white/12 text-white text-xs font-bold hover:bg-white/20 transition cursor-pointer">Center</button>
+                  <button onClick={() => removeArtwork(activeArtwork.id)} className="px-3 h-8 rounded-full bg-red-500/90 text-white text-xs font-bold hover:bg-red-500 transition cursor-pointer sm:hidden flex items-center gap-1.5"><Icons.Trash /> Delete</button>
+                  <button onClick={() => duplicateArtwork(activeArtwork.id)} className="px-3 h-8 rounded-full bg-white/12 text-white text-xs font-bold hover:bg-white/20 transition cursor-pointer sm:hidden flex items-center gap-1.5"><Icons.Copy /> Duplicate</button>
                   <button onClick={rotateCCW}       className="w-8 h-8 rounded-full bg-white/12 text-white flex items-center justify-center hover:bg-white/20 transition cursor-pointer"><Icons.RotateCW /></button>
                   <button onClick={rotateCW}        className="w-8 h-8 rounded-full bg-white/12 text-white flex items-center justify-center hover:bg-white/20 transition cursor-pointer" style={{ transform: 'scaleX(-1)' }}><Icons.RotateCW /></button>
                   <button onClick={scaleDown}       className="px-3 h-8 rounded-full bg-white/12 text-white text-xs font-bold hover:bg-white/20 transition cursor-pointer">−</button>
@@ -660,12 +676,13 @@ const PrintStudioPage = () => {
                 onStagePointerMove={handlePointerMove}
                 onStagePointerUp={stopPan}
                 onStageWheel={handleWheel}
+                onStagePinch={handleStagePinch}
                 heightClass="h-full"
                 emptyLabel="Upload artwork to preview"
               />
             </div>
 
-            <p className="text-center text-white/25 text-[11px] font-medium pb-3 shrink-0">
+            <p className="text-center text-white/25 text-[11px] font-medium pb-3 shrink-0 hidden sm:block">
               Scroll to zoom · Drag to pan · Corner anchors to resize · Esc to exit
             </p>
           </motion.div>
@@ -1045,7 +1062,7 @@ const PrintStudioPage = () => {
                           ))}
                         </div>
                         <button onClick={() => applyPreset('#111111')}
-                          className="mt-3 text-xs font-bold text-black/35 hover:text-black transition cursor-pointer">
+                          className="mt-4 w-full h-10 rounded-xl bg-black/5 text-black text-xs font-bold flex items-center justify-center gap-1.5 hover:bg-black/10 transition cursor-pointer">
                           Reset to default
                         </button>
                       </>

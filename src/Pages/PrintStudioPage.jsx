@@ -6,14 +6,14 @@ import { Stage, Layer, Image as KonvaImage, Transformer, Group, Rect, Text } fro
 import useImage from 'use-image';
 import Footer from '../Components/footer.jsx';
 import { usePrintContext } from '../Components/printContext.jsx';
-import tshirtFrontMock from '../assets/mock images/T-shirt (front).svg';
-import tshirtBackMock from '../assets/mock images/T-shirt (back).svg';
-import hoodieFrontMock from '../assets/mock images/hoodie (front).svg';
-import hoodieBackMock from '../assets/mock images/hoodie (back).svg';
-import jeansFrontMock from '../assets/mock images/Jeans (front).svg';
-import jeansBackMock from '../assets/mock images/Jeans (back).svg';
-import jeansFrontBlueMock from '../assets/mock images/Jeans (front) (blue).svg';
-import jeansBackBlueMock from '../assets/mock images/Jeans (back) (blue).svg';
+import tshirtFrontMock from '../assets/mock images/T-shirt (front).png';
+import tshirtBackMock from '../assets/mock images/T-shirt (back).png';
+import hoodieFrontMock from '../assets/mock images/hoodie (front).png';
+import hoodieBackMock from '../assets/mock images/hoodie (back).png';
+import jeansFrontMock from '../assets/mock images/Jeans (front).png';
+import jeansBackMock from '../assets/mock images/Jeans (back).png';
+import jeansFrontBlueMock from '../assets/mock images/Jeans (front) (blue).png';
+import jeansBackBlueMock from '../assets/mock images/Jeans (back) (blue).png';
 import mockBackground from '../assets/mock images/background.png';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -317,53 +317,85 @@ const ArtworkNode = ({ artwork, isSelected, onSelect, onChange, activeSide, cent
   );
 };
 
-// ─── GarmentLayers — uses a shared measured garment rect so recolor/cutout
-//     layers and design transforms are locked to the same coordinate space.
-const GarmentLayers = ({ activeGarmentImage, activeMaskImage, garmentColor, isJeans, garmentRect }) => {
+// ─── ResponsiveGarment — renders the background gradient and the garment
+//     using a unified SVG viewBox. This ensures that the recolor mask and
+//     the garment image scale in perfect unison regardless of screen size.
+const ResponsiveGarment = ({ activeGarmentImage, activeMaskImage, garmentColor, isJeans }) => {
+  const maskId = useMemo(() => `garment-mask-${Math.random().toString(36).slice(2, 9)}`, [activeGarmentImage]);
+  
   return (
-    <div className="absolute inset-0 w-full h-full pointer-events-none select-none">
-      {/* Garment image — greyscale filter for non-jeans */}
-      <img
-        src={activeGarmentImage}
-        alt="" aria-hidden draggable={false}
-        className="absolute inset-0 w-full h-full object-contain pointer-events-none select-none"
-        style={!isJeans ? { filter: 'grayscale(1) contrast(1.32) brightness(1.03)' } : undefined}
+    <svg 
+      viewBox="0 0 1000 1000" 
+      width="100%" height="100%"
+      className="absolute inset-0 w-full h-full pointer-events-none select-none"
+      preserveAspectRatio="xMidYMid meet"
+      xmlns="http://www.w3.org/2000/svg"
+      xmlnsXlink="http://www.w3.org/1999/xlink"
+    >
+      <defs>
+        {/* Premium Background Gradient — Soft Studio Lighting */}
+        <radialGradient id="studioGradient" cx="50%" cy="45%" r="65%" fx="50%" fy="40%">
+          <stop offset="0%"   stopColor="#ffffff" />
+          <stop offset="60%"  stopColor="#f2f2f2" />
+          <stop offset="100%" stopColor="#e0e0e0" />
+        </radialGradient>
+
+        <linearGradient id="softShadow" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="rgba(0,0,0,0)" />
+          <stop offset="100%" stopColor="rgba(0,0,0,0.03)" />
+        </linearGradient>
+
+        {/* Mask for recoloring — uses the mockup image alpha channel */}
+        {!isJeans && (
+          <mask id={maskId} maskUnits="userSpaceOnUse" x="0" y="0" width="1000" height="1000">
+            <image 
+              href={activeMaskImage} 
+              xlinkHref={activeMaskImage}
+              x="0" y="0" width="1000" height="1000" 
+              preserveAspectRatio="xMidYMid meet"
+            />
+          </mask>
+        )}
+      </defs>
+
+      {/* 1. Background Layer */}
+      <rect width="1000" height="1000" fill="url(#studioGradient)" />
+      <rect width="1000" height="1000" fill="url(#softShadow)" />
+
+      {/* 2. Garment Base Image (Filtered for depth) */}
+      <image 
+        href={activeGarmentImage} 
+        xlinkHref={activeGarmentImage}
+        x="0" y="0" width="1000" height="1000" 
+        preserveAspectRatio="xMidYMid meet"
+        style={!isJeans ? { filter: 'grayscale(1) contrast(1.08) brightness(1.04)' } : undefined}
       />
 
-      {/* Color overlay — precisely overlaid on the rendered image rect */}
-      {!isJeans && garmentRect && (
-        <div
-          className="absolute pointer-events-none mix-blend-multiply"
-          style={{
-            top: garmentRect.top, left: garmentRect.left,
-            width: garmentRect.width, height: garmentRect.height,
-            backgroundColor: garmentColor,
-            WebkitMaskImage: `url("${activeMaskImage}")`,
-            maskImage:        `url("${activeMaskImage}")`,
-            WebkitMaskSize:   '100% 100%',
-            maskSize:         '100% 100%',
-            WebkitMaskPosition: 'center center',
-            maskPosition:       'center center',
-            WebkitMaskRepeat: 'no-repeat',
-            maskRepeat:       'no-repeat',
-          }}
+      {/* 3. Color Overlay — precisely masked to the garment silhouette */}
+      {!isJeans && (
+        <rect 
+          x="0" y="0" width="1000" height="1000" 
+          fill={garmentColor} 
+          mask={`url(#${maskId})`}
+          style={{ mixBlendMode: 'multiply' }}
         />
       )}
 
-      {/* Highlight sheen — same rect */}
-      {!isJeans && garmentRect && (
-        <img
-          src={activeGarmentImage}
-          alt="" aria-hidden draggable={false}
-          className="absolute pointer-events-none select-none mix-blend-screen opacity-20"
-          style={{
-            top: garmentRect.top, left: garmentRect.left,
-            width: garmentRect.width, height: garmentRect.height,
-            filter: 'grayscale(1) contrast(1.2) brightness(1.18)',
+      {/* 4. Highlight Sheen — adds depth and texture back on top of the color */}
+      {!isJeans && (
+        <image 
+          href={activeGarmentImage} 
+          xlinkHref={activeGarmentImage}
+          x="0" y="0" width="1000" height="1000" 
+          preserveAspectRatio="xMidYMid meet"
+          style={{ 
+            filter: 'grayscale(1) contrast(1.2) brightness(1.15)', 
+            opacity: 0.16, 
+            mixBlendMode: 'screen' 
           }}
         />
       )}
-    </div>
+    </svg>
   );
 };
 
@@ -379,7 +411,6 @@ const MockupCanvas = ({
   const [dim, setDim] = useState({ width: 0, height: 0 });
   const lastDist = useRef(0);
   const lastCenter = useRef(null);
-  const garmentRect = useContainedImageRect(frameRef, activeGarmentImage);
 
   useEffect(() => {
     if (!frameRef.current) return;
@@ -389,22 +420,32 @@ const MockupCanvas = ({
   }, []);
 
   const anchor = DESIGN_ANCHOR_MAP[garmentType] || DESIGN_ANCHOR_MAP.tshirt;
+  
+  // ResponsiveGarment uses a 1000x1000 viewBox with preserveAspectRatio="xMidYMid meet".
+  // We need to calculate the actual rendered rect of this 1000x1000 square within 
+  // the dim.width x dim.height container to keep Konva artworks perfectly aligned.
   const garmentBox = useMemo(() => {
-    if (garmentRect) return garmentRect;
+    const cW = dim.width;
+    const cH = dim.height;
+    if (!cW || !cH) return { left: 0, top: 0, width: 0, height: 0 };
+    
+    // The SVG content is essentially a 1000x1000 square (1:1 aspect ratio)
+    const scale = Math.min(cW / 1000, cH / 1000);
+    const rW = 1000 * scale;
+    const rH = 1000 * scale;
+    
     return {
-      left: dim.width * 0.15,
-      top: dim.height * 0.1,
-      width: dim.width * 0.7,
-      height: dim.height * 0.8,
+      left: (cW - rW) / 2,
+      top: (cH - rH) / 2,
+      width: rW,
+      height: rH
     };
-  }, [dim.height, dim.width, garmentRect]);
+  }, [dim.width, dim.height]);
 
-  const designCenter = useMemo(() => {
-    return {
-      x: garmentBox.left + garmentBox.width * anchor.x,
-      y: garmentBox.top + garmentBox.height * anchor.y,
-    };
-  }, [anchor.x, anchor.y, garmentBox]);
+  const designCenter = useMemo(() => ({
+    x: garmentBox.left + garmentBox.width * anchor.x,
+    y: garmentBox.top + garmentBox.height * anchor.y,
+  }), [anchor.x, anchor.y, garmentBox]);
 
   const handleTouchMove = (e) => {
     if (e.evt.touches.length !== 2) return;
@@ -426,7 +467,6 @@ const MockupCanvas = ({
       onStagePinch(factor);
     } else if (activeArtworkId) {
       updateArtworkTransform(activeArtworkId, activeSide, (t) => {
-        // dampen the factor slightly so pinch to zoom is more controlled
         const dampedFactor = 1 + (factor - 1) * 0.6;
         return { ...t, scale: clampNormScale(t.scale * dampedFactor) };
       });
@@ -450,18 +490,14 @@ const MockupCanvas = ({
           transformOrigin: 'center center',
           transition: stageZoom === 1 && stagePan.x === 0 && stagePan.y === 0 ? 'transform 140ms ease-out' : 'none',
         }}>
-        <div ref={frameRef} className="absolute inset-2 rounded-xl overflow-hidden isolate" onPointerDown={onStagePointerDown}>
-          {/* background */}
-          <img src={mockBackground} alt="" aria-hidden
-            className="absolute inset-0 h-full w-full object-cover object-center pointer-events-none select-none" draggable={false} />
-
-          {/* garment + responsive color overlay — always pixel-perfect aligned */}
-          <GarmentLayers
+        
+        <div ref={frameRef} className="absolute inset-2 sm:inset-3 rounded-xl overflow-hidden isolate" onPointerDown={onStagePointerDown}>
+          {/* Unified SVG Background + Garment Rendering */}
+          <ResponsiveGarment
             activeGarmentImage={activeGarmentImage}
             activeMaskImage={activeMaskImage}
             garmentColor={garmentColor}
             isJeans={isJeans}
-            garmentRect={garmentRect}
           />
 
           <div className="absolute inset-0 z-20">

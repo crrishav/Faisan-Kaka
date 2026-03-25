@@ -236,7 +236,7 @@ const CtrlBtn = ({ onClick, disabled, children, danger = false, className = '' }
 );
 
 // ─── ArtworkNode (Konva) ──────────────────────────────────────────────────────
-const ArtworkNode = ({ artwork, isSelected, onSelect, onChange, activeSide, centerX, centerY, garmentBox, onContextMenu }) => {
+const ArtworkNode = ({ artwork, isSelected, onSelect, onChange, activeSide, centerX, centerY, garmentBox, onContextMenu, onlyDesign, onlyTransformer }) => {
   const transform = artwork.transforms[activeSide];
   const isVisible = artwork.visible ? artwork.visible[activeSide] !== false : true;
   const [img] = useImage(artwork.previewUrl);
@@ -293,18 +293,22 @@ const ArtworkNode = ({ artwork, isSelected, onSelect, onChange, activeSide, cent
 
   return (
     <React.Fragment>
-      {artwork.isPdf ? (
-        <Group {...common} offsetX={48} offsetY={48}>
-          <Rect width={96} height={96} fill="#111" cornerRadius={12}
-            stroke="rgba(255,255,255,0.15)" strokeWidth={1}
-            shadowColor="black" shadowBlur={12} shadowOpacity={0.3} shadowOffsetY={4} />
-          <Text text="PDF" width={96} height={96} fill="white" fontStyle="700" fontSize={13} align="center" verticalAlign="middle" />
-        </Group>
-      ) : img ? (
-        <KonvaImage {...common} image={img} offsetX={img.width / 2} offsetY={img.height / 2} />
-      ) : null}
+      {onlyDesign !== false && (
+        <React.Fragment>
+          {artwork.isPdf ? (
+            <Group {...common} offsetX={48} offsetY={48}>
+              <Rect width={96} height={96} fill="#111" cornerRadius={12}
+                stroke="rgba(255,255,255,0.15)" strokeWidth={1}
+                shadowColor="black" shadowBlur={12} shadowOpacity={0.3} shadowOffsetY={4} />
+              <Text text="PDF" width={96} height={96} fill="white" fontStyle="700" fontSize={13} align="center" verticalAlign="middle" />
+            </Group>
+          ) : img ? (
+            <KonvaImage {...common} image={img} offsetX={img.width / 2} offsetY={img.height / 2} />
+          ) : null}
+        </React.Fragment>
+      )}
 
-      {isSelected && (
+      {onlyTransformer !== false && isSelected && (
         <Transformer ref={trRef} keepRatio
           enabledAnchors={['top-left','top-right','bottom-left','bottom-right']}
           rotateEnabled rotateAnchorOffset={28}
@@ -411,6 +415,7 @@ const MockupCanvas = ({
   const [dim, setDim] = useState({ width: 0, height: 0 });
   const lastDist = useRef(0);
   const lastCenter = useRef(null);
+  const [maskImg] = useImage(activeMaskImage);
 
   useEffect(() => {
     if (!frameRef.current) return;
@@ -441,6 +446,36 @@ const MockupCanvas = ({
       height: rH
     };
   }, [dim.width, dim.height]);
+
+  // Match SVG <image preserveAspectRatio="xMidYMid meet"> placement for pixel-perfect masking.
+  const maskBox = useMemo(() => {
+    if (!maskImg || !garmentBox.width || !garmentBox.height) {
+      return garmentBox;
+    }
+
+    const targetRatio = garmentBox.width / garmentBox.height;
+    const imageRatio = maskImg.width / maskImg.height;
+
+    if (!Number.isFinite(imageRatio) || imageRatio <= 0) {
+      return garmentBox;
+    }
+
+    let width = garmentBox.width;
+    let height = garmentBox.height;
+
+    if (imageRatio > targetRatio) {
+      height = garmentBox.width / imageRatio;
+    } else {
+      width = garmentBox.height * imageRatio;
+    }
+
+    return {
+      left: garmentBox.left + (garmentBox.width - width) / 2,
+      top: garmentBox.top + (garmentBox.height - height) / 2,
+      width,
+      height,
+    };
+  }, [garmentBox, maskImg]);
 
   const designCenter = useMemo(() => ({
     x: garmentBox.left + garmentBox.width * anchor.x,
@@ -506,8 +541,39 @@ const MockupCanvas = ({
               onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}
               style={{ position: 'absolute', top: 0, left: 0 }}>
               <Layer>
+                {/* 1. Masked Designs Group */}
+                <Group>
+                  {artworks.map((aw) => (
+                    <ArtworkNode key={aw.id} artwork={aw}
+                      isSelected={aw.id === activeArtworkId}
+                      onSelect={() => onSelectArtwork(aw.id)}
+                      onChange={(t) => updateArtworkTransform(aw.id, activeSide, () => t)}
+                      activeSide={activeSide}
+                      centerX={designCenter.x}
+                      centerY={designCenter.y}
+                      garmentBox={garmentBox}
+                      onContextMenu={(e) => onContextMenu && onContextMenu(e, aw.id)}
+                      onlyTransformer={false} // Only render the design here
+                    />
+                  ))}
+                  
+                  {/* The Mask Image — clips everything above in this group */}
+                  {maskImg && (
+                    <KonvaImage
+                      image={maskImg}
+                      x={maskBox.left}
+                      y={maskBox.top}
+                      width={maskBox.width}
+                      height={maskBox.height}
+                      globalCompositeOperation="destination-in"
+                      listening={false}
+                    />
+                  )}
+                </Group>
+
+                {/* 2. Unmasked Control Layer (Transformers) */}
                 {artworks.map((aw) => (
-                  <ArtworkNode key={aw.id} artwork={aw}
+                  <ArtworkNode key={`tr-${aw.id}`} artwork={aw}
                     isSelected={aw.id === activeArtworkId}
                     onSelect={() => onSelectArtwork(aw.id)}
                     onChange={(t) => updateArtworkTransform(aw.id, activeSide, () => t)}
@@ -516,6 +582,7 @@ const MockupCanvas = ({
                     centerY={designCenter.y}
                     garmentBox={garmentBox}
                     onContextMenu={(e) => onContextMenu && onContextMenu(e, aw.id)}
+                    onlyDesign={false} // Only render the transformer here
                   />
                 ))}
               </Layer>

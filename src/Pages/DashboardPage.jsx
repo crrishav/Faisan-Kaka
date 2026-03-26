@@ -102,24 +102,24 @@ const RevenueCard = () => {
   const periods = ['daily', 'weekly', 'monthly'];
   return (
     <Card className="md:col-span-2" custom={0}>
-      <div className="flex items-start justify-between gap-3 mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
         <div>
           <Label>Gross Revenue</Label>
           <BigNum sub="INR">₹{MOCK.revenue[period].toLocaleString()}</BigNum>
         </div>
-        <div className="flex gap-1 bg-black/5 rounded-full p-1 mt-1">
+        <div className="grid grid-cols-3 sm:flex gap-1 bg-black/5 rounded-full p-1 mt-1 w-full sm:w-auto">
           {periods.map((p) => (
             <button
               key={p}
               onClick={() => setPeriod(p)}
-              className={`px-3 py-1 rounded-full text-[11px] font-black transition-all duration-200 ${period === p ? 'bg-black text-white' : 'text-black/40 hover:text-black'}`}
+              className={`w-full sm:w-auto px-3 py-1 rounded-full text-[11px] font-black text-center transition-all duration-200 ${period === p ? 'bg-black text-white' : 'text-black/40 hover:text-black'}`}
             >
               {p.charAt(0).toUpperCase() + p.slice(1)}
             </button>
           ))}
         </div>
       </div>
-      <div className="grid grid-cols-3 gap-3 pt-4 border-t-2 border-black/6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 border-t-2 border-black/6">
         <div>
           <Label>Net Profit</Label>
           <p className="text-xl font-black text-emerald-600 tracking-tight">₹{MOCK.netProfit[period].toLocaleString()}</p>
@@ -270,9 +270,9 @@ const OrdersSection = () => {
                     <p className="font-black tracking-[0.12em] uppercase text-black/35">Ship Cost</p>
                     <p className="font-bold text-black">₹{order.shippingCost}</p>
                   </div>
-                  <div className="col-span-2">
+                  <div className="col-span-2 min-w-0">
                     <p className="font-black tracking-[0.12em] uppercase text-black/35">Tracking</p>
-                    <p className="font-mono font-bold text-black/60 text-[11px]">{order.tracking}</p>
+                    <p className="font-mono font-bold text-black/60 text-[11px] break-all">{order.tracking}</p>
                   </div>
                 </div>
 
@@ -431,7 +431,7 @@ const PartnershipSection = () => {
       <motion.div variants={stagger} className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card custom={0} className="col-span-1 md:col-span-2">
           <Label>Revenue Split · 50 / 50</Label>
-          <div className="grid grid-cols-2 gap-6 mt-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-3">
             {[
               { name: 'Saurabh', role: 'Founder', color: 'bg-black' },
               { name: 'Rishav', role: 'Co-Founder', color: 'bg-black/20' },
@@ -474,7 +474,7 @@ const DashboardPage = () => {
   const today = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
   return (
-    <div className="min-h-screen bg-[#fafafa]">
+    <div className="min-h-screen bg-[#fafafa] overflow-x-hidden [&_button]:cursor-pointer">
       {/* ── Header ── */}
       <motion.div
         ref={heroRef}

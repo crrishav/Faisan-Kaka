@@ -9,6 +9,7 @@ import NavBar from './Components/navBar.jsx';
 import CheckoutForm from './Components/CheckoutForm.jsx';
 import OrderTrackingPage from './Pages/OrderTrackingPage.jsx';
 import PrintStudioPage from './claude/PrintStudioPage.jsx';
+import DashboardPage from './Pages/DashboardPage.jsx';
 import ShippingReturnsPage from './Pages/ShippingReturnsPage.jsx';
 import SizingGuidePage from './Pages/SizingGuidePage.jsx';
 import TermsOfServicePage from './Pages/TermsOfServicePage.jsx';
@@ -28,6 +29,7 @@ const AppRoutes = () => {
         <Route path="/sizing-guide" element={<SizingGuidePage />} />
         <Route path="/track-order" element={<OrderTrackingPage />} />
         <Route path="/print" element={<PrintStudioPage />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/studio/*" element={<Studio config={config} />} />
       </Routes>
     </PageTransition>

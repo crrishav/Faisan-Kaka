@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { motion, AnimatePresence, useInView } from 'framer-motion';
+import Footer from '../Components/footer';
 
 /* ─── Mock Data ─────────────────────────────────────────────────── */
 
@@ -111,7 +112,10 @@ const RevenueCard = () => {
           {periods.map((p) => (
             <button
               key={p}
+              type="button"
               onClick={() => setPeriod(p)}
+              aria-label={`Show ${p} revenue data`}
+              aria-pressed={period === p}
               className={`w-full sm:w-auto px-3 py-1 rounded-full text-[11px] font-black text-center transition-all duration-200 ${period === p ? 'bg-black text-white' : 'text-black/40 hover:text-black'}`}
             >
               {p.charAt(0).toUpperCase() + p.slice(1)}
@@ -155,7 +159,7 @@ const PaymentCard = () => {
           { label: 'Failed', val: MOCK.payments.failed, color: 'bg-red-400' },
         ].map(({ label, val, color }) => (
           <div key={label} className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${color} flex-shrink-0`} />
+            <div className={`w-2 h-2 rounded-full ${color} flex-shrink-0`} aria-hidden="true" />
             <span className="text-xs font-black text-black/60 flex-1">{label}</span>
             <span className="text-sm font-black text-black">{val}</span>
             <div className="w-16 h-1.5 rounded-full bg-black/8 overflow-hidden">
@@ -179,11 +183,12 @@ const OrdersSection = () => {
       <SectionHeading>Order Management</SectionHeading>
       <Card className="!p-0 overflow-hidden" custom={0}>
         <div className="overflow-x-auto hidden md:block">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm" aria-label="Order management table">
+            <caption className="sr-only">Orders sorted by status with customer, tracking, shipping cost, and design file actions.</caption>
             <thead>
               <tr className="border-b-2 border-black/6">
                 {['Preview', 'Order', 'Customer', 'Design', 'Status', 'Tracking', 'Ship Cost', 'Files'].map((h) => (
-                  <th key={h} className="px-5 py-4 text-left text-[10px] font-black tracking-[0.15em] uppercase text-black/35">
+                  <th key={h} scope="col" className="px-5 py-4 text-left text-[10px] font-black tracking-[0.15em] uppercase text-black/35">
                     {h}
                   </th>
                 ))}
@@ -200,7 +205,7 @@ const OrdersSection = () => {
                     className="border-b border-black/5 hover:bg-black/[0.02] transition-colors"
                   >
                     <td className="px-5 py-3.5">
-                      <img src={order.preview} alt="" className="w-10 h-10 rounded-xl object-cover" />
+                      <img src={order.preview} alt={`${order.design} preview for ${order.id}`} className="w-10 h-10 rounded-xl object-cover" />
                     </td>
                     <td className="px-5 py-3.5">
                       <span className="font-black text-black">{order.id}</span>
@@ -224,7 +229,11 @@ const OrdersSection = () => {
                     </td>
                     <td className="px-5 py-3.5">
                       {order.design === 'Custom Studio' ? (
-                        <button className="px-3 py-1.5 rounded-xl bg-black text-white text-[11px] font-black hover:bg-black/80 transition-colors">
+                        <button
+                          type="button"
+                          aria-label={`View uploaded design file for order ${order.id}`}
+                          className="px-3 py-1.5 rounded-xl bg-black text-white text-[11px] font-black hover:bg-black/80 transition-colors"
+                        >
                           View File ↗
                         </button>
                       ) : (
@@ -249,7 +258,7 @@ const OrdersSection = () => {
                 className="rounded-2xl border border-black/8 p-3 bg-white"
               >
                 <div className="flex items-start gap-3">
-                  <img src={order.preview} alt="" className="w-12 h-12 rounded-xl object-cover" />
+                  <img src={order.preview} alt={`${order.design} preview for ${order.id}`} className="w-12 h-12 rounded-xl object-cover" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
                       <p className="font-black text-black text-sm">{order.id}</p>
@@ -277,7 +286,11 @@ const OrdersSection = () => {
                 </div>
 
                 {order.design === 'Custom Studio' && (
-                  <button className="mt-3 w-full px-3 py-2 rounded-xl bg-black text-white text-[11px] font-black hover:bg-black/80 transition-colors">
+                  <button
+                    type="button"
+                    aria-label={`View uploaded design file for order ${order.id}`}
+                    className="mt-3 w-full px-3 py-2 rounded-xl bg-black text-white text-[11px] font-black hover:bg-black/80 transition-colors"
+                  >
                     View File ↗
                   </button>
                 )}
@@ -433,11 +446,19 @@ const PartnershipSection = () => {
           <Label>Revenue Split · 50 / 50</Label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-3">
             {[
-              { name: 'Saurabh', role: 'Founder', color: 'bg-black' },
-              { name: 'Rishav', role: 'Co-Founder', color: 'bg-black/20' },
-            ].map(({ name, role, color }) => (
+              {
+                name: 'Saurabh',
+                role: 'Founder',
+                image: new URL('../assets/pfp/saurabh.jpg', import.meta.url).href,
+              },
+              {
+                name: 'Rishav',
+                role: 'Co-Founder',
+                image: new URL('../assets/pfp/rishav.jpg', import.meta.url).href,
+              },
+            ].map(({ name, role, image }) => (
               <div key={name}>
-                <div className={`w-8 h-8 rounded-full ${color} mb-2`} />
+                <img src={image} alt={`${name} profile`} className="w-8 h-8 rounded-full object-cover mb-2" />
                 <p className="text-xs font-black tracking-[0.1em] uppercase text-black/35">{role}</p>
                 <p className="text-xl font-black text-black tracking-tight">{name}</p>
                 <p className="text-2xl font-black text-black tracking-tighter mt-1">₹{share.toLocaleString()}</p>
@@ -474,7 +495,7 @@ const DashboardPage = () => {
   const today = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
   return (
-    <div className="min-h-screen bg-[#fafafa] overflow-x-hidden [&_button]:cursor-pointer">
+    <div className="min-h-screen bg-[#fafafa] overflow-x-hidden [&_button]:cursor-pointer" role="main" aria-label="Dashboard overview">
       {/* ── Header ── */}
       <motion.div
         ref={heroRef}
@@ -529,6 +550,8 @@ const DashboardPage = () => {
 
         <div className="h-16" />
       </motion.div>
+
+      <Footer />
     </div>
   );
 };

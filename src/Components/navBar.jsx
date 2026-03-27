@@ -342,23 +342,30 @@ const NavBar = () => {
         {/* Desktop Navigation */}
         <div ref={headerRef} className="px-6 py-3 hidden md:block">
           <div className="flex items-center justify-between gap-8 text-black">
-            <a
+            <button
+              type="button"
               onClick={() => navigate('/collections')}
-              className={`font-bold transition hover:opacity-70 text-black cursor-pointer ${isSearchOpen ? 'hidden md:block' : ''}`}
+              aria-label="Go to collections"
+              className={`font-bold transition hover:opacity-70 text-black cursor-pointer bg-transparent border-0 p-0 ${isSearchOpen ? 'hidden md:block' : ''}`}
               onMouseEnter={() => openMenu('collection')}
               onMouseLeave={scheduleClose}
             >
               Collection
-            </a>
-            <a
-              href="#about"
-              className={`font-bold transition hover:opacity-70 text-black cursor-pointer ${isSearchOpen ? 'hidden md:block' : ''}`}
+            </button>
+            <button
+              type="button"
+              aria-label="Open about menu"
+              className={`font-bold transition hover:opacity-70 text-black cursor-pointer bg-transparent border-0 p-0 ${isSearchOpen ? 'hidden md:block' : ''}`}
+              onClick={() => openMenu('about')}
+              onFocus={() => openMenu('about')}
               onMouseEnter={() => openMenu('about')}
               onMouseLeave={scheduleClose}
             >
               About
-            </a>
-            <img src={logo} alt="Logo" className="h-6 md:h-10 cursor-pointer" onClick={handleLogoClick} />
+            </button>
+            <button type="button" onClick={handleLogoClick} aria-label="Go to home page" className="cursor-pointer bg-transparent border-0 p-0">
+              <img src={logo} alt="Logo" className="h-6 md:h-10" />
+            </button>
             
             {isSearchOpen ? (
                 <div className="flex-1 max-w-xs relative">
@@ -388,15 +395,18 @@ const NavBar = () => {
             )}
 
             <div className="relative" onMouseEnter={() => openMenu('cart')} onMouseLeave={scheduleClose}>
-              <a
-                href="#cart"
-                className="font-bold transition hover:opacity-70 text-black relative inline-block cursor-pointer"
+              <button
+                type="button"
+                aria-label="Open cart menu"
+                className="font-bold transition hover:opacity-70 text-black relative inline-block cursor-pointer bg-transparent border-0 p-0"
+                onClick={() => openMenu('cart')}
+                onFocus={() => openMenu('cart')}
               >
                 Cart
                 {items.length > 0 && (
                   <span className="pointer-events-none absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
                 )}
-              </a>
+              </button>
             </div>
           </div>
         </div>
@@ -423,12 +433,13 @@ const NavBar = () => {
             </button>
 
             {/* Logo - Centered */}
-            <img
-              src={logo}
-              alt="Faisan Kaka"
-              className="h-5 md:h-10 cursor-pointer max-w-[50px] max-h-[50px] w-auto shrink-0"
-              onClick={handleLogoClick}
-            />
+            <button type="button" onClick={handleLogoClick} aria-label="Go to home page" className="cursor-pointer shrink-0 bg-transparent border-0 p-0">
+              <img
+                src={logo}
+                alt="Faisan Kaka"
+                className="h-5 md:h-10 max-w-[50px] max-h-[50px] w-auto"
+              />
+            </button>
 
             {/* Hamburger / Close toggle */}
             <button
@@ -466,11 +477,13 @@ const NavBar = () => {
              {searchResults.length > 0 ? (
                  <div className="flex flex-col gap-3">
                      {searchResults.map(product => (
-                         <div 
+                         <button
+                           type="button"
                             key={product.slug} 
-                            className="flex items-center gap-4 p-2 hover:bg-black/5 rounded-lg cursor-pointer transition-colors"
+                            className="flex items-center gap-4 p-2 hover:bg-black/5 rounded-lg cursor-pointer transition-colors bg-transparent border-0 w-full text-left"
                             onClick={() => handleSearchResultClick(product)}
                             onMouseDown={(e) => e.preventDefault()} // Prevent blur
+                           aria-label={`Open product ${product.name}`}
                          >
                              <div className="w-12 h-12 rounded bg-gray-200 overflow-hidden flex-shrink-0">
                                  <img src={product.backImage || product.frontImage} alt={product.name} className="w-full h-full object-cover" />
@@ -479,7 +492,7 @@ const NavBar = () => {
                                  <span className="font-bold text-sm">{product.name}</span>
                                  <span className="text-xs text-black/60">{currency === 'NPR' ? `Rs. ${product.priceNPR}` : `₹${product.priceINR}`}</span>
                              </div>
-                         </div>
+                           </button>
                      ))}
                  </div>
              ) : (

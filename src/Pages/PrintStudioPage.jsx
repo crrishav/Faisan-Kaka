@@ -892,7 +892,7 @@ const PrintStudioPage = () => {
                   <p className="text-xs font-black tracking-[0.18em] uppercase text-black/40">Order Summary</p>
                   <h2 className="mt-1 text-2xl font-black text-black">Ready to Print?</h2>
                 </div>
-                <button onClick={() => setShowOrder(false)}
+                <button type="button" onClick={() => setShowOrder(false)} aria-label="Close order summary"
                   className="w-9 h-9 rounded-full bg-black/8 flex items-center justify-center hover:bg-black/15 transition cursor-pointer">
                   <Icons.X />
                 </button>
@@ -937,7 +937,7 @@ const PrintStudioPage = () => {
             <div className="flex lg:hidden flex-col gap-2 px-3 py-3 border-b border-white/10 shrink-0 bg-black">
               <div className="flex items-center justify-between gap-2 overflow-x-auto no-scrollbar">
                 <div className="flex items-center gap-2 shrink-0">
-                  <button onClick={() => { setIsFullscreen(false); stopPan(); }}
+                  <button type="button" onClick={() => { setIsFullscreen(false); stopPan(); }} aria-label="Close fullscreen editor"
                     className="w-9 h-9 rounded-full bg-white/10 text-white flex items-center justify-center active:scale-95 transition">
                     <Icons.X />
                   </button>
@@ -1088,7 +1088,7 @@ const PrintStudioPage = () => {
                 {!isJeans ? (
                   <div className="flex items-center gap-2 pl-2 pr-1 shrink-0 bg-white/10 rounded-full h-8 cursor-pointer">
                     <span className="text-white text-[10px] font-bold pointer-events-none">Color</span>
-                    <input type="color" value={garmentColor} onChange={(e) => applyPreset(colord(e.target.value).toHex())} className="w-6 h-6 rounded-full cursor-pointer border-0 p-0 bg-transparent" />
+                    <input type="color" aria-label="Choose garment color" value={garmentColor} onChange={(e) => applyPreset(colord(e.target.value).toHex())} className="w-6 h-6 rounded-full cursor-pointer border-0 p-0 bg-transparent" />
                   </div>
                 ) : (
                   <div className="flex bg-white/10 rounded-full p-0.5 shrink-0 items-center h-8">
@@ -1096,7 +1096,7 @@ const PrintStudioPage = () => {
                     <button onClick={() => setJeansType('blue')} className={`px-2 h-7 rounded-full text-[10px] font-bold ${jeansType === 'blue' ? 'bg-white text-black' : 'text-white/60'}`}>Blue</button>
                   </div>
                 )}
-                <button disabled={!activeArtworkOnThisSide} onClick={() => { if(activeArtworkOnThisSide) { removeArtwork(activeArtworkOnThisSide.id); showToast('Deleted'); setIsFullscreen(false); } }}
+                <button type="button" disabled={!activeArtworkOnThisSide} onClick={() => { if(activeArtworkOnThisSide) { removeArtwork(activeArtworkOnThisSide.id); showToast('Deleted'); setIsFullscreen(false); } }} aria-label="Delete selected design"
                     className="w-8 h-8 shrink-0 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center active:bg-red-500/40 transition disabled:opacity-20 disabled:pointer-events-none ml-1">
                     <Icons.Trash />
                 </button>
@@ -1167,6 +1167,14 @@ const PrintStudioPage = () => {
                     const isAct = aw.id === activeArtworkId;
                     return (
                       <div key={aw.id} onClick={() => setActiveArtworkId(aw.id)}
+                        role="button" tabIndex={0}
+                        aria-label={`Select design ${i + 1}: ${aw.name}`}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            setActiveArtworkId(aw.id);
+                          }
+                        }}
                         className={`group rounded-xl border px-3 py-2.5 flex items-center gap-2.5 cursor-pointer transition-all
                           ${isAct ? 'border-black bg-black text-white' : 'border-black/10 bg-white hover:bg-black/2'}`}>
                         {aw.previewUrl
@@ -1179,12 +1187,12 @@ const PrintStudioPage = () => {
                           <p className={`text-[10px] ${isAct ? 'text-white/40' : 'text-black/35'}`}>{formatFileSize(aw.size)}</p>
                         </div>
                         <div className="flex gap-0.5 shrink-0">
-                          <button onClick={(e) => { e.stopPropagation(); duplicateArtwork(aw.id); }} title="Duplicate"
+                          <button type="button" onClick={(e) => { e.stopPropagation(); duplicateArtwork(aw.id); }} aria-label={`Duplicate design ${aw.name}`} title="Duplicate"
                             className={`w-7 h-7 rounded-lg flex items-center justify-center transition cursor-pointer
                               ${isAct ? 'text-white/50 hover:text-white hover:bg-white/15' : 'text-black/25 hover:text-black hover:bg-black/8'}`}>
                             <Icons.Copy />
                           </button>
-                          <button onClick={(e) => { e.stopPropagation(); removeArtwork(aw.id); }} title="Remove"
+                          <button type="button" onClick={(e) => { e.stopPropagation(); removeArtwork(aw.id); }} aria-label={`Remove design ${aw.name}`} title="Remove"
                             className={`w-7 h-7 rounded-lg flex items-center justify-center transition cursor-pointer
                               ${isAct ? 'text-white/50 hover:text-red-300 hover:bg-white/10' : 'text-black/25 hover:text-red-500 hover:bg-red-50'}`}>
                             <Icons.Trash />
@@ -1377,12 +1385,12 @@ const PrintStudioPage = () => {
               {/* Top tools on canvas */}
               <div className="absolute top-3 right-3 z-[40] flex gap-2">
                 {activeArtworkOnThisSide && (
-                  <button onClick={() => { removeArtworkFromSide(activeArtworkOnThisSide.id, activeSide); showToast(`Removed from ${activeSide}`); }} 
+                  <button type="button" onClick={() => { removeArtworkFromSide(activeArtworkOnThisSide.id, activeSide); showToast(`Removed from ${activeSide}`); }} aria-label={`Remove design from ${activeSide}`}
                     className="w-8 h-8 rounded-full bg-white/90 backdrop-blur shadow-sm flex items-center justify-center text-red-500 active:scale-95 transition">
                     <Icons.Trash />
                   </button>
                 )}
-                <button onClick={() => { resetView(); setIsFullscreen(true); }}
+                <button type="button" onClick={() => { resetView(); setIsFullscreen(true); }} aria-label="Open fullscreen editor"
                   className="px-3 h-8 rounded-full bg-white/90 backdrop-blur shadow-sm text-black text-[11px] font-black flex items-center justify-center gap-1 active:scale-95 transition">
                   <Icons.Maximize /> Edit
                 </button>
@@ -1472,7 +1480,7 @@ const PrintStudioPage = () => {
               
               <div className="flex items-center justify-between px-5 pb-2 border-b border-black/5">
                 <h3 className="text-base font-black capitalize tracking-wide text-black/80">{mobileTab}</h3>
-                <button onClick={() => setMobileTab(null)} className="w-8 h-8 bg-black/5 rounded-full flex items-center justify-center active:scale-90 transition">
+                <button type="button" onClick={() => setMobileTab(null)} aria-label="Close panel" className="w-8 h-8 bg-black/5 rounded-full flex items-center justify-center active:scale-90 transition">
                   <Icons.X />
                 </button>
               </div>
@@ -1486,6 +1494,15 @@ const PrintStudioPage = () => {
                       onDragLeave={() => setDragOver(false)}
                       onDrop={handleDrop}
                       onClick={() => inputRef.current?.click()}
+                      role="button"
+                      tabIndex={0}
+                      aria-label="Upload new design"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          inputRef.current?.click();
+                        }
+                      }}
                       className={`rounded-2xl border-2 border-dashed h-20 flex items-center justify-center gap-4 cursor-pointer transition-all active:scale-[0.98]
                         ${dragOver ? 'border-black/50 bg-black/4' : 'border-black/15 bg-black/2'}`}>
                       <div className="w-10 h-10 rounded-full bg-black/5 flex items-center justify-center text-black/40"><Icons.Upload /></div>
@@ -1505,6 +1522,14 @@ const PrintStudioPage = () => {
                         const onBack  = !aw.visible || aw.visible.back  !== false;
                         return (
                           <div key={aw.id} onClick={() => setActiveArtworkId(aw.id)}
+                            role="button" tabIndex={0}
+                            aria-label={`Select design ${i + 1}: ${aw.name}`}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                setActiveArtworkId(aw.id);
+                              }
+                            }}
                             className={`flex items-center gap-3 rounded-2xl border p-2 cursor-pointer transition-all active:scale-[0.99]
                               ${isAct ? 'border-black shadow-md bg-white' : 'border-black/5 bg-black/[0.02]'}`}>
                             {aw.previewUrl
@@ -1523,11 +1548,11 @@ const PrintStudioPage = () => {
                               </div>
                             </div>
                             <div className="flex flex-col gap-1 shrink-0 p-1">
-                              <button onClick={(e) => { e.stopPropagation(); duplicateArtwork(aw.id); }}
+                              <button type="button" onClick={(e) => { e.stopPropagation(); duplicateArtwork(aw.id); }} aria-label={`Duplicate design ${aw.name}`}
                                 className="w-7 h-7 rounded-lg bg-black/5 flex items-center justify-center text-black/50 hover:text-black active:scale-90 transition">
                                 <Icons.Copy />
                               </button>
-                              <button onClick={(e) => { e.stopPropagation(); removeArtworkFromSide(aw.id, activeSide); showToast(`Removed from ${activeSide}`); }}
+                              <button type="button" onClick={(e) => { e.stopPropagation(); removeArtworkFromSide(aw.id, activeSide); showToast(`Removed from ${activeSide}`); }} aria-label={`Remove design from ${activeSide}`}
                                 className="w-7 h-7 rounded-lg bg-red-50 flex items-center justify-center text-red-500 hover:text-red-600 active:scale-90 transition">
                                 <Icons.Trash />
                               </button>
@@ -1638,6 +1663,14 @@ const PrintStudioPage = () => {
                           const onThisSide = !aw.visible || aw.visible[activeSide] !== false;
                           return (
                             <div key={aw.id} onClick={() => setActiveArtworkId(aw.id)}
+                              role="button" tabIndex={0}
+                              aria-label={`Select layer ${aw.name}`}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  setActiveArtworkId(aw.id);
+                                }
+                              }}
                               className={`flex items-center gap-3 p-2 rounded-2xl border cursor-pointer transition-all active:scale-[0.99]
                                 ${isAct ? 'bg-black border-black shadow-lg text-white' : onThisSide ? 'bg-white border-black/10' : 'bg-black/4 border-black/5 opacity-60'}`}>
                               {aw.previewUrl
@@ -1646,7 +1679,7 @@ const PrintStudioPage = () => {
                               }
                               <p className={`flex-1 text-sm font-bold truncate ${isAct ? 'text-white' : 'text-black'}`}>{aw.name}</p>
                               
-                              <button onClick={(e) => {
+                              <button type="button" onClick={(e) => {
                                   e.stopPropagation();
                                   if (!onThisSide) {
                                     setArtworks((p) => p.map((a) => a.id !== aw.id ? a : { ...a, visible: { ...a.visible, [activeSide]: true } }));
@@ -1654,16 +1687,17 @@ const PrintStudioPage = () => {
                                     removeArtworkFromSide(aw.id, activeSide);
                                   }
                                 }}
+                                aria-label={onThisSide ? `Hide ${aw.name} on ${activeSide}` : `Show ${aw.name} on ${activeSide}`}
                                 className={`w-10 h-10 rounded-xl flex items-center justify-center text-xs font-black transition active:scale-90
                                   ${isAct ? 'bg-white/15 hover:bg-white/25 text-white' : 'bg-black/5 hover:bg-black/10 text-black/40'}`}>
                                 {onThisSide ? 'ON' : 'OFF'}
                               </button>
                               
                               <div className="flex flex-col gap-1 pr-1">
-                                <button onClick={(e) => { e.stopPropagation(); moveLayer(aw.id, 'up'); }} disabled={realIdx === artworks.length - 1}
+                                <button type="button" onClick={(e) => { e.stopPropagation(); moveLayer(aw.id, 'up'); }} disabled={realIdx === artworks.length - 1} aria-label={`Move ${aw.name} layer up`}
                                   className={`w-8 h-5 rounded-md flex items-center justify-center transition active:bg-black/10 disabled:opacity-20
                                     ${isAct ? 'bg-white/10' : 'bg-black/5'}`}><Icons.LayerUp /></button>
-                                <button onClick={(e) => { e.stopPropagation(); moveLayer(aw.id, 'down'); }} disabled={realIdx === 0}
+                                <button type="button" onClick={(e) => { e.stopPropagation(); moveLayer(aw.id, 'down'); }} disabled={realIdx === 0} aria-label={`Move ${aw.name} layer down`}
                                   className={`w-8 h-5 rounded-md flex items-center justify-center transition active:bg-black/10 disabled:opacity-20
                                     ${isAct ? 'bg-white/10' : 'bg-black/5'}`}><Icons.LayerDn /></button>
                               </div>

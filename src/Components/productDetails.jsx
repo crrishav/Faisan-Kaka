@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import useCart from './useCart.jsx';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import useCurrency from './currencyContext.jsx';
+import { getResponsiveImageProps } from '../lib/responsiveImage.js';
 
 const ProductDetails = ({ 
   title = "T-Shirt (White)", 
@@ -32,6 +33,24 @@ const ProductDetails = ({
     const unique = [frontImage, backImage].filter(Boolean);
     return [...new Set(unique)];
   }, [frontImage, backImage]);
+
+  const sizingGuideState = useMemo(() => {
+    if (!slug) return undefined;
+    return {
+      fromProduct: `/product/${encodeURIComponent(String(slug))}`,
+    };
+  }, [slug]);
+
+  const activeMobileImageProps = getResponsiveImageProps({
+    src: images[currentImageIndex],
+    alt: `${title} preview ${currentImageIndex + 1}`,
+    widths: [360, 480, 640, 800, 960],
+    sizes: '(max-width: 768px) 100vw, 360px',
+    fallbackWidth: 800,
+    quality: 80,
+    loading: 'eager',
+    fetchPriority: 'high',
+  });
 
   const clampZoom = (value) => Math.min(4, Math.max(1, value));
 
@@ -152,8 +171,7 @@ const ProductDetails = ({
                 aria-label="Open image viewer"
               >
                 <img
-                  src={images[currentImageIndex]}
-                  alt={`${title} preview ${currentImageIndex + 1}`}
+                  {...activeMobileImageProps}
                   className="w-full h-[300px] sm:h-[360px] object-cover"
                 />
               </button>
@@ -202,7 +220,17 @@ const ProductDetails = ({
                     } cursor-pointer`}
                     aria-label={`Show image ${index + 1}`}
                   >
-                    <img src={img} alt={`${title} thumbnail ${index + 1}`} className="w-full h-full object-cover" />
+                    <img
+                      {...getResponsiveImageProps({
+                        src: img,
+                        alt: `${title} thumbnail ${index + 1}`,
+                        widths: [80, 120, 160],
+                        sizes: '48px',
+                        fallbackWidth: 120,
+                        quality: 72,
+                      })}
+                      className="w-full h-full object-cover"
+                    />
                   </button>
                 ))}
               </div>
@@ -245,6 +273,7 @@ const ProductDetails = ({
               <span className="text-[0.72rem] tracking-[0.14em] uppercase font-bold text-black/45">Size</span>
               <Link
                 to="/sizing-guide"
+                state={sizingGuideState}
                 className="text-xs font-semibold text-black/60 hover:text-black underline underline-offset-2 transition-colors"
               >
                 Not sure about fit? View Sizing Guide
@@ -375,8 +404,16 @@ const ProductDetails = ({
             onPointerLeave={stopPanning}
           >
             <img
-              src={images[currentImageIndex]}
-              alt={`${title} enlarged ${currentImageIndex + 1}`}
+              {...getResponsiveImageProps({
+                src: images[currentImageIndex],
+                alt: `${title} enlarged ${currentImageIndex + 1}`,
+                widths: [720, 960, 1280, 1600, 1920],
+                sizes: '100vw',
+                fallbackWidth: 1600,
+                quality: 82,
+                loading: 'eager',
+                fetchPriority: 'high',
+              })}
               className="max-w-full max-h-[85vh] object-contain select-none"
               style={{
                 transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoomLevel})`,

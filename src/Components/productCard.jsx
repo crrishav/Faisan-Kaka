@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { prefetchProductBySlug } from '../lib/sanityClient.js';
+import { buildSanityImageUrl, getResponsiveImageProps } from '../lib/responsiveImage.js';
 import useCart from './useCart.jsx';
 import useCurrency from './currencyContext.jsx';
 
@@ -17,9 +18,30 @@ const ProductCard = ({ title, price, backImage, frontImage, slug, priceINR, pric
   const [addedFlash, setAddedFlash] = useState(false);
 
   useEffect(() => {
-    if (backImage) { const img = new Image(); img.src = backImage; }
-    if (frontImage) { const img = new Image(); img.src = frontImage; }
+    if (backImage) { const img = new Image(); img.src = buildSanityImageUrl(backImage, { width: 560, quality: 72 }); }
+    if (frontImage) { const img = new Image(); img.src = buildSanityImageUrl(frontImage, { width: 560, quality: 72 }); }
   }, [backImage, frontImage]);
+
+  const primaryImageProps = getResponsiveImageProps({
+    src: frontImage || backImage,
+    alt: title,
+    widths: [240, 320, 420, 560, 840],
+    sizes: '(max-width: 768px) 80vw, 280px',
+    fallbackWidth: 560,
+    quality: 78,
+    loading: 'eager',
+    fetchPriority: 'high',
+  });
+
+  const hoverImageProps = getResponsiveImageProps({
+    src: backImage,
+    alt: title,
+    widths: [240, 320, 420, 560, 840],
+    sizes: '(max-width: 768px) 80vw, 280px',
+    fallbackWidth: 560,
+    quality: 76,
+    loading: 'lazy',
+  });
 
   useEffect(() => {
     if (!addedFlash) return undefined;
@@ -89,10 +111,7 @@ const ProductCard = ({ title, price, backImage, frontImage, slug, priceINR, pric
       {/* Image */}
       <div className="relative w-full aspect-[3/4] mb-3 overflow-hidden rounded-[24px]">
         <img
-          src={frontImage || backImage}
-          alt={title}
-          loading="eager"
-          fetchPriority="high"
+          {...primaryImageProps}
           className="absolute inset-0 w-full h-full object-cover"
           style={{
             opacity: hovered && backImage ? 0 : 1,
@@ -101,10 +120,7 @@ const ProductCard = ({ title, price, backImage, frontImage, slug, priceINR, pric
         />
         {backImage && (
           <img
-            src={backImage}
-            alt={title}
-            loading="eager"
-            fetchPriority="high"
+            {...hoverImageProps}
             className="absolute inset-0 w-full h-full object-cover"
             style={{
               opacity: hovered ? 1 : 0,

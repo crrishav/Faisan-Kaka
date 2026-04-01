@@ -5,6 +5,7 @@ import Footer from '../Components/footer.jsx';
 import SmoothScroll from '../Components/smoothScroll.jsx';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getProductBySlug } from '../lib/sanityClient.js';
+import { getResponsiveImageProps } from '../lib/responsiveImage.js';
 
 const ProductDetailsPage = () => {
   const { slug } = useParams();
@@ -334,7 +335,19 @@ const ProductDetailsPage = () => {
                       onClick={() => openDesktopViewer(desktopImages.indexOf(backImg))}
                       aria-label="Open product image"
                     >
-                      <img src={backImg} alt={productData.title} className="w-full h-64 md:h-[420px] object-cover" />
+                      <img
+                        {...getResponsiveImageProps({
+                          src: backImg,
+                          alt: productData.title,
+                          widths: [360, 540, 720, 840, 1080],
+                          sizes: '(max-width: 768px) 100vw, 300px',
+                          fallbackWidth: 840,
+                          quality: 80,
+                          loading: 'eager',
+                          fetchPriority: 'high',
+                        })}
+                        className="w-full h-64 md:h-[420px] object-cover"
+                      />
                     </button>
                   </div>
                   <div className="rounded-[35px] overflow-hidden shadow-xl bg-[#27443b]">
@@ -344,7 +357,19 @@ const ProductDetailsPage = () => {
                       onClick={() => openDesktopViewer(desktopImages.indexOf(frontImg))}
                       aria-label="Open product image"
                     >
-                      <img src={frontImg} alt={productData.title} className="w-full h-64 md:h-[420px] object-cover" />
+                      <img
+                        {...getResponsiveImageProps({
+                          src: frontImg,
+                          alt: productData.title,
+                          widths: [360, 540, 720, 840, 1080],
+                          sizes: '(max-width: 768px) 100vw, 300px',
+                          fallbackWidth: 840,
+                          quality: 80,
+                          loading: 'eager',
+                          fetchPriority: 'high',
+                        })}
+                        className="w-full h-64 md:h-[420px] object-cover"
+                      />
                     </button>
                   </div>
             </div>
@@ -447,8 +472,16 @@ const ProductDetailsPage = () => {
               onPointerLeave={stopDesktopPanning}
             >
               <img
-                src={desktopImages[desktopViewerIndex]}
-                alt={`${productData.title} enlarged ${desktopViewerIndex + 1}`}
+                {...getResponsiveImageProps({
+                  src: desktopImages[desktopViewerIndex],
+                  alt: `${productData.title} enlarged ${desktopViewerIndex + 1}`,
+                  widths: [720, 960, 1280, 1600, 1920, 2400],
+                  sizes: '100vw',
+                  fallbackWidth: 1920,
+                  quality: 84,
+                  loading: 'eager',
+                  fetchPriority: 'high',
+                })}
                 className="max-w-full max-h-[85vh] object-contain select-none"
                 style={{
                   transform: `translate(${desktopPan.x}px, ${desktopPan.y}px) scale(${desktopZoomLevel})`,

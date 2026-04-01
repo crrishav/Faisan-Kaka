@@ -4,6 +4,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Footer from './footer.jsx';
 import useCart from './useCart.jsx';
 import useProducts from './useProducts.jsx';
+import {
+  formatCouponBadge,
+  incrementCouponUsage,
+  validateCouponCode,
+} from '../lib/couponService.js';
+
+void motion;
 
 /* ─── Validation ────────────────────────────────────────────────── */
 
@@ -77,6 +84,10 @@ const inputCls = (hasError) =>
       : 'border-black/15 focus:border-black'
   }`;
 
+const formatAmount = (currency, amount) => (
+  currency === 'NPR' ? `Rs. ${amount.toFixed(2)}` : `₹${amount.toFixed(2)}`
+);
+
 /* ─── CheckoutForm ──────────────────────────────────────────────── */
 
 const INITIAL = {
@@ -92,12 +103,18 @@ const CheckoutForm = ({ cartItems, total, currency }) => {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [hasAcceptedPolicies, setHasAcceptedPolicies] = useState(false);
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponError, setCouponError] = useState('');
+  const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
 
   const effectiveCartItems = cartItems ?? cart.items;
-  const effectiveTotal = total ?? cart.total;
+  const subtotal = total ?? cart.total;
   const effectiveCurrency = currency ?? cart.currency;
   const isNepal = effectiveCurrency === 'NPR';
-  const displayTotal = isNepal ? `Rs. ${effectiveTotal.toFixed(2)}` : `₹${effectiveTotal.toFixed(2)}`;
+  const discountAmount = appliedCoupon ? appliedCoupon.discountAmount : 0;
+  const finalTotal = Math.max(0, subtotal - discountAmount);
+  const displayTotal = formatAmount(effectiveCurrency, finalTotal);
 
   const resolveCartItemImage = useCallback((item) => {
     if (item.frontImage || item.backImage) {
@@ -141,6 +158,38 @@ const CheckoutForm = ({ cartItems, total, currency }) => {
     setHasAcceptedPolicies((prev) => !prev);
   };
 
+  const applyCoupon = async () => {
+    setCouponError('');
+    setIsApplyingCoupon(true);
+
+    const result = await validateCouponCode({
+      code: couponCode,
+      subtotal,
+      currency: effectiveCurrency,
+    });
+
+    if (!result.ok) {
+      setAppliedCoupon(null);
+      setCouponError(result.reason);
+      setIsApplyingCoupon(false);
+      return;
+    }
+
+    setAppliedCoupon({
+      ...result.coupon,
+      discountAmount: result.discountAmount,
+    });
+    setCouponCode(result.coupon.code);
+    setCouponError('');
+    setIsApplyingCoupon(false);
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode('');
+    setCouponError('');
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const errs = validate(fields);
@@ -152,11 +201,44 @@ const CheckoutForm = ({ cartItems, total, currency }) => {
       return;
     }
 
+    let finalCoupon = appliedCoupon;
+    if (appliedCoupon) {
+      const refreshed = await validateCouponCode({
+        code: appliedCoupon.code,
+        subtotal,
+        currency: effectiveCurrency,
+      });
+      if (!refreshed.ok) {
+        setAppliedCoupon(null);
+        setCouponError(`Coupon removed: ${refreshed.reason}`);
+        return;
+      }
+      finalCoupon = {
+        ...refreshed.coupon,
+        discountAmount: refreshed.discountAmount,
+      };
+      setAppliedCoupon(finalCoupon);
+    }
+
     setLoading(true);
 
     const payload = {
       customer: { ...fields },
-      order: { items: effectiveCartItems, total: effectiveTotal, currency: effectiveCurrency },
+      order: {
+        items: effectiveCartItems,
+        subtotal,
+        discountAmount: finalCoupon ? finalCoupon.discountAmount : 0,
+        total: Math.max(0, subtotal - (finalCoupon ? finalCoupon.discountAmount : 0)),
+        currency: effectiveCurrency,
+        coupon: finalCoupon
+          ? {
+              id: finalCoupon.id,
+              code: finalCoupon.code,
+              discountType: finalCoupon.discountType,
+              discountValue: finalCoupon.discountValue,
+            }
+          : null,
+      },
       timestamp: new Date().toISOString(),
     };
 
@@ -181,6 +263,20 @@ const CheckoutForm = ({ cartItems, total, currency }) => {
 
     // Simulate async for now
     await new Promise(r => setTimeout(r, 1800));
+    if (finalCoupon?.id) {
+      const usageResult = await incrementCouponUsage(finalCoupon.id, {
+        code: finalCoupon.code,
+        subtotal,
+        total: Math.max(0, subtotal - finalCoupon.discountAmount),
+        currency: effectiveCurrency,
+      });
+      if (!usageResult?.ok) {
+        setLoading(false);
+        setCouponError(`Coupon removed: ${usageResult.reason}`);
+        setAppliedCoupon(null);
+        return;
+      }
+    }
     setLoading(false);
     setSubmitted(true);
   };
@@ -464,8 +560,64 @@ const CheckoutForm = ({ cartItems, total, currency }) => {
                 )}
               </div>
 
+              {/* Coupon */}
+              <div className="rounded-2xl border border-black/10 bg-white px-3.5 py-3">
+                <p className="text-[0.6rem] font-bold tracking-[0.16em] uppercase text-black/45 mb-2">
+                  Coupon / Discount
+                </p>
+                <div className="flex gap-2">
+                  <input
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                    placeholder="ENTER CODE"
+                    className="flex-1 h-10 rounded-xl border border-black/12 bg-[#f9f9f9] px-3 text-xs font-bold uppercase tracking-wide outline-none focus:border-black/40"
+                  />
+                  {appliedCoupon ? (
+                    <button
+                      type="button"
+                      onClick={removeCoupon}
+                      className="h-10 px-3.5 rounded-xl bg-black/6 text-black text-xs font-black hover:bg-black/12 transition-colors"
+                    >
+                      Remove
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={applyCoupon}
+                      disabled={isApplyingCoupon || !couponCode.trim()}
+                      className="h-10 px-3.5 rounded-xl bg-black text-white text-xs font-black hover:bg-black/85 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      {isApplyingCoupon ? 'Applying' : 'Apply'}
+                    </button>
+                  )}
+                </div>
+                {appliedCoupon && (
+                  <div className="mt-2 text-[0.67rem] font-semibold text-emerald-700 flex items-center justify-between gap-2">
+                    <span>{appliedCoupon.code} · {formatCouponBadge(appliedCoupon)}</span>
+                    <span>-{formatAmount(effectiveCurrency, appliedCoupon.discountAmount)}</span>
+                  </div>
+                )}
+                {couponError && (
+                  <p className="mt-2 text-[0.67rem] font-semibold text-red-500">{couponError}</p>
+                )}
+              </div>
+
               {/* Divider */}
               <div className="w-full h-px bg-black/10" />
+
+              {/* Subtotal */}
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-bold text-black/65">Subtotal</p>
+                <p className="text-sm font-bold text-black/65">{formatAmount(effectiveCurrency, subtotal)}</p>
+              </div>
+
+              {/* Discount */}
+              {appliedCoupon && (
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-bold text-emerald-700">Discount</p>
+                  <p className="text-sm font-bold text-emerald-700">-{formatAmount(effectiveCurrency, discountAmount)}</p>
+                </div>
+              )}
 
               {/* Total */}
               <div className="flex items-center justify-between">

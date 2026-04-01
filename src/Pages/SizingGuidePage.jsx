@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Footer from '../Components/footer.jsx';
 
@@ -11,6 +11,13 @@ const rows = [
 ];
 
 const SizingGuidePage = () => {
+  const location = useLocation();
+  const fromProduct = location.state?.fromProduct;
+  const continueShoppingTo =
+    typeof fromProduct === 'string' && fromProduct.startsWith('/product/')
+      ? fromProduct
+      : '/collections';
+
   return (
     <div className="min-h-screen bg-white flex flex-col">
       <div className="flex-grow w-full max-w-5xl mx-auto px-4 md:px-16 lg:px-24 pt-32 pb-16 md:pt-40 md:pb-20">
@@ -72,7 +79,7 @@ const SizingGuidePage = () => {
             Shipping & Returns
           </Link>
           <Link
-            to="/collections"
+            to={continueShoppingTo}
             className="inline-flex items-center justify-center rounded-full border border-black/10 bg-black text-white px-5 py-2 text-sm font-bold transition-opacity hover:opacity-90"
           >
             Continue Shopping

@@ -9,30 +9,39 @@ import NavBar from './Components/navBar.jsx';
 import CheckoutForm from './Components/CheckoutForm.jsx';
 import OrderTrackingPage from './Pages/OrderTrackingPage.jsx';
 import PrintStudioPage from './claude/PrintStudioPage.jsx';
-import DashboardPage from './Pages/DashboardPage.jsx';
+import AdminPage from './Pages/adminPage.jsx';
 import ShippingReturnsPage from './Pages/ShippingReturnsPage.jsx';
 import SizingGuidePage from './Pages/SizingGuidePage.jsx';
 import TermsOfServicePage from './Pages/TermsOfServicePage.jsx';
 import { Studio } from 'sanity';
 import config from '../sanity.config';
+import AppErrorBoundary from './Components/AppErrorBoundary.jsx';
+
+const withRouteBoundary = (element, fallbackTitle) => (
+  <AppErrorBoundary fallbackTitle={fallbackTitle}>
+    {element}
+  </AppErrorBoundary>
+);
 
 const AppRoutes = () => {
   return (
-    <PageTransition>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/collections" element={<CollectionsPage />} />
-        <Route path="/product/:slug" element={<ProductDetailsPage />} />
-        <Route path="/checkout" element={<CheckoutForm />} />
-        <Route path="/terms-of-service" element={<TermsOfServicePage />} />
-        <Route path="/shipping-returns" element={<ShippingReturnsPage />} />
-        <Route path="/sizing-guide" element={<SizingGuidePage />} />
-        <Route path="/track-order" element={<OrderTrackingPage />} />
-        <Route path="/print" element={<PrintStudioPage />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/studio/*" element={<Studio config={config} />} />
-      </Routes>
-    </PageTransition>
+    <AppErrorBoundary fallbackTitle="We could not render this page transition.">
+      <PageTransition>
+        <Routes>
+          <Route path="/" element={withRouteBoundary(<HomePage />, 'Home page is unavailable right now.')} />
+          <Route path="/collections" element={withRouteBoundary(<CollectionsPage />, 'Collections page is unavailable right now.')} />
+          <Route path="/product/:slug" element={withRouteBoundary(<ProductDetailsPage />, 'Product details are unavailable right now.')} />
+          <Route path="/checkout" element={withRouteBoundary(<CheckoutForm />, 'Checkout is temporarily unavailable.')} />
+          <Route path="/terms-of-service" element={withRouteBoundary(<TermsOfServicePage />, 'Terms page is unavailable right now.')} />
+          <Route path="/shipping-returns" element={withRouteBoundary(<ShippingReturnsPage />, 'Shipping and returns page is unavailable right now.')} />
+          <Route path="/sizing-guide" element={withRouteBoundary(<SizingGuidePage />, 'Sizing guide is unavailable right now.')} />
+          <Route path="/track-order" element={withRouteBoundary(<OrderTrackingPage />, 'Order tracking is unavailable right now.')} />
+          <Route path="/print" element={withRouteBoundary(<PrintStudioPage />, 'Print studio is unavailable right now.')} />
+          <Route path="/admin" element={withRouteBoundary(<AdminPage />, 'Admin page is unavailable right now.')} />
+          <Route path="/studio/*" element={withRouteBoundary(<Studio config={config} />, 'Studio is unavailable right now.')} />
+        </Routes>
+      </PageTransition>
+    </AppErrorBoundary>
   );
 };
 
@@ -72,7 +81,9 @@ function App() {
     <BrowserRouter>
       <LoadingScreen isLoaded={isLoaded} />
       <NavBar />
-      <AppRoutes />
+      <AppErrorBoundary fallbackTitle="We hit an unexpected rendering issue.">
+        <AppRoutes />
+      </AppErrorBoundary>
     </BrowserRouter>
   );
 }

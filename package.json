@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@sanity/client": "^6.15.5",
+    "@supabase/supabase-js": "^2.101.1",
     "@tailwindcss/vite": "^4.2.1",
     "colord": "^2.9.3",
     "framer-motion": "^12.36.0",

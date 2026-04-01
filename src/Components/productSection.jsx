@@ -5,6 +5,7 @@ import ProductCard from './productCard.jsx';
 import ArrowButton from './arrowButton.jsx';
 import useCurrency from './currencyContext.jsx';
 import useProducts from './useProducts.jsx';
+import AppErrorBoundary from './AppErrorBoundary.jsx';
 
 /* ─── Variants ─────────────────────────────────────────────────── */
 
@@ -35,6 +36,13 @@ const cardVariants = {
     },
   }),
 };
+
+const ProductCardFallback = () => (
+  <div className="w-[80vw] max-w-[280px] md:w-[280px] min-w-0 flex-shrink-0 mx-auto rounded-[32px] border border-black/10 bg-white p-4 flex flex-col items-center text-center">
+    <p className="text-sm font-semibold text-black">Product unavailable</p>
+    <p className="mt-1 text-xs text-black/60">This item could not be rendered.</p>
+  </div>
+);
 
 /* ─── Component ────────────────────────────────────────────────── */
 
@@ -139,19 +147,24 @@ const ProductSection = ({ title }) => {
               initial="hidden"
               animate={isInView ? 'visible' : 'hidden'}
             >
-              <ProductCard
-                title={product.name}
-                price={
-                  isNepal
-                    ? (product.priceNPR ? `Rs. ${product.priceNPR}` : 'Rs. —')
-                    : (product.priceINR ? `₹${product.priceINR}` : '₹—')
-                }
-                priceINR={product.priceINR}
-                priceNPR={product.priceNPR}
-                backImage={product.backImage}
-                frontImage={product.frontImage}
-                slug={product.slug}
-              />
+              <AppErrorBoundary
+                boundaryName={`Product card ${product?._id || index}`}
+                fallback={<ProductCardFallback />}
+              >
+                <ProductCard
+                  title={product.name}
+                  price={
+                    isNepal
+                      ? (product.priceNPR ? `Rs. ${product.priceNPR}` : 'Rs. —')
+                      : (product.priceINR ? `₹${product.priceINR}` : '₹—')
+                  }
+                  priceINR={product.priceINR}
+                  priceNPR={product.priceNPR}
+                  backImage={product.backImage}
+                  frontImage={product.frontImage}
+                  slug={product.slug}
+                />
+              </AppErrorBoundary>
             </motion.div>
           ))}
         </div>

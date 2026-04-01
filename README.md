@@ -2,6 +2,8 @@
 
 Faisan Kaka is a React storefront for a fashion brand, built with Vite and backed by Sanity CMS. It includes the customer-facing site, product and order schemas, and the Sanity Studio used to manage catalog content.
 
+The repository also includes an `app/` directory with metadata and SEO utility routes (`robots.ts`, `sitemap.ts`) plus a Sanity fetch helper used for product slug and metadata generation.
+
 ## What It Includes
 
 - Homepage, collections, product details, checkout, print studio, order tracking, and policy pages
@@ -51,6 +53,12 @@ Faisan Kaka is a React storefront for a fashion brand, built with Vite and backe
 
 ```text
 .
+├── app/
+│   ├── lib/
+│   ├── product/[slug]/
+│   ├── layout.tsx
+│   ├── robots.ts
+│   └── sitemap.ts
 ├── public/
 ├── sanity/
 │   └── schemaTypes/
@@ -77,6 +85,7 @@ Faisan Kaka is a React storefront for a fashion brand, built with Vite and backe
 - `/checkout`
 - `/print`
 - `/track-order`
+- `/admin`
 - `/shipping-returns`
 - `/sizing-guide`
 - `/terms-of-service`
@@ -88,6 +97,7 @@ The CMS layer includes:
 
 - `product` schema for title, slug, category, description, images, INR and NPR pricing, stock, sizes, colors, featured flag, and publish date
 - `order` schema for customer details, cart items, payment fields, fulfillment status, tracking, and internal notes
+- `designAsset` schema for print studio assets
 - Sanity Studio configured with `structureTool()` and `visionTool()`
 
 ## Environment Variables
@@ -99,6 +109,9 @@ VITE_SANITY_PROJECT_ID=a4f3nfat
 VITE_SANITY_DATASET=production
 SANITY_STUDIO_PROJECT_ID=a4f3nfat
 SANITY_STUDIO_DATASET=production
+NEXT_PUBLIC_SANITY_PROJECT_ID=a4f3nfat
+NEXT_PUBLIC_SANITY_DATASET=production
+NEXT_PUBLIC_SITE_URL=https://faisankaka.com
 SANITY_API_TOKEN=your_token_if_running_migration_scripts
 ```
 
@@ -117,7 +130,9 @@ npm run dev
 npm run dev          # Frontend
 npm run studio       # Sanity Studio
 npm run dev:all      # Frontend + Studio
-npm run build        # Production build
+npm run build        # Build web app + static studio output
+npm run build:web    # Build storefront with Vite
+npm run build:studio-static # Build Studio into dist/studio for /studio hosting
 npm run preview      # Preview build
 npm run lint         # Lint
 npm run test         # Tests

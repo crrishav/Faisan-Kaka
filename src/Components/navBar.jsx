@@ -331,12 +331,12 @@ const NavBar = () => {
   return (
     <nav
         ref={navRef}
-        className="fixed top-0 z-[60] md:z-50 w-full max-w-[100vw] px-3 pt-1 md:px-4 md:pt-2 overflow-x-hidden flex justify-center"
-        onMouseLeave={scheduleClose}
+        className="fixed top-0 z-[60] md:z-50 w-full max-w-[100vw] px-3 pt-1 md:px-4 md:pt-2 overflow-x-hidden flex justify-center pointer-events-none"
       >
       <div
         ref={containerRef}
-        className="w-full max-w-[92vw] md:w-[900px] md:max-w-[90vw] mx-auto rounded-3xl bg-white/10 backdrop-blur-md border border-black/10 shadow-md overflow-hidden transition-all duration-300 ease-out"
+        className="w-full max-w-[92vw] md:w-[900px] md:max-w-[90vw] mx-auto rounded-3xl bg-white/10 backdrop-blur-md border border-black/10 shadow-md overflow-hidden transition-all duration-300 ease-out pointer-events-auto"
+        onMouseLeave={scheduleClose}
         style={{ height: (minHeight && typeof window !== 'undefined' && window.innerWidth >= 768) ? `${minHeight}px` : undefined }}
       >
         {/* Desktop Navigation */}

@@ -331,7 +331,7 @@ const NavBar = () => {
   return (
     <nav
         ref={navRef}
-        className="fixed top-0 z-[60] md:z-50 w-full max-w-[100vw] px-3 pt-1 md:px-4 md:pt-2 overflow-x-hidden flex justify-center pointer-events-none"
+        className="fixed top-2 md:top-0 z-[60] md:z-50 w-full max-w-[100vw] px-3 pt-1 md:px-4 md:pt-2 overflow-x-hidden flex justify-center pointer-events-none"
       >
       <div
         ref={containerRef}

@@ -5,6 +5,7 @@ import ProductSection from './Components/productSection.jsx';
 import Footer from './Components/footer.jsx';
 import DeliverySection from './Components/DeliverySection.jsx';
 import PrintSection from './Components/PrintSection.jsx';
+import ReviewSection from './Components/ReviewSection.jsx';
 
 const sectionVariants = {
   hidden: { opacity: 0 },
@@ -258,6 +259,9 @@ const HomePage = () => {
 
       {/* Print Section */}
       <PrintSection />
+
+      {/* Review Section */}
+      <ReviewSection />
 
       <Footer />
     </div>

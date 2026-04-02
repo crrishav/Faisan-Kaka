@@ -1,11 +1,24 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence, useInView } from 'framer-motion';
 import ProductCard from '../Components/productCard.jsx';
 import useProducts from '../Components/useProducts.jsx';
 
 /* ─── Constants ────────────────────────────────────────────────── */
 
-const FILTERS = ['All', 'Hoodies', 'T-Shirts', 'Pants'];
+const AVAILABILITY_OPTIONS = [
+  { label: 'All Availability', value: 'all' },
+  { label: 'In Stock', value: 'in-stock' },
+  { label: 'Out of Stock', value: 'out-of-stock' },
+];
+
+const SORT_OPTIONS = [
+  { label: 'Featured', value: 'featured' },
+  { label: 'Newest First', value: 'newest' },
+  { label: 'Price: Low to High', value: 'price-asc' },
+  { label: 'Price: High to Low', value: 'price-desc' },
+  { label: 'Name: A-Z', value: 'name-asc' },
+  { label: 'Name: Z-A', value: 'name-desc' },
+];
 
 /* ─── Variants ─────────────────────────────────────────────────── */
 
@@ -44,7 +57,7 @@ const cardVariants = {
 
 /* ─── Empty state ──────────────────────────────────────────────── */
 
-const EmptyState = ({ query }) => (
+const EmptyState = ({ query, onResetFilters }) => (
   <motion.div
     className="col-span-full flex flex-col items-center justify-center py-24 gap-3"
     initial={{ opacity: 0, y: 16 }}
@@ -58,18 +71,42 @@ const EmptyState = ({ query }) => (
     <p className="text-sm text-black/40">
       {query ? `Nothing matched "${query}"` : 'Nothing in this category yet.'}
     </p>
+    <button
+      type="button"
+      onClick={onResetFilters}
+      className="mt-2 rounded-full border border-black/20 px-4 py-2 text-xs font-bold uppercase tracking-wider text-black hover:border-black hover:bg-black hover:text-white transition-colors"
+    >
+      Reset Filters
+    </button>
   </motion.div>
 );
 
 /* ─── Page ─────────────────────────────────────────────────────── */
 
 const CollectionsPage = () => {
-  const { products, loading } = useProducts();
-  const [activeFilter, setActiveFilter] = useState('All');
+  const { products, loading } = useProducts({ includeOutOfStock: true });
   const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('All');
+  const [sizeFilter, setSizeFilter] = useState('All');
+  const [colorFilter, setColorFilter] = useState('All');
+  const [availabilityFilter, setAvailabilityFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('featured');
+  const [minPriceInput, setMinPriceInput] = useState('');
+  const [maxPriceInput, setMaxPriceInput] = useState('');
   const gridRef = useRef(null);
   const heroRef = useRef(null);
   const heroInView = useInView(heroRef, { once: true, amount: 0.3 });
+
+  const toPriceNumber = (value) => {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed) && parsed >= 0) return parsed;
+    const stripped = Number(String(value || '').replace(/[^\d.]/g, ''));
+    return Number.isFinite(stripped) ? stripped : 0;
+  };
+
+  const productPrice = (product) => (
+    isNepal ? toPriceNumber(product.priceNPR) : toPriceNumber(product.priceINR)
+  );
 
   /* Nepal detection (mirrors productSection) */
   const isNepal = useMemo(() => {
@@ -80,21 +117,127 @@ const CollectionsPage = () => {
     } catch { return false; }
   }, []);
 
-  /* Filtered + searched products */
-  const filtered = useMemo(() => {
-    let list = products;
-    if (activeFilter !== 'All') {
-      list = list.filter((p) => p.category === activeFilter);
+  const categoryOptions = useMemo(() => {
+    const categories = Array.from(new Set(products.map((p) => p.category).filter(Boolean)));
+    return ['All', ...categories.sort((a, b) => a.localeCompare(b))];
+  }, [products]);
+
+  const sizeOptions = useMemo(() => {
+    const sizes = products.flatMap((p) => (Array.isArray(p.sizes) ? p.sizes : [])).filter(Boolean);
+    return ['All', ...Array.from(new Set(sizes)).sort((a, b) => a.localeCompare(b))];
+  }, [products]);
+
+  const colorOptions = useMemo(() => {
+    const colors = products.flatMap((p) => (Array.isArray(p.colors) ? p.colors : [])).filter(Boolean);
+    return ['All', ...Array.from(new Set(colors)).sort((a, b) => a.localeCompare(b))];
+  }, [products]);
+
+  const priceBounds = useMemo(() => {
+    const prices = products
+      .map((p) => productPrice(p))
+      .filter((value) => Number.isFinite(value) && value > 0);
+
+    if (!prices.length) {
+      return { min: 0, max: 0 };
     }
+
+    return {
+      min: Math.floor(Math.min(...prices)),
+      max: Math.ceil(Math.max(...prices)),
+    };
+  }, [products, isNepal]);
+
+  useEffect(() => {
+    setMinPriceInput(priceBounds.min ? String(priceBounds.min) : '');
+    setMaxPriceInput(priceBounds.max ? String(priceBounds.max) : '');
+  }, [priceBounds.min, priceBounds.max]);
+
+  const filtered = useMemo(() => {
+    let list = [...products];
+
+    if (categoryFilter !== 'All') {
+      list = list.filter((p) => p.category === categoryFilter);
+    }
+
+    if (sizeFilter !== 'All') {
+      list = list.filter((p) => Array.isArray(p.sizes) && p.sizes.includes(sizeFilter));
+    }
+
+    if (colorFilter !== 'All') {
+      list = list.filter((p) => Array.isArray(p.colors) && p.colors.includes(colorFilter));
+    }
+
+    if (availabilityFilter === 'in-stock') {
+      list = list.filter((p) => p.inStock !== false);
+    }
+
+    if (availabilityFilter === 'out-of-stock') {
+      list = list.filter((p) => p.inStock === false);
+    }
+
+    const minPrice = Number(minPriceInput);
+    const maxPrice = Number(maxPriceInput);
+
+    if (Number.isFinite(minPrice) && minPrice > 0) {
+      list = list.filter((p) => productPrice(p) >= minPrice);
+    }
+
+    if (Number.isFinite(maxPrice) && maxPrice > 0) {
+      list = list.filter((p) => productPrice(p) <= maxPrice);
+    }
+
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      list = list.filter((p) => p.name.toLowerCase().includes(q));
+      list = list.filter((p) => {
+        const name = String(p.name || '').toLowerCase();
+        const description = String(p.description || '').toLowerCase();
+        return name.includes(q) || description.includes(q);
+      });
     }
-    return list;
-  }, [products, activeFilter, searchQuery]);
 
-  const handleFilterChange = (filter) => {
-    setActiveFilter(filter);
+    switch (sortBy) {
+      case 'newest':
+        list.sort((a, b) => new Date(b.publishedAt || 0).getTime() - new Date(a.publishedAt || 0).getTime());
+        break;
+      case 'price-asc':
+        list.sort((a, b) => productPrice(a) - productPrice(b));
+        break;
+      case 'price-desc':
+        list.sort((a, b) => productPrice(b) - productPrice(a));
+        break;
+      case 'name-asc':
+        list.sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
+        break;
+      case 'name-desc':
+        list.sort((a, b) => String(b.name || '').localeCompare(String(a.name || '')));
+        break;
+      default:
+        break;
+    }
+
+    return list;
+  }, [
+    products,
+    categoryFilter,
+    sizeFilter,
+    colorFilter,
+    availabilityFilter,
+    minPriceInput,
+    maxPriceInput,
+    searchQuery,
+    sortBy,
+    isNepal,
+  ]);
+
+  const resetFilters = () => {
+    setCategoryFilter('All');
+    setSizeFilter('All');
+    setColorFilter('All');
+    setAvailabilityFilter('all');
+    setSortBy('featured');
+    setSearchQuery('');
+    setMinPriceInput(priceBounds.min ? String(priceBounds.min) : '');
+    setMaxPriceInput(priceBounds.max ? String(priceBounds.max) : '');
   };
 
   return (
@@ -164,30 +307,116 @@ const CollectionsPage = () => {
           </AnimatePresence>
         </motion.div>
 
-        {/* Filter pills */}
+        {/* Advanced filter controls */}
         <motion.div
-          className="flex items-center gap-2 flex-wrap"
+          className="grid w-full grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3"
           variants={heroItemVariants}
         >
-          {FILTERS.map((filter) => {
-            const active = activeFilter === filter;
-            return (
-              <motion.button
-                key={filter}
-                onClick={() => handleFilterChange(filter)}
-                className={`px-4 py-1.5 rounded-full text-sm font-bold border-2 transition-colors duration-200 ${
-                  active
-                    ? 'bg-black text-white border-black'
-                    : 'bg-white text-black border-black/15 hover:border-black/40'
-                }`}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.96 }}
-                layout
-              >
-                {filter}
-              </motion.button>
-            );
-          })}
+          <label className="flex flex-col gap-1">
+            <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-black/45">Category</span>
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="h-11 rounded-xl border border-black/15 bg-white px-3 text-sm font-semibold text-black outline-none focus:border-black"
+            >
+              {categoryOptions.map((option) => (
+                <option key={option} value={option}>{option}</option>
+              ))}
+            </select>
+          </label>
+
+          <label className="flex flex-col gap-1">
+            <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-black/45">Size</span>
+            <select
+              value={sizeFilter}
+              onChange={(e) => setSizeFilter(e.target.value)}
+              className="h-11 rounded-xl border border-black/15 bg-white px-3 text-sm font-semibold text-black outline-none focus:border-black"
+            >
+              {sizeOptions.map((option) => (
+                <option key={option} value={option}>{option}</option>
+              ))}
+            </select>
+          </label>
+
+          <label className="flex flex-col gap-1">
+            <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-black/45">Color</span>
+            <select
+              value={colorFilter}
+              onChange={(e) => setColorFilter(e.target.value)}
+              className="h-11 rounded-xl border border-black/15 bg-white px-3 text-sm font-semibold text-black outline-none focus:border-black"
+            >
+              {colorOptions.map((option) => (
+                <option key={option} value={option}>{option}</option>
+              ))}
+            </select>
+          </label>
+
+          <label className="flex flex-col gap-1">
+            <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-black/45">Availability</span>
+            <select
+              value={availabilityFilter}
+              onChange={(e) => setAvailabilityFilter(e.target.value)}
+              className="h-11 rounded-xl border border-black/15 bg-white px-3 text-sm font-semibold text-black outline-none focus:border-black"
+            >
+              {AVAILABILITY_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </label>
+        </motion.div>
+
+        <motion.div
+          className="grid w-full grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3"
+          variants={heroItemVariants}
+        >
+          <label className="flex flex-col gap-1">
+            <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-black/45">Min Price ({isNepal ? 'NPR' : 'INR'})</span>
+            <input
+              type="number"
+              min={0}
+              step={10}
+              value={minPriceInput}
+              onChange={(e) => setMinPriceInput(e.target.value)}
+              className="h-11 rounded-xl border border-black/15 bg-white px-3 text-sm font-semibold text-black outline-none focus:border-black"
+              placeholder={priceBounds.min ? String(priceBounds.min) : '0'}
+            />
+          </label>
+
+          <label className="flex flex-col gap-1">
+            <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-black/45">Max Price ({isNepal ? 'NPR' : 'INR'})</span>
+            <input
+              type="number"
+              min={0}
+              step={10}
+              value={maxPriceInput}
+              onChange={(e) => setMaxPriceInput(e.target.value)}
+              className="h-11 rounded-xl border border-black/15 bg-white px-3 text-sm font-semibold text-black outline-none focus:border-black"
+              placeholder={priceBounds.max ? String(priceBounds.max) : '0'}
+            />
+          </label>
+
+          <label className="flex flex-col gap-1">
+            <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-black/45">Sort By</span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="h-11 rounded-xl border border-black/15 bg-white px-3 text-sm font-semibold text-black outline-none focus:border-black"
+            >
+              {SORT_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </label>
+
+          <div className="flex items-end">
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="h-11 w-full rounded-xl border border-black/20 bg-white px-3 text-sm font-black uppercase tracking-[0.14em] text-black transition-colors hover:bg-black hover:text-white"
+            >
+              Clear All
+            </button>
+          </div>
         </motion.div>
       </motion.div>
 
@@ -220,7 +449,7 @@ const CollectionsPage = () => {
           >
             <AnimatePresence mode="popLayout">
               {filtered.length === 0 ? (
-                <EmptyState query={searchQuery} key="empty" />
+                <EmptyState query={searchQuery} onResetFilters={resetFilters} key="empty" />
               ) : (
                 filtered.map((product, index) => (
                   <motion.div

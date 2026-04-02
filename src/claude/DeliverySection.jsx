@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { motion, useInView } from 'framer-motion';
+import { motion, useInView, AnimatePresence } from 'framer-motion';
 import './DeliverySection.css';
 import indiaMap from '../assets/in.svg';
 
@@ -33,19 +33,36 @@ const mapWrapperVariants = {
   },
 };
 
+const tooltipVariants = {
+  hidden: { opacity: 0, y: 6, scale: 0.92 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: 0.18, ease: [0.22, 1, 0.36, 1] },
+  },
+  exit: {
+    opacity: 0,
+    y: 4,
+    scale: 0.94,
+    transition: { duration: 0.12, ease: 'easeIn' },
+  },
+};
+
 /* ─── Component ────────────────────────────────────────────────── */
 
 const DeliverySection = () => {
   const sectionRef = useRef(null);
   const mapDataRef = useRef(null);
+  const svgContainerRef = useRef(null);
 
   const [svgElements, setSvgElements] = useState([]);
   const [svgViewBox, setSvgViewBox] = useState('0 0 1000 1000');
+  const [tooltip, setTooltip] = useState({ visible: false, name: '', x: 0, y: 0 });
 
-  // Framer Motion's useInView — once: false means it re-triggers on scroll in/out
   const isInView = useInView(sectionRef, { amount: 0.15, once: false });
 
-  /* Parse SVG text → array of { tag, attrs, id, revealOrder } */
+  /* Parse SVG text → array of { tag, attrs, id, name, revealOrder } */
   const parseSVG = useCallback((svgContent) => {
     const parser = new DOMParser();
     const svgDoc = parser.parseFromString(svgContent, 'image/svg+xml');
@@ -62,10 +79,17 @@ const DeliverySection = () => {
     const parsed = els.map((el, i) => {
       const attrs = {};
       for (const a of el.attributes) attrs[a.name] = a.value;
-      return { tag: el.tagName.toLowerCase(), attrs, id: attrs.id || `el-${i}`, index: i };
+      // name comes from `name` attr on paths, or `class` attr on circles
+      const stateName = attrs.name || attrs.class || '';
+      return {
+        tag: el.tagName.toLowerCase(),
+        attrs,
+        id: attrs.id || `el-${i}`,
+        stateName,
+        index: i,
+      };
     });
 
-    // Organic reveal order: slight shuffle by index
     const shuffled = parsed
       .map((el) => ({ el, sort: el.index + (Math.random() - 0.5) * 6 }))
       .sort((a, b) => a.sort - b.sort)
@@ -81,6 +105,22 @@ const DeliverySection = () => {
       .then((content) => { mapDataRef.current = content; parseSVG(content); })
       .catch((err) => console.error('SVG load error:', err));
   }, [parseSVG]);
+
+  /* Convert SVG-space coords to container-relative px */
+  const handleMouseMove = useCallback((e, stateName) => {
+    if (!svgContainerRef.current) return;
+    const rect = svgContainerRef.current.getBoundingClientRect();
+    setTooltip({
+      visible: true,
+      name: stateName,
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    setTooltip((t) => ({ ...t, visible: false }));
+  }, []);
 
   /* Per-state variants — delay based on revealOrder */
   const stateVariants = (revealOrder) => ({
@@ -136,6 +176,7 @@ const DeliverySection = () => {
           animate={isInView ? 'visible' : 'hidden'}
         >
           <div
+            ref={svgContainerRef}
             className="svg-container"
             aria-label="Map of India showing delivery coverage"
           >
@@ -146,31 +187,37 @@ const DeliverySection = () => {
                 preserveAspectRatio="xMidYMid meet"
                 xmlns="http://www.w3.org/2000/svg"
               >
-                {svgElements.map(({ tag, attrs, id, revealOrder }) => {
+                {svgElements.map(({ tag, attrs, id, stateName, revealOrder }) => {
                   const variants = stateVariants(revealOrder);
+                  const elementKey = `${tag}-${id}-${revealOrder}`;
+
                   const sharedProps = {
-                    key: id,
                     className: 'map-state',
                     variants,
                     initial: 'hidden',
                     animate: isInView ? 'visible' : 'hidden',
                     whileHover: {
                       fill: '#1d4ed8',
-                      scale: 1.018,
-                      transition: { duration: 0.18 },
+                      filter: 'drop-shadow(0 2px 6px rgba(29,78,216,0.45))',
+                      scale: 1.022,
+                      transition: { duration: 0.15 },
                     },
                     style: { originX: '50%', originY: '50%', cursor: 'pointer' },
+                    onMouseMove: stateName ? (e) => handleMouseMove(e, stateName) : undefined,
+                    onMouseLeave: stateName ? handleMouseLeave : undefined,
                   };
 
                   return tag === 'circle' ? (
                     <motion.circle
+                      key={elementKey}
                       {...sharedProps}
                       cx={attrs.cx}
                       cy={attrs.cy}
-                      r={attrs.r}
+                      r={attrs.r || 4}
                     />
                   ) : (
                     <motion.path
+                      key={elementKey}
                       {...sharedProps}
                       d={attrs.d}
                     />
@@ -178,6 +225,27 @@ const DeliverySection = () => {
                 })}
               </svg>
             )}
+
+            {/* ── Tooltip ── */}
+            <AnimatePresence>
+              {tooltip.visible && tooltip.name && (
+                <motion.div
+                  className="map-tooltip"
+                  key="tooltip"
+                  variants={tooltipVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                  style={{
+                    left: tooltip.x,
+                    top: tooltip.y,
+                  }}
+                >
+                  <span className="map-tooltip-dot" />
+                  {tooltip.name}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </motion.div>
 

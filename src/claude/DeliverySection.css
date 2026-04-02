@@ -102,6 +102,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
+
+  /* Tooltip needs relative positioning context */
+  position: relative;
 }
 
 .india-map-svg {
@@ -120,6 +123,55 @@
   stroke: #ffffff;
   stroke-width: 1.2;
   stroke-linejoin: round;
+  transition: fill 0.15s ease;
+}
+
+/* ─── Tooltip ─────────────────────────────────────── */
+.map-tooltip {
+  position: absolute;
+  pointer-events: none;
+
+  /* Offset so it sits above-right of the cursor */
+  transform: translate(14px, calc(-100% - 10px));
+
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+
+  background: #0a0a0a;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+
+  padding: 0.32rem 0.65rem 0.32rem 0.5rem;
+  border-radius: 6px;
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, 0.18),
+    0 1px 3px rgba(0, 0, 0, 0.12);
+
+  /* Keep tooltip above the SVG */
+  z-index: 10;
+}
+
+.map-tooltip::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 16px;
+  width: 10px;
+  height: 10px;
+  background: #0a0a0a;
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+
+.map-tooltip-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #60a5fa;   /* blue-400 — matches map fill family */
+  flex-shrink: 0;
 }
 
 /* ─── Responsive: tablet portrait ───────────────── */
@@ -128,8 +180,8 @@
     flex-direction: column;
     height: auto;
     min-height: 100vh;
-    padding: clamp(2rem, 5vw, 3rem) clamp(1rem, 4vw, 2rem);
-    gap: clamp(1rem, 3vw, 2rem);
+    padding: clamp(1.5rem, 5vw, 2rem) clamp(1rem, 4vw, 2rem);
+    gap: clamp(2rem, 6vw, 3.5rem);
     justify-content: center;
   }
 
@@ -138,6 +190,7 @@
     max-width: 480px;
     align-items: center;
     text-align: center;
+    gap: 1.2rem;
   }
 
   .delivery-title {
@@ -147,23 +200,32 @@
   /* Map: fixed fraction of viewport height so it never overflows */
   .map-wrapper {
     width: 100%;
-    height: clamp(240px, 48vw, 420px);
+    height: clamp(300px, 60vw, 500px);
     flex: 0 0 auto;
   }
 }
 
 /* ─── Responsive: small phones ───────────────────── */
 @media (max-width: 480px) {
+  .delivery-container {
+    gap: 2.5rem;
+  }
+
   .delivery-title {
     font-size: clamp(1.6rem, 8vw, 2.2rem);
   }
 
   .map-wrapper {
-    height: clamp(220px, 52vw, 340px);
+    height: clamp(280px, 65vw, 400px);
   }
 
   .map-state {
     stroke-width: 0.8;
+  }
+
+  .map-tooltip {
+    font-size: 0.66rem;
+    padding: 0.28rem 0.55rem 0.28rem 0.44rem;
   }
 }
 

@@ -102,9 +102,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-
-  /* Tooltip needs relative positioning context */
-  position: relative;
 }
 
 .india-map-svg {
@@ -123,55 +120,6 @@
   stroke: #ffffff;
   stroke-width: 1.2;
   stroke-linejoin: round;
-  transition: fill 0.15s ease;
-}
-
-/* ─── Tooltip ─────────────────────────────────────── */
-.map-tooltip {
-  position: absolute;
-  pointer-events: none;
-
-  /* Offset so it sits above-right of the cursor */
-  transform: translate(14px, calc(-100% - 10px));
-
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-
-  background: #0a0a0a;
-  color: #ffffff;
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.03em;
-  white-space: nowrap;
-
-  padding: 0.32rem 0.65rem 0.32rem 0.5rem;
-  border-radius: 6px;
-  box-shadow:
-    0 4px 14px rgba(0, 0, 0, 0.18),
-    0 1px 3px rgba(0, 0, 0, 0.12);
-
-  /* Keep tooltip above the SVG */
-  z-index: 10;
-}
-
-.map-tooltip::after {
-  content: '';
-  position: absolute;
-  bottom: -5px;
-  left: 16px;
-  width: 10px;
-  height: 10px;
-  background: #0a0a0a;
-  clip-path: polygon(0 0, 100% 0, 50% 100%);
-}
-
-.map-tooltip-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #60a5fa;   /* blue-400 — matches map fill family */
-  flex-shrink: 0;
 }
 
 /* ─── Responsive: tablet portrait ───────────────── */
@@ -221,11 +169,6 @@
 
   .map-state {
     stroke-width: 0.8;
-  }
-
-  .map-tooltip {
-    font-size: 0.66rem;
-    padding: 0.28rem 0.55rem 0.28rem 0.44rem;
   }
 }
 

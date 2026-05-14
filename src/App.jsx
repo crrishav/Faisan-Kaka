@@ -10,6 +10,8 @@ import CheckoutForm from './Components/CheckoutForm.jsx';
 import OrderTrackingPage from './Pages/OrderTrackingPage.jsx';
 import PrintStudioPage from './claude/PrintStudioPage.jsx';
 import AdminPage from './Pages/adminPage.jsx';
+import AdminLoginPage from './Pages/AdminLoginPage.jsx';
+import AdminGuard from './Components/AdminGuard.jsx';
 import ShippingReturnsPage from './Pages/ShippingReturnsPage.jsx';
 import SizingGuidePage from './Pages/SizingGuidePage.jsx';
 import TermsOfServicePage from './Pages/TermsOfServicePage.jsx';
@@ -37,7 +39,8 @@ const AppRoutes = () => {
           <Route path="/sizing-guide" element={withRouteBoundary(<SizingGuidePage />, 'Sizing guide is unavailable right now.')} />
           <Route path="/track-order" element={withRouteBoundary(<OrderTrackingPage />, 'Order tracking is unavailable right now.')} />
           <Route path="/print" element={withRouteBoundary(<PrintStudioPage />, 'Print studio is unavailable right now.')} />
-          <Route path="/admin" element={withRouteBoundary(<AdminPage />, 'Admin page is unavailable right now.')} />
+          <Route path="/admin" element={withRouteBoundary(<AdminGuard><AdminPage /></AdminGuard>, 'Admin page is unavailable right now.')} />
+          <Route path="/admin/login" element={withRouteBoundary(<AdminLoginPage />, 'Login is unavailable right now.')} />
           <Route path="/studio/*" element={withRouteBoundary(<Studio config={config} />, 'Studio is unavailable right now.')} />
         </Routes>
       </PageTransition>

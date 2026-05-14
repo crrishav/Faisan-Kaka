@@ -1,18 +1,30 @@
 import { createClient } from '@sanity/client';
 
-// Initialize Sanity client with environment variables
-export const sanityClient = createClient({
-  projectId: import.meta.env.VITE_SANITY_PROJECT_ID,
-  dataset: import.meta.env.VITE_SANITY_DATASET || 'production',
-  apiVersion: '2024-03-14', // Use current date for latest API
-  useCdn: true, // Use CDN for faster reads (disable for real-time data)
-  perspective: 'published', // Only fetch published documents
-});
+const SANITY_PROJECT_ID = import.meta.env.VITE_SANITY_PROJECT_ID;
+const SANITY_DATASET = import.meta.env.VITE_SANITY_DATASET || 'production';
+
+let sanityClient = null;
+if (SANITY_PROJECT_ID) {
+  sanityClient = createClient({
+    projectId: SANITY_PROJECT_ID,
+    dataset: SANITY_DATASET,
+    apiVersion: '2024-03-14',
+    useCdn: true,
+    perspective: 'published',
+  });
+} else {
+  // In development/demo without Sanity configured, avoid throwing at import time.
+  // Consumers should handle empty results when client is null.
+  // eslint-disable-next-line no-console
+  console.warn('[sanityClient] VITE_SANITY_PROJECT_ID not set — falling back to empty data.');
+}
+export { sanityClient };
 
 /**
  * GROQ Query: Fetch all products by category
  */
 export const getProductsByCategory = async (category) => {
+  if (!sanityClient) return [];
   const query = `*[_type == "product" && category == $category && inStock == true] | order(publishedAt desc) {
     _id,
     title,
@@ -107,6 +119,7 @@ export const getProductBySlug = async (slug) => {
   }`;
 
   try {
+    if (!sanityClient) return null;
     const product = await sanityClient.fetch(query, { slug });
     if (product) {
       productCache.set(slug, product);
@@ -128,6 +141,7 @@ export const prefetchProductBySlug = (slug) => {
  * GROQ Query: Fetch all featured products
  */
 export const getFeaturedProducts = async () => {
+  if (!sanityClient) return [];
   const query = `*[_type == "product" && featured == true && inStock == true] | order(publishedAt desc)[0..5] {
     _id,
     title,
@@ -160,8 +174,8 @@ export const getFeaturedProducts = async () => {
  * GROQ Query: Fetch all unique categories
  */
 export const getCategories = async () => {
+  if (!sanityClient) return [];
   const query = `array::unique(*[_type == "product"].category) | sort()`;
-
   try {
     const categories = await sanityClient.fetch(query);
     return categories;
@@ -176,6 +190,7 @@ export const getCategories = async () => {
  * Use for live inventory updates
  */
 export const subscribeToProducts = (category, callback) => {
+  if (!sanityClient) return { unsubscribe: () => {} };
   const query = `*[_type == "product" && category == $category && inStock == true] | order(publishedAt desc) {
     _id,
     title,
@@ -194,6 +209,5 @@ export const subscribeToProducts = (category, callback) => {
     stock,
     inStock
   }`;
-
   return sanityClient.listen(query, { category }).subscribe(callback);
 };

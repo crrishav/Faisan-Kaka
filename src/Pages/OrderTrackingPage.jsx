@@ -1,6 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Footer from '../Components/footer.jsx';
+import { listOrders } from '../lib/ordersService.js';
 
 /* ─── Validation ────────────────────────────────────────────────── */
 
@@ -115,49 +116,34 @@ const OrderTrackingPage = () => {
 
     setLoading(true);
 
-    const payload = {
-      contact: fields.contact,
-      orderId: fields.orderId,
-      timestamp: new Date().toISOString(),
-    };
+    try {
+      const orders = await listOrders();
+      const order = orders.find(o => 
+        (o.id.toLowerCase() === fields.orderId.toLowerCase() || o.id.replace('ORD-', '').toLowerCase() === fields.orderId.toLowerCase()) &&
+        (o.phone === fields.contact || o.raw?.customer?.email === fields.contact)
+      );
 
-    console.log('[OrderTrackingPage] Submitting payload:', payload);
-
-    // ── Integration point ──────────────────────────────────────
-    // Replace this block with your backend API call:
-    //
-    // try {
-    //   const res = await fetch('/api/track-order', {
-    //     method: 'POST',
-    //     headers: { 'Content-Type': 'application/json' },
-    //     body: JSON.stringify(payload),
-    //   });
-    //   const data = await res.json();
-    //   setTrackingData(data);
-    // } catch (err) {
-    //   console.error(err);
-    //   setLoading(false);
-    // }
-    // ──────────────────────────────────────────────────────────
-
-    // Simulate async for now
-    await new Promise((r) => setTimeout(r, 1800));
-    setLoading(false);
-
-    // Mock tracking data
-    const mockTracking = {
-      orderId: fields.orderId,
-      status: 'In Transit',
-      steps: [
-        { label: 'Order Confirmed', completed: true, date: '2 days ago' },
-        { label: 'Processing', completed: true, date: '1 day ago' },
-        { label: 'Shipped', completed: true, date: 'Yesterday' },
-        { label: 'Out for Delivery', completed: true, date: 'Today' },
-        { label: 'Delivered', completed: false, date: 'Expected Tomorrow' },
-      ],
-    };
-    setTrackingData(mockTracking);
-    setSubmitted(true);
+      if (order) {
+        const tracking = {
+          orderId: order.id,
+          status: order.status,
+          steps: [
+            { label: 'Order Confirmed', completed: true, date: order.date },
+            { label: 'Processing', completed: order.status !== 'Pending', date: order.status === 'Pending' ? 'In queue' : 'In progress' },
+            { label: 'Shipped', completed: order.status === 'Shipped', date: order.tracking ? `Tracking: ${order.tracking}` : 'Awaiting dispatch' },
+          ],
+        };
+        setTrackingData(tracking);
+        setSubmitted(true);
+      } else {
+        setErrors({ contact: 'Order not found with these details.' });
+      }
+    } catch (err) {
+      console.error(err);
+      setErrors({ contact: 'Failed to fetch tracking data. Please try again.' });
+    } finally {
+      setLoading(false);
+    }
   };
 
   /* ── Tracking result state ── */

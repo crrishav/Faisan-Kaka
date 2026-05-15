@@ -2,7 +2,7 @@ import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence, useInView } from 'framer-motion';
 import Footer from '../Components/footer';
 import CouponsAdminPanel from '../Components/CouponsAdminPanel.jsx';
-import { listOrders, updateOrderStatus, updateOrderTracking } from '../lib/ordersService.js';
+import { listOrders, updateOrderStatus, updateOrderTracking, deleteOrder } from '../lib/ordersService.js';
 
 /* ─── Mock Data ─────────────────────────────────────────────────── */
 
@@ -367,12 +367,38 @@ const OrderListTab = ({ orders, setOrders }) => {
     showToast(`Tracking saved for ${id}`);
   };
 
-  const applyBulkAction = () => {
+  const applyBulkAction = async () => {
     if (!bulkStatus || selected.size === 0) return;
+    
+    // Update locally first for immediate UI response
+    const selectedIds = Array.from(selected);
     setOrders((prev) => prev.map((o) => selected.has(o.id) ? { ...o, status: bulkStatus } : o));
-    showToast(`${selected.size} order${selected.size > 1 ? 's' : ''} → ${bulkStatus}`);
+    
+    // Update in database for each
+    showToast(`Updating ${selected.size} order${selected.size > 1 ? 's' : ''}…`);
+    
+    await Promise.all(selectedIds.map(id => updateOrderStatus(id, bulkStatus)));
+    
+    showToast(`Successfully updated ${selected.size} order${selected.size > 1 ? 's' : ''}`);
     setSelected(new Set());
     setBulkStatus('');
+  };
+
+  const handleBulkDelete = async () => {
+    if (selected.size === 0) return;
+    if (!window.confirm(`Are you sure you want to delete ${selected.size} order${selected.size > 1 ? 's' : ''}? This cannot be undone.`)) return;
+
+    const selectedIds = Array.from(selected);
+    
+    // Update locally
+    setOrders((prev) => prev.filter((o) => !selected.has(o.id)));
+    
+    showToast(`Deleting ${selected.size} order${selected.size > 1 ? 's' : ''}…`);
+    
+    await Promise.all(selectedIds.map(id => deleteOrder(id)));
+    
+    showToast(`Deleted ${selected.size} order${selected.size > 1 ? 's' : ''}`);
+    setSelected(new Set());
   };
 
   return (
@@ -459,9 +485,13 @@ const OrderListTab = ({ orders, setOrders }) => {
                 className="px-4 py-1.5 rounded-xl bg-white text-black text-xs font-black hover:bg-white/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
                 Apply
               </button>
+              <button onClick={handleBulkDelete}
+                className="px-3 py-1.5 rounded-xl bg-red-500/20 text-red-400 text-xs font-black hover:bg-red-500/30 transition-colors">
+                Delete
+              </button>
               <button onClick={() => setSelected(new Set())}
                 className="px-3 py-1.5 rounded-xl bg-white/10 text-white/70 text-xs font-black hover:bg-white/20 transition-colors">
-                Clear
+                Deselect
               </button>
             </motion.div>
           )}
@@ -989,11 +1019,23 @@ const AdminPage = () => {
         <motion.p variants={fadeUp} className="text-xs font-black tracking-[0.2em] uppercase text-black/35 mb-1">
           Admin Panel
         </motion.p>
-        <motion.div variants={fadeUp} className="flex flex-col md:flex-row md:items-end md:justify-between gap-2">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-black tracking-tighter leading-none">
-            Dashboard
-          </h1>
-          <p className="text-sm font-semibold text-black/35 md:pb-2">{today}</p>
+        <motion.div variants={fadeUp} className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+          <div>
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-black tracking-tighter leading-none">
+              Dashboard
+            </h1>
+            <p className="text-sm font-semibold text-black/35 mt-2">{today}</p>
+          </div>
+          <button 
+            onClick={() => {
+              localStorage.removeItem('fk_admin_token');
+              localStorage.removeItem('fk_admin_expiry');
+              window.location.reload();
+            }}
+            className="px-6 py-2.5 rounded-2xl bg-black/5 text-black text-sm font-black hover:bg-red-50 text-red-600 border border-black/5 hover:border-red-100 transition-all duration-200"
+          >
+            Log Out
+          </button>
         </motion.div>
 
         {/* Tab switcher */}

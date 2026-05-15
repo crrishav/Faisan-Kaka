@@ -124,5 +124,21 @@ export const updateOrderTracking = async (id, tracking) => {
   return true;
 };
 
-export default { submitOrder, listOrders, updateOrderStatus, updateOrderTracking };
+export const deleteOrder = async (id) => {
+  const orders = await listOrders();
+  const target = orders.find(o => o.id === id);
+  if (!target) return false;
+
+  // 1. Remove Local
+  writeLocalOrders(readLocalOrders().filter(o => o.id !== id));
+
+  // 2. Remove Cloud (if key exists)
+  if (target.utKey) {
+    await apiRequest('DELETE', null, `?key=${target.utKey}`);
+  }
+  
+  return true;
+};
+
+export default { submitOrder, listOrders, updateOrderStatus, updateOrderTracking, deleteOrder };
 

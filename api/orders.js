@@ -3,7 +3,7 @@ import { UTApi } from "uploadthing/server";
 // Initialize UTApi with the Secret Key
 // On Vercel, this comes from the Environment Variables you set in the dashboard
 const utapi = new UTApi({
-  apiKey: process.env.UPLOADTHING_SECRET,
+  token: process.env.UPLOADTHING_TOKEN || process.env.UPLOADTHING_SECRET,
 });
 
 export default async function handler(req, res) {
@@ -33,12 +33,16 @@ export default async function handler(req, res) {
       }
 
       // Upload to UploadThing
-      const response = await utapi.uploadFiles(new File([file], `${order.id}.json`, { type: 'application/json' }));
+      const response = await utapi.uploadFiles([
+        new File([file], `${order.id}.json`, { type: 'application/json' })
+      ]);
+      
+      const uploadResult = Array.isArray(response) ? response[0] : response;
       
       return res.status(200).json({ 
         success: true, 
-        key: response.data?.key,
-        url: response.data?.url 
+        key: uploadResult.data?.key,
+        url: uploadResult.data?.url 
       });
     }
 

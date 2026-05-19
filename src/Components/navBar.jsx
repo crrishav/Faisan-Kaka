@@ -25,6 +25,7 @@ const NavBar = () => {
   const closeTimer = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const [isHeroVisible, setIsHeroVisible] = useState(true);
 
   // state for show-on-scroll-up navbar
   // navbar always visible; no scroll state required
@@ -144,16 +145,25 @@ const NavBar = () => {
 
   // Scroll-triggered collapse: close all mobile panels when user scrolls
   useEffect(() => {
-    const handleScrollPanels = () => {
+    const handleScroll = () => {
       if (window.innerWidth < 768) {
         setIsMobileMenuOpen(false);
         setIsMobileCartOpen(false);
         setMobileSubmenu(null);
       }
+      
+      if (location.pathname === '/') {
+        setIsHeroVisible(window.scrollY < window.innerHeight - 80);
+      } else {
+        setIsHeroVisible(false);
+      }
     };
-    window.addEventListener('scroll', handleScrollPanels, { passive: true });
-    return () => window.removeEventListener('scroll', handleScrollPanels);
-  }, []);
+    
+    handleScroll(); // initial check
+    
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [location.pathname]);
 
   // Outside-tap collapse: close all mobile panels when tapping outside the nav
   useEffect(() => {
@@ -341,12 +351,12 @@ const NavBar = () => {
       >
         {/* Desktop Navigation */}
         <div ref={headerRef} className="px-6 py-3 hidden md:block">
-          <div className="flex items-center justify-between gap-8 text-black">
+          <div className={`flex items-center justify-between gap-8 ${isHeroVisible ? 'text-white' : 'text-black'}`}>
             <button
               type="button"
               onClick={() => navigate('/collections')}
               aria-label="Go to collections"
-              className={`font-bold transition hover:opacity-70 text-black cursor-pointer bg-transparent border-0 p-0 ${isSearchOpen ? 'hidden md:block' : ''}`}
+              className={`font-bold transition hover:opacity-70 cursor-pointer bg-transparent border-0 p-0 ${isHeroVisible ? 'text-white' : 'text-black'} ${isSearchOpen ? 'hidden md:block' : ''}`}
               onMouseEnter={() => openMenu('collection')}
               onMouseLeave={scheduleClose}
             >
@@ -355,7 +365,7 @@ const NavBar = () => {
             <button
               type="button"
               aria-label="Open about menu"
-              className={`font-bold transition hover:opacity-70 text-black cursor-pointer bg-transparent border-0 p-0 ${isSearchOpen ? 'hidden md:block' : ''}`}
+              className={`font-bold transition hover:opacity-70 cursor-pointer bg-transparent border-0 p-0 ${isHeroVisible ? 'text-white' : 'text-black'} ${isSearchOpen ? 'hidden md:block' : ''}`}
               onClick={() => openMenu('about')}
               onFocus={() => openMenu('about')}
               onMouseEnter={() => openMenu('about')}
@@ -364,7 +374,7 @@ const NavBar = () => {
               About
             </button>
             <button type="button" onClick={handleLogoClick} aria-label="Go to home page" className="cursor-pointer bg-transparent border-0 p-0">
-              <img src={logo} alt="Logo" className="h-6 md:h-10" />
+              <img src={logo} alt="Logo" className="h-6 md:h-10 transition-all" />
             </button>
             
             {isSearchOpen ? (
@@ -382,12 +392,12 @@ const NavBar = () => {
                             }, 200);
                         }}
                         placeholder="Search products..."
-                        className="w-full bg-transparent border-b-2 border-black text-black font-bold outline-none px-2 py-1 placeholder-black/50"
+                        className={`w-full bg-transparent border-b-2 font-bold outline-none px-2 py-1 ${isHeroVisible ? 'border-white text-white placeholder-white/70' : 'border-black text-black placeholder-black/50'}`}
                     />
                 </div>
             ) : (
                 <button 
-                    className="font-bold transition hover:opacity-70 text-black cursor-pointer"
+                    className={`font-bold transition hover:opacity-70 cursor-pointer ${isHeroVisible ? 'text-white' : 'text-black'}`}
                     onClick={handleSearchClick}
                 >
                     Search
@@ -398,7 +408,7 @@ const NavBar = () => {
               <button
                 type="button"
                 aria-label="Open cart menu"
-                className="font-bold transition hover:opacity-70 text-black relative inline-block cursor-pointer bg-transparent border-0 p-0"
+                className={`font-bold transition hover:opacity-70 relative inline-block cursor-pointer bg-transparent border-0 p-0 ${isHeroVisible ? 'text-white' : 'text-black'}`}
                 onClick={() => openMenu('cart')}
                 onFocus={() => openMenu('cart')}
               >
@@ -420,7 +430,7 @@ const NavBar = () => {
               aria-label="Open cart"
               aria-expanded={isMobileCartOpen}
               aria-controls="mobile-cart-panel"
-              className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-black relative touch-manipulation"
+              className={`p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center relative touch-manipulation transition-colors ${isHeroVisible ? 'text-white' : 'text-black'}`}
             >
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M9 2L6 9H3l3 7h12l3-7h-3l-3-7z"/>
@@ -437,7 +447,7 @@ const NavBar = () => {
               <img
                 src={logo}
                 alt="Faisan Kaka"
-                className="h-5 md:h-10 max-w-[50px] max-h-[50px] w-auto"
+                className="h-5 md:h-10 max-w-[50px] max-h-[50px] w-auto transition-all"
               />
             </button>
 
@@ -447,7 +457,7 @@ const NavBar = () => {
               aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
               aria-expanded={isMobileMenuOpen}
               aria-controls="mobile-menu-panel"
-              className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-black touch-manipulation transition-transform duration-200"
+              className={`p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center touch-manipulation transition-transform duration-200 ${isHeroVisible ? 'text-white' : 'text-black'}`}
             >
               {isMobileMenuOpen ? (
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">

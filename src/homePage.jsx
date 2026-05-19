@@ -6,6 +6,7 @@ import Footer from './Components/footer.jsx';
 import DeliverySection from './Components/DeliverySection.jsx';
 import PrintSection from './Components/PrintSection.jsx';
 import ReviewSection from './Components/ReviewSection.jsx';
+import heroVideo from './assets/videos/Hero_Keyframe_Scene_A_person_walks_through_a_bustling_marketplace_hRvmxVDL.mp4';
 
 const sectionVariants = {
   hidden: { opacity: 0 },
@@ -74,12 +75,19 @@ const printWorkflowSteps = [
   },
 ];
 
-const HomePage = () => {
+const HomePage = ({ isLoaded }) => {
   const location = useLocation();
   const fabricSectionRef = useRef(null);
   const workflowSectionRef = useRef(null);
   const fabricInView = useInView(fabricSectionRef, { amount: 0.2, once: false });
   const workflowInView = useInView(workflowSectionRef, { amount: 0.2, once: false });
+  const videoRef = useRef(null);
+
+  useEffect(() => {
+    if (isLoaded && videoRef.current) {
+      videoRef.current.play().catch(error => console.warn('Video play prevented:', error));
+    }
+  }, [isLoaded]);
 
   useEffect(() => {
     const PENDING_CATEGORY_KEY = 'fk_pending_category_scroll';
@@ -145,10 +153,18 @@ const HomePage = () => {
 
   return (
     <div className="min-h-screen bg-white overflow-x-hidden max-w-[100vw]">
-      {/* Hero Section (Empty for now) */}
-      <div className="w-full h-screen flex items-center justify-center bg-white max-w-[100vw] overflow-x-hidden">
-        {/* Placeholder for Hero content */}
-        <h1 className="text-2xl text-gray-400 font-light tracking-widest uppercase">Video Here</h1>
+      {/* Hero Section */}
+      <div className="w-full h-screen flex items-center justify-center bg-white max-w-[100vw] overflow-x-hidden relative">
+        <video 
+          ref={videoRef}
+          src={heroVideo}
+          className="w-full h-full object-cover"
+          muted
+          loop
+          playsInline
+        />
+        {/* Gradient overlay to blend with the white section below */}
+        <div className="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
       </div>
 
       {/* Product Sections */}

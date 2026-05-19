@@ -25,12 +25,12 @@ const withRouteBoundary = (element, fallbackTitle) => (
   </AppErrorBoundary>
 );
 
-const AppRoutes = () => {
+const AppRoutes = ({ isLoaded }) => {
   return (
     <AppErrorBoundary fallbackTitle="We could not render this page transition.">
       <PageTransition>
         <Routes>
-          <Route path="/" element={withRouteBoundary(<HomePage />, 'Home page is unavailable right now.')} />
+          <Route path="/" element={withRouteBoundary(<HomePage isLoaded={isLoaded} />, 'Home page is unavailable right now.')} />
           <Route path="/collections" element={withRouteBoundary(<CollectionsPage />, 'Collections page is unavailable right now.')} />
           <Route path="/product/:slug" element={withRouteBoundary(<ProductDetailsPage />, 'Product details are unavailable right now.')} />
           <Route path="/checkout" element={withRouteBoundary(<CheckoutForm />, 'Checkout is temporarily unavailable.')} />
@@ -85,7 +85,7 @@ function App() {
       <LoadingScreen isLoaded={isLoaded} />
       <NavBar />
       <AppErrorBoundary fallbackTitle="We hit an unexpected rendering issue.">
-        <AppRoutes />
+        <AppRoutes isLoaded={isLoaded} />
       </AppErrorBoundary>
     </BrowserRouter>
   );

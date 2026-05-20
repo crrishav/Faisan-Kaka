@@ -98,17 +98,17 @@ const Footer = () => {
                 <span className="text-xs text-[#a3a3a3]">Founder</span>
               </div>
             </a>
-            <a href="https://www.instagram.com/crrishav/" target="_blank" rel="noreferrer" className="flex items-center gap-3 cursor-pointer group">
+            <div className="flex items-center gap-3 group">
               <img 
-                src={new URL('../assets/pfp/rishav.jpg', import.meta.url).href} 
-                alt="Rishav" 
+                src={new URL('../assets/pfp/aman.jpg', import.meta.url).href} 
+                alt="Aman" 
                 className="w-12 h-12 rounded-full border border-[#d4d4d4] group-hover:border-white transition-colors" 
               />
               <div className="flex flex-col">
-                <span className="text-sm font-bold text-[#e5e5e5]">Rishav</span>
+                <span className="text-sm font-bold text-[#e5e5e5]">Aman</span>
                 <span className="text-xs text-[#a3a3a3]">Co-Founder</span>
               </div>
-            </a>
+            </div>
           </div>
         </div>
 

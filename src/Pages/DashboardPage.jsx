@@ -452,9 +452,9 @@ const PartnershipSection = () => {
                 image: new URL('../assets/pfp/saurabh.jpg', import.meta.url).href,
               },
               {
-                name: 'Rishav',
+                name: 'Aman',
                 role: 'Co-Founder',
-                image: new URL('../assets/pfp/rishav.jpg', import.meta.url).href,
+                image: new URL('../assets/pfp/aman.jpg', import.meta.url).href,
               },
             ].map(({ name, role, image }) => (
               <div key={name}>

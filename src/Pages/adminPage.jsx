@@ -936,7 +936,7 @@ const PartnershipSection = () => {
         <Card custom={0} className="col-span-1 md:col-span-2">
           <Label>Revenue Split · 50 / 50</Label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-3">
-            {[{ name: 'Saurabh', role: 'Founder' }, { name: 'Rishav', role: 'Co-Founder' }].map(({ name, role }) => (
+            {[{ name: 'Saurabh', role: 'Founder' }, { name: 'Aman', role: 'Co-Founder' }].map(({ name, role }) => (
               <div key={name}>
                 <div className="w-8 h-8 rounded-full bg-black/15 mb-2 flex items-center justify-center">
                   <span className="text-xs font-black text-black">{name[0]}</span>

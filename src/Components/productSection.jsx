@@ -1,10 +1,25 @@
 import React, { useRef, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import ProductCard from './productCard.jsx';
 import ArrowButton from './arrowButton.jsx';
 import useProducts from './useProducts.jsx';
 
 const ProductSection = ({ title }) => {
+  const navigate = useNavigate();
   const scrollContainerRef = useRef(null);
+
+  const renderHeader = () => (
+    <div className="w-full px-4 md:px-32 flex flex-col items-center md:flex-row md:items-end md:justify-between gap-3 mb-4 md:mb-6">
+      <h2 className="text-5xl md:text-3xl font-black text-black tracking-tighter">{title}</h2>
+      <button
+        type="button"
+        onClick={() => navigate('/collections')}
+        className="inline-flex items-center justify-center rounded-full border border-black bg-transparent px-5 py-2.5 text-sm font-bold text-black transition-colors duration-200 hover:bg-black hover:text-white active:scale-[0.98] cursor-pointer"
+      >
+        View All
+      </button>
+    </div>
+  );
 
   const scroll = (direction) => {
     if (scrollContainerRef.current) {
@@ -43,9 +58,7 @@ const ProductSection = ({ title }) => {
   if (loading) {
     return (
       <section data-product-section className="w-full py-12 flex flex-col items-center relative mt-8 outline-none max-w-[100vw]">
-        <div className="w-full px-4 md:px-32 flex flex-col items-center md:items-start mb-4 md:mb-6">
-          <h2 className="text-5xl md:text-3xl font-black text-black tracking-tighter">{title}</h2>
-        </div>
+        {renderHeader()}
         <div className="w-full h-40 flex items-center justify-center">
           <p className="text-gray-400 text-lg">Loading products...</p>
         </div>
@@ -57,9 +70,7 @@ const ProductSection = ({ title }) => {
   if (error) {
     return (
       <section data-product-section className="w-full py-12 flex flex-col items-center relative mt-8 outline-none max-w-[100vw]">
-        <div className="w-full px-4 md:px-32 flex flex-col items-center md:items-start mb-4 md:mb-6">
-          <h2 className="text-5xl md:text-3xl font-black text-black tracking-tighter">{title}</h2>
-        </div>
+        {renderHeader()}
         <div className="w-full h-40 flex items-center justify-center">
           <p className="text-red-500 text-lg">Error loading products. Please try again later.</p>
         </div>
@@ -71,9 +82,7 @@ const ProductSection = ({ title }) => {
   if (sectionProducts.length === 0) {
     return (
       <section data-product-section className="w-full py-12 flex flex-col items-center relative mt-8 outline-none max-w-[100vw]">
-        <div className="w-full px-4 md:px-32 flex flex-col items-center md:items-start mb-4 md:mb-6">
-          <h2 className="text-5xl md:text-3xl font-black text-black tracking-tighter">{title}</h2>
-        </div>
+        {renderHeader()}
         <div className="w-full h-40 flex items-center justify-center">
           <p className="text-gray-400 text-lg">No products available in this category.</p>
         </div>
@@ -83,10 +92,7 @@ const ProductSection = ({ title }) => {
 
   return (
     <section data-product-section className="w-full py-12 flex flex-col items-center relative mt-8 outline-none max-w-[100vw]">
-      {/* Header Section */}
-      <div className="w-full px-4 md:px-32 flex flex-col items-center md:items-start mb-4 md:mb-6">
-        <h2 className="text-5xl md:text-3xl font-black text-black tracking-tighter">{title}</h2>
-      </div>
+      {renderHeader()}
 
       <div className="w-full relative flex items-center group max-w-[100vw] overflow-x-auto">
         {/* Left feathering overlay */}

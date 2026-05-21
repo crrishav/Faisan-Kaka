@@ -245,22 +245,96 @@ const CheckoutForm = ({ cartItems, total, currency }) => {
 
     console.log('[CheckoutForm] Submitting payload:', payload);
 
-    // ── Integration point ──────────────────────────────────────
-    // Replace this block with your Razorpay + Sanity serverless call:
-    //
-    // try {
-    //   const res = await fetch('/api/create-order', {
-    //     method: 'POST',
-    //     headers: { 'Content-Type': 'application/json' },
-    //     body: JSON.stringify(payload),
-    //   });
-    //   const { orderId, amount, key } = await res.json();
-    //   // Init Razorpay here...
-    // } catch (err) {
-    //   console.error(err);
-    //   setLoading(false);
-    // }
-    // ──────────────────────────────────────────────────────────
+    // Create a Razorpay order on the server, then open Razorpay Checkout
+    const loadRazorpay = () => new Promise((resolve) => {
+      if (window.Razorpay) return resolve(true);
+      const s = document.createElement('script');
+      s.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      s.onload = () => resolve(true);
+      s.onerror = () => resolve(false);
+      document.body.appendChild(s);
+    });
+
+    try {
+      // 1) Create order on server (uses RAZORPAY_KEY_ID/SECRET from env on server)
+      const createRes = await fetch('/api/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ payload }),
+      });
+      let createJson;
+      try {
+        createJson = await createRes.json();
+      } catch (parseErr) {
+        const text = await createRes.text().catch(() => '<unreadable body>');
+        console.error('[create-order] non-JSON response', text);
+        throw new Error(`Invalid response from create-order: ${text}`);
+      }
+      if (!createRes.ok) throw new Error(createJson.error || 'Unable to create payment order');
+
+      const { razorpayOrderId, amount, key } = createJson;
+
+      // 2) Load Razorpay SDK
+      const ok = await loadRazorpay();
+      if (!ok) throw new Error('Failed to load Razorpay SDK');
+
+      // 3) Open Razorpay Checkout
+      const options = {
+        key, // key_id
+        amount: amount, // in paise
+        currency: 'INR',
+        name: 'Faisan Kaka',
+        description: 'Order payment',
+        order_id: razorpayOrderId,
+        handler: async function (response) {
+          // Called when payment succeeds in the Checkout UI
+          setLoading(true);
+          try {
+            const verifyRes = await fetch('/api/verify-payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature,
+                orderPayload: payload,
+              }),
+            });
+            const verifyJson = await verifyRes.json();
+            if (!verifyRes.ok) throw new Error(verifyJson.error || 'Payment verification failed');
+
+            // Persist the order (mark as Paid) and clear cart
+            await submitOrder({ ...payload, payment: { id: response.razorpay_payment_id, orderId: response.razorpay_order_id }, status: 'Paid' });
+            cart.clear();
+            setSubmitted(true);
+          } catch (err) {
+            console.error('[Payment] verify error', err);
+            alert(err.message || 'Payment verification failed');
+            setLoading(false);
+          }
+        },
+        prefill: {
+          name: fields.fullName,
+          email: fields.email,
+          contact: fields.phone,
+        },
+        theme: { color: '#000000' },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', function (resp) {
+        console.error('Payment failed', resp);
+        alert('Payment failed. Please try again.');
+        setLoading(false);
+      });
+      rzp.open();
+      return;
+    } catch (err) {
+      console.error(err);
+      setLoading(false);
+      alert(err.message || 'Payment failed');
+      return;
+    }
 
     // Simulate async for now
     await new Promise(r => setTimeout(r, 1800));

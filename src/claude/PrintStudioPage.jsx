@@ -61,6 +61,7 @@ const DESIGN_ANCHOR_MAP = {
 };
 const MIN_NORM_SCALE = 0.04;
 const MAX_NORM_SCALE = 1.2;
+const TEXT_LAYER_MAX_LENGTH = 40;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const isValidFile = (file) => {
@@ -74,12 +75,30 @@ const formatFileSize = (size) =>
 
 const createArtworkEntry = (file) => ({
   id: `${file.name}-${file.size}-${file.lastModified}-${Math.random().toString(36).slice(2, 8)}`,
+  type: 'asset',
   file, name: file.name, size: file.size,
   isPdf: file.type === 'application/pdf' || String(file.name).toLowerCase().endsWith('.pdf'),
   previewUrl: file.type.startsWith('image/') || String(file.name).toLowerCase().endsWith('.svg')
     ? URL.createObjectURL(file) : '',
   transforms: { front: { ...DEFAULT_TRANSFORM }, back: { ...DEFAULT_TRANSFORM } },
   // per-side visibility so removing from front doesn't affect back
+  visible: { front: true, back: true },
+  opacity: { front: 1, back: 1 },
+});
+
+const createTextEntry = (text = '') => ({
+  id: `text-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+  type: 'text',
+  file: null,
+  name: text || 'Text Layer',
+  size: 0,
+  isPdf: false,
+  previewUrl: '',
+  text,
+  textColor: '#111111',
+  fontFamily: 'Arial',
+  fontStyle: 'bold',
+  transforms: { front: { ...DEFAULT_TRANSFORM }, back: { ...DEFAULT_TRANSFORM } },
   visible: { front: true, back: true },
   opacity: { front: 1, back: 1 },
 });
@@ -240,6 +259,11 @@ const ArtworkNode = ({ artwork, isSelected, onSelect, onChange, activeSide, cent
   const transform = artwork.transforms[activeSide];
   const isVisible = artwork.visible ? artwork.visible[activeSide] !== false : true;
   const [img] = useImage(artwork.previewUrl);
+  const isTextLayer = artwork.type === 'text';
+  const textValue = String(artwork.text || 'Your Text');
+  const textFontSize = Number.isFinite(artwork.textSize) ? artwork.textSize : 96;
+  const textWidthEstimate = Math.max(120, Math.round(textValue.length * textFontSize * 0.62));
+  const textHeightEstimate = Math.max(56, Math.round(textFontSize * 1.2));
   const shapeRef = useRef(null);
   const trRef    = useRef(null);
   const boxWidth = Math.max(garmentBox?.width || 1, 1);
@@ -247,7 +271,11 @@ const ArtworkNode = ({ artwork, isSelected, onSelect, onChange, activeSide, cent
   const normX = Number.isFinite(transform.x) ? transform.x : 0;
   const normY = Number.isFinite(transform.y) ? transform.y : 0;
   const normScale = clampNormScale(Number.isFinite(transform.scale) ? transform.scale : DEFAULT_TRANSFORM.scale);
-  const baseWidth = artwork.isPdf ? 96 : Math.max(img?.width || 0, 1);
+  const baseWidth = isTextLayer
+    ? textWidthEstimate
+    : artwork.isPdf
+      ? 96
+      : Math.max(img?.width || 0, 1);
   const displayWidth = Math.max(8, boxWidth * normScale);
   const nodeScale = displayWidth / baseWidth;
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 1024;
@@ -267,7 +295,7 @@ const ArtworkNode = ({ artwork, isSelected, onSelect, onChange, activeSide, cent
     if (!showTransformer || !isSelected || !trRef.current || !shapeRef.current) return;
     trRef.current.nodes([shapeRef.current]);
     trRef.current.getLayer()?.batchDraw();
-  }, [isSelected, img, artwork.isPdf, showTransformer, artwork.id]);
+  }, [isSelected, img, artwork.isPdf, isTextLayer, showTransformer, artwork.id]);
 
   if (!isVisible) return null;
 
@@ -293,6 +321,36 @@ const ArtworkNode = ({ artwork, isSelected, onSelect, onChange, activeSide, cent
 
   // ── Masked layer: render actual visible artwork ──
   if (!showTransformer) {
+    if (isTextLayer) {
+      return (
+        <Text
+          ref={shapeRef}
+          text={textValue}
+          x={absX}
+          y={absY}
+          offsetX={textWidthEstimate / 2}
+          offsetY={textHeightEstimate / 2}
+          width={textWidthEstimate}
+          height={textHeightEstimate}
+          fontSize={textFontSize}
+          fontFamily={artwork.fontFamily || 'Arial'}
+          fontStyle={artwork.fontStyle || 'bold'}
+          fill={artwork.textColor || '#111111'}
+          align="center"
+          verticalAlign="middle"
+          scaleX={nodeScale}
+          scaleY={nodeScale}
+          rotation={transform.rotation || 0}
+          opacity={artwork.opacity?.[activeSide] ?? 1}
+          draggable={true}
+          onClick={onSelect}
+          onTap={onSelect}
+          onDragEnd={handleDragEnd}
+          onTransformEnd={handleTransformEnd}
+          onContextMenu={onContextMenu}
+        />
+      );
+    }
     if (artwork.isPdf) {
       return (
         <Group ref={shapeRef} x={absX} y={absY} offsetX={48} offsetY={48}
@@ -323,27 +381,57 @@ const ArtworkNode = ({ artwork, isSelected, onSelect, onChange, activeSide, cent
   // ── Control layer: render transformer + an invisible proxy node so Transformer can attach ──
   // We render a transparent hit-area node so the Transformer has a valid Konva node to grip.
   // All transform changes are propagated via handleTransformEnd which reads from shapeRefsMap.
-  const proxyWidth = artwork.isPdf ? 96 : Math.max(img?.width || 96, 1);
-  const proxyHeight = artwork.isPdf ? 96 : Math.max(img?.height || 96, 1);
+  const proxyWidth = isTextLayer
+    ? textWidthEstimate
+    : artwork.isPdf
+      ? 96
+      : Math.max(img?.width || 96, 1);
+  const proxyHeight = isTextLayer
+    ? textHeightEstimate
+    : artwork.isPdf
+      ? 96
+      : Math.max(img?.height || 96, 1);
 
   return (
     <React.Fragment>
       {/* Invisible proxy node — Transformer attaches to this in the unmasked layer */}
-      <KonvaImage
-        ref={shapeRef}
-        image={img || undefined}
-        offsetX={proxyWidth / 2}
-        offsetY={proxyHeight / 2}
-        x={absX} y={absY}
-        scaleX={nodeScale} scaleY={nodeScale}
-        rotation={transform.rotation || 0}
-        opacity={0}
-        draggable={true}
-        onClick={onSelect} onTap={onSelect}
-        onDragEnd={handleDragEnd}
-        onTransformEnd={handleTransformEnd}
-        onContextMenu={onContextMenu}
-      />
+      {isTextLayer ? (
+        <Rect
+          ref={shapeRef}
+          x={absX}
+          y={absY}
+          offsetX={proxyWidth / 2}
+          offsetY={proxyHeight / 2}
+          width={proxyWidth}
+          height={proxyHeight}
+          scaleX={nodeScale}
+          scaleY={nodeScale}
+          rotation={transform.rotation || 0}
+          opacity={0}
+          draggable={true}
+          onClick={onSelect}
+          onTap={onSelect}
+          onDragEnd={handleDragEnd}
+          onTransformEnd={handleTransformEnd}
+          onContextMenu={onContextMenu}
+        />
+      ) : (
+        <KonvaImage
+          ref={shapeRef}
+          image={img || undefined}
+          offsetX={proxyWidth / 2}
+          offsetY={proxyHeight / 2}
+          x={absX} y={absY}
+          scaleX={nodeScale} scaleY={nodeScale}
+          rotation={transform.rotation || 0}
+          opacity={0}
+          draggable={true}
+          onClick={onSelect} onTap={onSelect}
+          onDragEnd={handleDragEnd}
+          onTransformEnd={handleTransformEnd}
+          onContextMenu={onContextMenu}
+        />
+      )}
 
       {isSelected && (
         <Transformer ref={trRef} keepRatio
@@ -769,6 +857,17 @@ const PrintStudioPage = () => {
     e.target.value = '';
   }, [addFiles]);
 
+  const addTextLayer = useCallback(() => {
+    if (artworksRef.current.length >= MAX_UPLOADS) {
+      showToast(`Max ${MAX_UPLOADS} layers`);
+      return;
+    }
+    const entry = createTextEntry();
+    setArtworks((p) => [...p, entry]);
+    setActiveArtworkId(entry.id);
+    showToast('Text layer added');
+  }, []);
+
   const removeArtwork = useCallback((id) => {
     setArtworks((p) => { const t = p.find((a) => a.id === id); if (t?.previewUrl) URL.revokeObjectURL(t.previewUrl); return p.filter((a) => a.id !== id); });
   }, []);
@@ -820,6 +919,16 @@ const PrintStudioPage = () => {
   // ── Transform ops ──
   const updateArtworkTransform = useCallback((id, side, updater) => {
     setArtworks((p) => p.map((a) => a.id !== id ? a : { ...a, transforms: { ...a.transforms, [side]: updater(a.transforms[side]) } }));
+  }, []);
+
+  const updateArtworkText = useCallback((id, nextText) => {
+    const text = String(nextText || '').slice(0, TEXT_LAYER_MAX_LENGTH);
+    setArtworks((p) => p.map((a) => (a.id !== id || a.type !== 'text') ? a : { ...a, text, name: text || 'Text Layer' }));
+  }, []);
+
+  const updateArtworkTextColor = useCallback((id, nextColor) => {
+    const color = colord(nextColor).isValid() ? colord(nextColor).toHex() : '#111111';
+    setArtworks((p) => p.map((a) => (a.id !== id || a.type !== 'text') ? a : { ...a, textColor: color }));
   }, []);
 
   const upActive = (fn) => { if (!activeArtworkOnThisSide) return; updateArtworkTransform(activeArtworkOnThisSide.id, activeSide, fn); };
@@ -947,7 +1056,7 @@ const PrintStudioPage = () => {
                 {[
                   ['Garment', garmentName],
                   ...(isJeans ? [['Wash', jeansType === 'blue' ? 'Blue Wash' : 'Default']] : [['Color', garmentColor.toUpperCase()]]),
-                  ['Designs', `${artworks.length} file${artworks.length !== 1 ? 's' : ''}`],
+                  ['Designs', `${artworks.length} layer${artworks.length !== 1 ? 's' : ''}`],
                   ['Sides printed', 'Front & Back'],
                 ].map(([k, v]) => (
                   <div key={k} className="flex justify-between py-3">
@@ -1223,6 +1332,14 @@ const PrintStudioPage = () => {
 
                 {uploadError && <p className="mt-2 text-xs font-semibold text-red-600">{uploadError}</p>}
 
+                <button
+                  type="button"
+                  onClick={addTextLayer}
+                  className="mt-3 w-full h-10 rounded-xl border border-black/12 bg-black/4 text-black text-xs font-bold hover:bg-black/10 transition cursor-pointer"
+                >
+                  + Add Text Layer
+                </button>
+
                 {/* Artwork list */}
                 <div className="mt-4 flex flex-col gap-1.5 max-h-56 overflow-y-auto">
                   {artworks.length === 0 && (
@@ -1238,12 +1355,12 @@ const PrintStudioPage = () => {
                           ${isAct ? 'border-black bg-black text-white' : 'border-black/10 bg-white hover:bg-black/2'}`}>
                         {aw.previewUrl
                           ? <img src={aw.previewUrl} alt="" className="w-8 h-8 rounded-lg object-cover shrink-0 bg-black/8" />
-                          : <div className="w-8 h-8 rounded-lg bg-black/25 flex items-center justify-center shrink-0"><span className={`text-[9px] font-black ${isAct ? 'text-white/60' : 'text-black/50'}`}>PDF</span></div>
+                          : <div className="w-8 h-8 rounded-lg bg-black/25 flex items-center justify-center shrink-0"><span className={`text-[9px] font-black ${isAct ? 'text-white/60' : 'text-black/50'}`}>{aw.type === 'text' ? 'TXT' : 'PDF'}</span></div>
                         }
                         <div className="flex-1 min-w-0">
                           <p className={`text-[10px] font-black uppercase tracking-wide ${isAct ? 'text-white/45' : 'text-black/35'}`}>Design {i + 1}</p>
                           <p className="text-xs font-bold truncate">{aw.name}</p>
-                          <p className={`text-[10px] ${isAct ? 'text-white/40' : 'text-black/35'}`}>{formatFileSize(aw.size)}</p>
+                          <p className={`text-[10px] ${isAct ? 'text-white/40' : 'text-black/35'}`}>{aw.type === 'text' ? 'Text Layer' : formatFileSize(aw.size)}</p>
                         </div>
                         <div className="flex gap-0.5 shrink-0">
                           <button onClick={(e) => { e.stopPropagation(); duplicateArtwork(aw.id); }} title="Duplicate"
@@ -1364,6 +1481,31 @@ const PrintStudioPage = () => {
                       value={Math.round((activeArtwork.opacity?.[activeSide] ?? 1) * 100)}
                       onChange={(e) => setOpacity(activeArtwork.id, Number(e.target.value) / 100)}
                       className="w-full accent-black h-1.5 cursor-pointer" />
+                  </div>
+                )}
+
+                {activeArtwork?.type === 'text' && (
+                  <div className="mt-3 space-y-2.5">
+                    <div>
+                      <p className="text-[11px] font-black uppercase tracking-[0.15em] text-black/45 mb-1.5">Text Content</p>
+                      <input
+                        type="text"
+                        value={activeArtwork.text || ''}
+                        maxLength={TEXT_LAYER_MAX_LENGTH}
+                        onChange={(e) => updateArtworkText(activeArtwork.id, e.target.value)}
+                        className="w-full h-9 rounded-xl border border-black/16 bg-white px-3 text-sm font-bold text-black outline-none focus:border-black/45 transition"
+                        placeholder="Your Text"
+                      />
+                    </div>
+                    <div>
+                      <p className="text-[11px] font-black uppercase tracking-[0.15em] text-black/45 mb-1.5">Text Color</p>
+                      <input
+                        type="color"
+                        value={activeArtwork.textColor || '#111111'}
+                        onChange={(e) => updateArtworkTextColor(activeArtwork.id, e.target.value)}
+                        className="h-9 w-14 rounded-xl border border-black/16 bg-white p-1 cursor-pointer"
+                      />
+                    </div>
                   </div>
                 )}
               </div>
@@ -1574,9 +1716,17 @@ const PrintStudioPage = () => {
                     </div>
                     {uploadError && <p className="text-xs text-red-600 font-semibold">{uploadError}</p>}
 
+                    <button
+                      type="button"
+                      onClick={addTextLayer}
+                      className="h-11 rounded-2xl border border-black/10 bg-black/4 text-black text-xs font-black active:scale-[0.98] transition"
+                    >
+                      + Add Text Layer
+                    </button>
+
                     <div className="flex flex-col gap-2">
                       {artworks.length === 0 && <p className="text-xs text-black/35 text-center py-5">No designs yet</p>}
-                      {artworks.map((aw, i) => {
+                      {artworks.map((aw) => {
                         const isAct = aw.id === activeArtworkId;
                         const onFront = !aw.visible || aw.visible.front !== false;
                         const onBack  = !aw.visible || aw.visible.back  !== false;
@@ -1586,7 +1736,7 @@ const PrintStudioPage = () => {
                               ${isAct ? 'border-black shadow-md bg-white' : 'border-black/5 bg-black/[0.02]'}`}>
                             {aw.previewUrl
                               ? <img src={aw.previewUrl} alt="" className="w-12 h-12 rounded-xl object-cover shrink-0 border border-black/5 shadow-sm" />
-                              : <div className="w-12 h-12 rounded-xl shrink-0 flex items-center justify-center bg-black/10"><span className="text-[10px] font-black text-black/40">PDF</span></div>
+                              : <div className="w-12 h-12 rounded-xl shrink-0 flex items-center justify-center bg-black/10"><span className="text-[10px] font-black text-black/40">{aw.type === 'text' ? 'TXT' : 'PDF'}</span></div>
                             }
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-bold truncate text-black">{aw.name}</p>
@@ -1689,6 +1839,31 @@ const PrintStudioPage = () => {
                             onChange={(e) => setOpacity(activeArtworkOnThisSide.id, Number(e.target.value) / 100)}
                             className="w-full accent-black h-2.5 cursor-pointer rounded-full bg-black/10" />
                         </div>
+
+                        {activeArtworkOnThisSide.type === 'text' && (
+                          <div className="bg-black/4 border border-black/5 rounded-2xl p-4 mt-2 space-y-3">
+                            <div>
+                              <p className="text-[11px] font-black uppercase tracking-wide text-black/60 mb-2">Text Content</p>
+                              <input
+                                type="text"
+                                value={activeArtworkOnThisSide.text || ''}
+                                maxLength={TEXT_LAYER_MAX_LENGTH}
+                                onChange={(e) => updateArtworkText(activeArtworkOnThisSide.id, e.target.value)}
+                                className="w-full h-11 rounded-2xl border-2 border-black/10 bg-white px-3 text-sm font-bold outline-none focus:border-black/40"
+                                placeholder="Your Text"
+                              />
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <p className="text-[11px] font-black uppercase tracking-wide text-black/60">Text Color</p>
+                              <input
+                                type="color"
+                                value={activeArtworkOnThisSide.textColor || '#111111'}
+                                onChange={(e) => updateArtworkTextColor(activeArtworkOnThisSide.id, e.target.value)}
+                                className="h-11 w-14 rounded-xl border border-black/12 bg-white p-1"
+                              />
+                            </div>
+                          </div>
+                        )}
                         
                         <button onClick={() => { removeArtwork(activeArtworkOnThisSide.id); showToast('Deleted'); setMobileTab(null); }}
                           className="mt-1 w-full h-12 rounded-xl bg-red-50 text-red-500 text-[13px] font-bold flex items-center justify-center gap-2 active:bg-red-100 active:scale-[0.98] transition">
@@ -1719,7 +1894,7 @@ const PrintStudioPage = () => {
                                 ${isAct ? 'bg-black border-black shadow-lg text-white' : onThisSide ? 'bg-white border-black/10' : 'bg-black/4 border-black/5 opacity-60'}`}>
                               {aw.previewUrl
                                 ? <img src={aw.previewUrl} alt="" className="w-12 h-12 rounded-xl object-cover shrink-0 bg-white/10" />
-                                : <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-black/20"><span className="text-[10px] font-black">PDF</span></div>
+                                : <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-black/20"><span className="text-[10px] font-black">{aw.type === 'text' ? 'TXT' : 'PDF'}</span></div>
                               }
                               <p className={`flex-1 text-sm font-bold truncate ${isAct ? 'text-white' : 'text-black'}`}>{aw.name}</p>
                               

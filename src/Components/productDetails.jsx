@@ -1,9 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import useCart from './useCart.jsx';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import useCurrency from './currencyContext.jsx';
 import { getResponsiveImageProps } from '../lib/responsiveImage.js';
+import { normalizeMoneyValue } from '../lib/money.js';
 
 const ProductDetails = ({ 
   title = "T-Shirt (White)", 
@@ -27,7 +28,9 @@ const ProductDetails = ({
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const { addItem } = useCart();
   const { isNepal } = useCurrency();
-  const displayPrice = isNepal ? `Rs. ${priceNPR}` : `₹${priceINR}`;
+  const resolvedPriceINR = normalizeMoneyValue(priceINR, priceINR);
+  const resolvedPriceNPR = normalizeMoneyValue(priceNPR, priceNPR);
+  const displayPrice = isNepal ? `Rs. ${resolvedPriceNPR}` : `₹${resolvedPriceINR}`;
   
   const images = useMemo(() => {
     const unique = [frontImage, backImage].filter(Boolean);
@@ -65,11 +68,11 @@ const ProductDetails = ({
     setIsViewerOpen(true);
   };
 
-  const closeViewer = () => {
+  const closeViewer = useCallback(() => {
     setIsViewerOpen(false);
     setIsPanning(false);
     resetViewerTransform();
-  };
+  }, []);
   
   const handlePrevImage = () => {
     setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
@@ -136,7 +139,20 @@ const ProductDetails = ({
   const handleAddToCart = () => {
     const baseId = slug || title.toLowerCase().replace(/\s+/g, '-');
     const id = `${baseId}-${selectedColor}-${selectedSize}`;
-    addItem({ id, title, priceINR, priceNPR, quantity, size: selectedSize, color: selectedColor, frontImage, backImage, slug: baseId });
+    addItem({
+      id,
+      title,
+      priceINR: resolvedPriceINR,
+      priceNPR: resolvedPriceNPR,
+      displayPriceINR: String(priceINR || resolvedPriceINR),
+      displayPriceNPR: String(priceNPR || resolvedPriceNPR),
+      quantity,
+      size: selectedSize,
+      color: selectedColor,
+      frontImage,
+      backImage,
+      slug: baseId,
+    });
   };
   
   const handleBuyNow = () => {
@@ -157,7 +173,7 @@ const ProductDetails = ({
       document.body.style.overflow = '';
       window.removeEventListener('keydown', onEsc);
     };
-  }, [isViewerOpen]);
+  }, [isViewerOpen, closeViewer]);
 
   return (
     <>

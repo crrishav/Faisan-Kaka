@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useCallback, useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import ProductDetails from '../Components/productDetails.jsx';
 import Footer from '../Components/footer.jsx';
@@ -6,6 +6,7 @@ import SmoothScroll from '../Components/smoothScroll.jsx';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getProductBySlug } from '../lib/sanityClient.js';
 import { getResponsiveImageProps } from '../lib/responsiveImage.js';
+import { normalizeMoneyValue } from '../lib/money.js';
 
 const ProductDetailsPage = () => {
   const { slug } = useParams();
@@ -167,8 +168,8 @@ const ProductDetailsPage = () => {
 
     return {
       title: normalizedTitle,
-      priceINR: product.priceINR?.toString() || '0',
-      priceNPR: product.priceNPR?.toString() || '0',
+      priceINR: normalizeMoneyValue(product.priceINR, product.priceINR?.toString()),
+      priceNPR: normalizeMoneyValue(product.priceNPR, product.priceNPR?.toString()),
       stock: typeof product.stock === 'number' ? product.stock : null,
       description: normalizedDescription,
       colors: normalizedColors.length > 0 ? normalizedColors : ["#3D5443", "#4D3434", "#4A4A4A"],
@@ -196,11 +197,11 @@ const ProductDetailsPage = () => {
     setIsDesktopViewerOpen(true);
   };
 
-  const closeDesktopViewer = () => {
+  const closeDesktopViewer = useCallback(() => {
     setIsDesktopViewerOpen(false);
     setIsDesktopPanning(false);
     resetDesktopViewerTransform();
-  };
+  }, []);
 
   const handleDesktopPrevImage = () => {
     setDesktopViewerIndex((prev) => (prev - 1 + desktopImages.length) % desktopImages.length);
@@ -277,7 +278,7 @@ const ProductDetailsPage = () => {
       document.body.style.overflow = '';
       window.removeEventListener('keydown', onEsc);
     };
-  }, [isDesktopViewerOpen]);
+  }, [isDesktopViewerOpen, closeDesktopViewer]);
 
   // Prepare display data
   const displayError = error || (!productData && !loading);

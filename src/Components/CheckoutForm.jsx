@@ -6,10 +6,8 @@ import useCart from './useCart.jsx';
 import useProducts from './useProducts.jsx';
 import {
   formatCouponBadge,
-  incrementCouponUsage,
   validateCouponCode,
 } from '../lib/couponService.js';
-import { submitOrder } from '../lib/ordersService.js';
 
 void motion;
 
@@ -265,7 +263,7 @@ const CheckoutForm = ({ cartItems, total, currency }) => {
       let createJson;
       try {
         createJson = await createRes.json();
-      } catch (parseErr) {
+      } catch {
         const text = await createRes.text().catch(() => '<unreadable body>');
         console.error('[create-order] non-JSON response', text);
         throw new Error(`Invalid response from create-order: ${text}`);
@@ -303,8 +301,7 @@ const CheckoutForm = ({ cartItems, total, currency }) => {
             const verifyJson = await verifyRes.json();
             if (!verifyRes.ok) throw new Error(verifyJson.error || 'Payment verification failed');
 
-            // Persist the order (mark as Paid) and clear cart
-            await submitOrder({ ...payload, payment: { id: response.razorpay_payment_id, orderId: response.razorpay_order_id }, status: 'Paid' });
+            // The verification endpoint already persists the paid order.
             cart.clear();
             setSubmitted(true);
           } catch (err) {
@@ -336,30 +333,6 @@ const CheckoutForm = ({ cartItems, total, currency }) => {
       return;
     }
 
-    // Simulate async for now
-    await new Promise(r => setTimeout(r, 1800));
-    if (finalCoupon?.id) {
-      const usageResult = await incrementCouponUsage(finalCoupon.id, {
-        code: finalCoupon.code,
-        subtotal,
-        total: Math.max(0, subtotal - finalCoupon.discountAmount),
-        currency: effectiveCurrency,
-      });
-      if (!usageResult?.ok) {
-        setLoading(false);
-        setCouponError(`Coupon removed: ${usageResult.reason}`);
-        setAppliedCoupon(null);
-        return;
-      }
-    }
-    try {
-      await submitOrder(payload);
-      cart.clear(); // Clear the cart after successful order
-    } catch (err) {
-      // ignore
-    }
-    setLoading(false);
-    setSubmitted(true);
   };
 
   /* ── Success state ── */
@@ -745,7 +718,7 @@ const CheckoutForm = ({ cartItems, total, currency }) => {
 
 /* ─── Pay button (shared between mobile + sidebar) ──────────────── */
 
-const PayButton = ({ loading, displayTotal, disabled = false, onClick }) => (
+const PayButton = ({ loading, disabled = false, onClick }) => (
   <motion.button
     type={onClick ? 'button' : 'submit'}
     onClick={onClick}

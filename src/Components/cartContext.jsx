@@ -1,5 +1,6 @@
 import React, { createContext, useEffect, useMemo, useState, useCallback } from 'react';
 import useCurrency from './currencyContext.jsx';
+import { normalizeMoneyValue } from '../lib/money.js';
 
 const CartContext = createContext(null);
 
@@ -25,23 +26,14 @@ export const CartProvider = ({ children }) => {
   }, [items]);
 
   const addItem = useCallback((item) => {
-    // Normalize incoming prices and warn on suspicious values to aid debugging
-    const normalizePrice = (v) => {
-      const n = Number(v);
-      if (Number.isFinite(n)) return n;
-      const parsed = Number(String(v || '').replace(/[^\d.]/g, ''));
-      return Number.isFinite(parsed) ? parsed : 0;
-    };
-
     const safeItem = {
       ...item,
-      priceINR: normalizePrice(item.priceINR),
-      priceNPR: normalizePrice(item.priceNPR),
+      priceINR: normalizeMoneyValue(item.priceINR, item.displayPriceINR),
+      priceNPR: normalizeMoneyValue(item.priceNPR, item.displayPriceNPR),
     };
 
     if (typeof window !== 'undefined' && (safeItem.priceINR > 0 && safeItem.priceINR < 1)) {
       // log small price value to help debug cases like 0.2 instead of 2000
-      // eslint-disable-next-line no-console
       console.warn('[cart] suspicious priceINR value', safeItem.priceINR, 'for item', safeItem.id || safeItem.title);
     }
 

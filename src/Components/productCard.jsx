@@ -4,6 +4,7 @@ import { prefetchProductBySlug } from '../lib/sanityClient.js';
 import { buildSanityImageUrl, getResponsiveImageProps } from '../lib/responsiveImage.js';
 import useCart from './useCart.jsx';
 import useCurrency from './currencyContext.jsx';
+import { normalizeMoneyValue } from '../lib/money.js';
 
 const QUICK_SIZES = ['S', 'M', 'L', 'XL'];
 const QUICK_COLORS = ['#111111', '#2f2f2f', '#d9d9d9', '#1e3a8a'];
@@ -49,15 +50,8 @@ const ProductCard = ({ title, price, backImage, frontImage, slug, priceINR, pric
     return () => clearTimeout(timer);
   }, [addedFlash]);
 
-  const toNumber = (value) => {
-    const parsed = Number(value);
-    if (Number.isFinite(parsed) && parsed > 0) return parsed;
-    const fromString = Number(String(value || '').replace(/[^\d.]/g, ''));
-    return Number.isFinite(fromString) ? fromString : 0;
-  };
-
-  const resolvedPriceINR = toNumber(priceINR || (currency === 'INR' ? price : 0));
-  const resolvedPriceNPR = toNumber(priceNPR || (currency === 'NPR' ? price : 0));
+  const resolvedPriceINR = normalizeMoneyValue(priceINR || (currency === 'INR' ? price : 0), price);
+  const resolvedPriceNPR = normalizeMoneyValue(priceNPR || (currency === 'NPR' ? price : 0), price);
 
   const handleMouseEnter = () => {
     setSelectedSize(null);
@@ -86,6 +80,8 @@ const ProductCard = ({ title, price, backImage, frontImage, slug, priceINR, pric
       title,
       priceINR: resolvedPriceINR,
       priceNPR: resolvedPriceNPR,
+      displayPriceINR: String(priceINR || price || resolvedPriceINR),
+      displayPriceNPR: String(priceNPR || price || resolvedPriceNPR),
       quantity: 1,
       size: finalSize,
       color: finalColor,

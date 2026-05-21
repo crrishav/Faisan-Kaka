@@ -315,6 +315,11 @@ const CheckoutForm = ({ cartItems, total, currency }) => {
           email: fields.email,
           contact: fields.phone,
         },
+        modal: {
+          ondismiss: () => {
+            setLoading(false);
+          },
+        },
         theme: { color: '#000000' },
       };
 

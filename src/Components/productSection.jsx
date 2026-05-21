@@ -119,7 +119,9 @@ const ProductSection = ({ title }) => {
                   isNepal
                     ? (product.priceNPR ? `Rs. ${product.priceNPR}` : 'Rs. —')
                     : (product.priceINR ? `₹${product.priceINR}` : '₹—')
-                  } 
+                  }
+                priceINR={product.priceINR}
+                priceNPR={product.priceNPR}
                 backImage={product.backImage} 
                 frontImage={product.frontImage} 
                 slug={product.slug}

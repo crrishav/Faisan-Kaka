@@ -79,7 +79,8 @@ const ProductCard = ({ title, price, backImage, frontImage, slug, priceINR, pric
 
     if (!finalSize || !finalColor) return;
 
-    const id = slug || title.toLowerCase().replace(/\s+/g, '-');
+    const baseId = slug || title.toLowerCase().replace(/\s+/g, '-');
+    const id = `${baseId}-${finalColor}-${finalSize}`;
     addItem({
       id,
       title,
@@ -90,7 +91,7 @@ const ProductCard = ({ title, price, backImage, frontImage, slug, priceINR, pric
       color: finalColor,
       frontImage,
       backImage,
-      slug: id,
+      slug: baseId,
     });
     setAddedFlash(true);
   };

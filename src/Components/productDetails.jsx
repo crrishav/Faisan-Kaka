@@ -134,8 +134,9 @@ const ProductDetails = ({
   };
   
   const handleAddToCart = () => {
-    const id = slug || title.toLowerCase().replace(/\s+/g, '-');
-    addItem({ id, title, priceINR, priceNPR, quantity, frontImage, backImage, slug: id });
+    const baseId = slug || title.toLowerCase().replace(/\s+/g, '-');
+    const id = `${baseId}-${selectedColor}-${selectedSize}`;
+    addItem({ id, title, priceINR, priceNPR, quantity, size: selectedSize, color: selectedColor, frontImage, backImage, slug: baseId });
   };
   
   const handleBuyNow = () => {

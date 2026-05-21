@@ -29,7 +29,7 @@ export const CartProvider = ({ children }) => {
     const normalizePrice = (v) => {
       const n = Number(v);
       if (Number.isFinite(n)) return n;
-      const parsed = Number(String(v || '').replace(/[^\\d.]/g, ''));
+      const parsed = Number(String(v || '').replace(/[^\d.]/g, ''));
       return Number.isFinite(parsed) ? parsed : 0;
     };
 

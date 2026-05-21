@@ -25,18 +25,38 @@ export const CartProvider = ({ children }) => {
   }, [items]);
 
   const addItem = useCallback((item) => {
+    // Normalize incoming prices and warn on suspicious values to aid debugging
+    const normalizePrice = (v) => {
+      const n = Number(v);
+      if (Number.isFinite(n)) return n;
+      const parsed = Number(String(v || '').replace(/[^\\d.]/g, ''));
+      return Number.isFinite(parsed) ? parsed : 0;
+    };
+
+    const safeItem = {
+      ...item,
+      priceINR: normalizePrice(item.priceINR),
+      priceNPR: normalizePrice(item.priceNPR),
+    };
+
+    if (typeof window !== 'undefined' && (safeItem.priceINR > 0 && safeItem.priceINR < 1)) {
+      // log small price value to help debug cases like 0.2 instead of 2000
+      // eslint-disable-next-line no-console
+      console.warn('[cart] suspicious priceINR value', safeItem.priceINR, 'for item', safeItem.id || safeItem.title);
+    }
+
     setItems((prev) => {
       const idx = prev.findIndex((i) => i.id === item.id);
       if (idx >= 0) {
         const next = [...prev];
         next[idx] = {
           ...next[idx],
-          ...item,
+          ...safeItem,
           quantity: next[idx].quantity + (item.quantity || 1),
         };
         return next;
       }
-      return [...prev, { ...item, quantity: item.quantity || 1 }];
+      return [...prev, { ...safeItem, quantity: item.quantity || 1 }];
     });
   }, []);
 

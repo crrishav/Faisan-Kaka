@@ -1,5 +1,3 @@
-import fetch from 'node-fetch';
-
 export default async function handler(req, res) {
   // CORS
   res.setHeader('Access-Control-Allow-Credentials', true);
@@ -42,8 +40,15 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify(body),
     });
+    let data;
+    try {
+      data = await r.json();
+    } catch (e) {
+      const text = await r.text().catch(() => '<unreadable body>');
+      console.error('[Razorpay create order] non-JSON response', text);
+      return res.status(502).json({ error: `Razorpay returned non-JSON response: ${text}` });
+    }
 
-    const data = await r.json();
     if (!r.ok) {
       console.error('[Razorpay create order] failed', data);
       return res.status(502).json({ error: data.error?.description || 'Razorpay order creation failed' });

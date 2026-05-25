@@ -1,6 +1,9 @@
 import { render } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import ProductSection from './productSection.jsx';
+import { BrowserRouter } from 'react-router-dom';
+import { CartProvider } from './cartContext.jsx';
+import { CurrencyProvider } from './currencyContext.jsx';
 
 // mock useProducts hook
 const mockUseProducts = vi.fn();
@@ -25,15 +28,23 @@ describe('ProductSection mobile layout', () => {
     // return three products in the same category
     mockUseProducts.mockReturnValue({
       products: [
-        { category: 'T-Shirts', name: 'A', slug: 'a' },
-        { category: 'T-Shirts', name: 'B', slug: 'b' },
-        { category: 'T-Shirts', name: 'C', slug: 'c' },
+        { _id: 'a', category: 'T-Shirts', name: 'A', slug: 'a' },
+        { _id: 'b', category: 'T-Shirts', name: 'B', slug: 'b' },
+        { _id: 'c', category: 'T-Shirts', name: 'C', slug: 'c' },
       ],
       loading: false,
       error: null
     });
 
-    const { container } = render(<ProductSection title="T-Shirts" />);
+    const { container } = render(
+      <CurrencyProvider>
+        <CartProvider>
+          <BrowserRouter>
+            <ProductSection title="T-Shirts" />
+          </BrowserRouter>
+        </CartProvider>
+      </CurrencyProvider>
+    );
     const scrollDiv = container.querySelector('div.flex.overflow-x-auto');
     expect(scrollDiv).toBeTruthy();
     // simulate measurable width so the centering effect runs
@@ -42,7 +53,7 @@ describe('ProductSection mobile layout', () => {
     expect(scrollDiv.style.transform).toMatch(/translateX\(/);
 
     // ensure each card includes mx-auto so left/right margins are equal
-    const cards = container.querySelectorAll('div.w-64');
+    const cards = container.querySelectorAll('.carousel-item');
     expect(cards.length).toBe(3);
     cards.forEach(card => {
       expect(card.className).toMatch(/mx-auto/);
@@ -51,8 +62,20 @@ describe('ProductSection mobile layout', () => {
 
   it('hides feather overlays on mobile', () => {
     setViewport(375);
-    mockUseProducts.mockReturnValue([{ category: 'T-Shirts', name: 'Only', slug: 'only' }]);
-    const { container } = render(<ProductSection title="T-Shirts" />);
+    mockUseProducts.mockReturnValue({
+      products: [{ _id: 'only', category: 'T-Shirts', name: 'Only', slug: 'only' }],
+      loading: false,
+      error: null
+    });
+    const { container } = render(
+      <CurrencyProvider>
+        <CartProvider>
+          <BrowserRouter>
+            <ProductSection title="T-Shirts" />
+          </BrowserRouter>
+        </CartProvider>
+      </CurrencyProvider>
+    );
     // overlays have gradient classes
     const overlays = container.querySelectorAll('div.bg-gradient-to-r, div.bg-gradient-to-l');
     overlays.forEach(el => {

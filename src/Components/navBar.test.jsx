@@ -59,7 +59,7 @@ describe('NavBar Cart Dropdown Height', () => {
     // Find container and children to set heights
     const navContainer = container.querySelector('div[style*="height"]');
     const header = navContainer.firstChild;
-    const content = navContainer.lastChild;
+    const content = navContainer.children[2];
     
     // Set heights using our custom setter
     header._offsetHeight = 80;
@@ -114,12 +114,14 @@ describe('NavBar Cart Dropdown Height', () => {
     );
     const nav = container.querySelector('nav');
     expect(nav).toBeTruthy();
-    // initial top should be 0 (tailwind top-0)
-    expect(nav.style.top || getComputedStyle(nav).top).toBe('0px');
+    // initial top classes
+    expect(nav.className).toContain('fixed');
+    expect(nav.className).toContain('top-2');
 
     // simulate scroll event
     window.scrollY = 100;
     fireEvent.scroll(window);
-    expect(nav.style.top || getComputedStyle(nav).top).toBe('0px');
+    expect(nav.className).toContain('fixed');
+    expect(nav.className).toContain('top-2');
   });
 });

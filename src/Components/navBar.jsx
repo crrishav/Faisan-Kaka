@@ -70,6 +70,28 @@ const NavBar = () => {
     return map;
   }, []);
 
+  const resolveCartItemImage = (item) => {
+    if (item.frontImage || item.backImage) {
+      return item.frontImage || item.backImage;
+    }
+    const slugKey = item.slug || (item.id ? item.id.split('-')[0] : '');
+    if (slugKey && imageMap[slugKey]) {
+      return imageMap[slugKey].front || imageMap[slugKey].back;
+    }
+    const idKey = item.id || '';
+    if (idKey && imageMap[idKey]) {
+      return imageMap[idKey].front || imageMap[idKey].back;
+    }
+    const matchedProduct = allProducts?.find((product) => {
+      const productSlug = String(product.slug || '').trim().toLowerCase();
+      const productName = String(product.name || '').trim().toLowerCase();
+      const key = String(item.slug || item.id || '').trim().toLowerCase();
+      const normalizedTitle = String(item.title || '').trim().toLowerCase();
+      return productSlug === key || productName === normalizedTitle || key.startsWith(productSlug);
+    });
+    return matchedProduct?.frontImage || matchedProduct?.backImage || '';
+  };
+
   const openMenu = (name) => {
     if (closeTimer.current) clearTimeout(closeTimer.current);
     setActiveMenu(name);
@@ -577,7 +599,7 @@ const NavBar = () => {
                 <>
                   <div className="flex flex-col gap-3">
                     {items.map((i) => {
-                      const imgSrc = imageMap[i.id]?.back || imageMap[i.id]?.front;
+                      const imgSrc = resolveCartItemImage(i);
                       return (
                         <div key={i.id} className="flex items-center justify-between w-full">
                           <div className="flex items-center gap-3">
@@ -830,7 +852,7 @@ const NavBar = () => {
               ) : (
                 <>
                   {items.map((i) => {
-                    const imgSrc = imageMap[i.id]?.back || imageMap[i.id]?.front;
+                    const imgSrc = resolveCartItemImage(i);
                     return (
                       <div key={i.id} className="flex items-center justify-between w-full">
                         <div className="flex items-center gap-3">

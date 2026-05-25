@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import logo from '../assets/logo.svg';
 import saurabhPfp from '../assets/pfp/saurabh.jpg';
-import amanPfp from '../assets/pfp/aman.jpg';
+import rishavPfp from '../assets/pfp/rishav.jpg';
 import { useNavigate, useLocation } from 'react-router-dom';
 import useCart from './useCart.jsx';
 import useProducts from './useProducts.jsx';
@@ -558,11 +558,11 @@ const NavBar = () => {
                     <span className="text-xs font-bold text-black leading-tight">Saurabh</span>
                     <span className="text-[10px] text-black/70 leading-tight">Founder</span>
                   </a>
-                  <div className="flex flex-col items-center gap-1">
-                    <img src={amanPfp} alt="Aman" className="w-14 h-14 rounded-full border-2 border-black" />
-                    <span className="text-xs font-bold text-black leading-tight">Aman</span>
+                  <a href="https://www.instagram.com/crrishav/" target="_blank" rel="noreferrer" className="flex flex-col items-center gap-1 cursor-pointer">
+                    <img src={rishavPfp} alt="Rishav" className="w-14 h-14 rounded-full border-2 border-black" />
+                    <span className="text-xs font-bold text-black leading-tight">Rishav</span>
                     <span className="text-[10px] text-black/70 leading-tight">Co-Founder</span>
-                  </div>
+                  </a>
                 </div>
               </div>
             </div>
@@ -743,11 +743,11 @@ const NavBar = () => {
                       <span className="text-xs font-bold text-black">Saurabh</span>
                       <span className="text-[10px] text-black/60">Founder</span>
                     </a>
-                    <div className="flex flex-col items-center gap-1">
-                      <img src={amanPfp} alt="Aman" className="w-12 h-12 rounded-full border-2 border-black" />
-                      <span className="text-xs font-bold text-black">Aman</span>
+                    <a href="https://www.instagram.com/crrishav/" target="_blank" rel="noreferrer" className="flex flex-col items-center gap-1 cursor-pointer">
+                      <img src={rishavPfp} alt="Rishav" className="w-12 h-12 rounded-full border-2 border-black" />
+                      <span className="text-xs font-bold text-black">Rishav</span>
                       <span className="text-[10px] text-black/60">Co-Founder</span>
-                    </div>
+                    </a>
                   </div>
                 </div>
               </div>

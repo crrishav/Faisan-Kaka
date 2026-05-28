@@ -63,6 +63,7 @@ const DESIGN_ANCHOR_MAP = {
 const MIN_NORM_SCALE = 0.04;
 const MAX_NORM_SCALE = 1.2;
 const TEXT_LAYER_MAX_LENGTH = 40;
+const DESIGN_DESCRIPTION_MAX_LENGTH = 280;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const isValidFile = (file) => {
@@ -1687,9 +1688,11 @@ const PrintStudioPage = () => {
                 <p className="text-[11px] font-black uppercase tracking-[0.18em] text-black/45 mb-2.5">Special Instructions / Custom Notes</p>
                 <textarea
                   value={designDescription}
-                  onChange={(e) => setDesignDescription(e.target.value)}
+                  maxLength={DESIGN_DESCRIPTION_MAX_LENGTH}
+                  onChange={(e) => setDesignDescription(e.target.value.slice(0, DESIGN_DESCRIPTION_MAX_LENGTH))}
                   placeholder="Describe where you want the print, specific alignment, sizing request, print style, or any other notes..."
-                  className="w-full h-24 rounded-2xl border border-black/16 bg-white px-4 py-3 text-sm font-bold text-black outline-none focus:border-black/45 transition resize-none placeholder-black/30"
+                  className="w-full h-24 rounded-2xl border border-black/16 bg-white px-4 py-3 text-sm font-bold text-black outline-none focus:border-black/45 transition resize-none overflow-y-auto overscroll-contain placeholder-black/30"
+                  onWheel={(e) => e.stopPropagation()}
                 />
               </div>
             </div>
@@ -1773,9 +1776,11 @@ const PrintStudioPage = () => {
               <p className="text-[11px] font-black uppercase tracking-[0.18em] text-black/45 mb-2.5">Special Instructions / Custom Notes</p>
               <textarea
                 value={designDescription}
-                onChange={(e) => setDesignDescription(e.target.value)}
+                maxLength={DESIGN_DESCRIPTION_MAX_LENGTH}
+                onChange={(e) => setDesignDescription(e.target.value.slice(0, DESIGN_DESCRIPTION_MAX_LENGTH))}
                 placeholder="Describe where you want the print, specific alignment, sizing request, print style, or any other notes..."
-                className="w-full h-24 rounded-2xl border border-black/16 bg-white px-4 py-3 text-sm font-bold text-black outline-none focus:border-black/45 transition resize-none placeholder-black/30"
+                className="w-full h-24 rounded-2xl border border-black/16 bg-white px-4 py-3 text-sm font-bold text-black outline-none focus:border-black/45 transition resize-none overflow-y-auto overscroll-contain placeholder-black/30"
+                onWheel={(e) => e.stopPropagation()}
               />
             </div>
 

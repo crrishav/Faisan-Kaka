@@ -597,7 +597,11 @@ const NavBar = () => {
                 </div>
               ) : (
                 <>
-                  <div className="flex flex-col gap-3 max-h-[180px] overflow-y-auto pr-1.5 custom-scrollbar" style={{ scrollbarWidth: 'thin' }}>
+                  <div
+                    className="flex flex-col gap-3 max-h-[180px] overflow-y-auto pr-1.5 custom-scrollbar overscroll-contain"
+                    style={{ scrollbarWidth: 'thin', overscrollBehavior: 'contain' }}
+                    onWheel={(e) => e.stopPropagation()}
+                  >
                     {items.map((i) => {
                       const imgSrc = resolveCartItemImage(i);
                       return (
@@ -856,7 +860,11 @@ const NavBar = () => {
                 </div>
               ) : (
                 <>
-                  <div className="flex flex-col gap-3 max-h-[170px] overflow-y-auto pr-1.5 custom-scrollbar" style={{ scrollbarWidth: 'thin' }}>
+                  <div
+                    className="flex flex-col gap-3 max-h-[170px] overflow-y-auto pr-1.5 custom-scrollbar overscroll-contain"
+                    style={{ scrollbarWidth: 'thin', overscrollBehavior: 'contain' }}
+                    onWheel={(e) => e.stopPropagation()}
+                  >
                     {items.map((i) => {
                       const imgSrc = resolveCartItemImage(i);
                       return (

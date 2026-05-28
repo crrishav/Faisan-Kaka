@@ -41,14 +41,15 @@ export const CartProvider = ({ children }) => {
       const idx = prev.findIndex((i) => i.id === item.id);
       if (idx >= 0) {
         const next = [...prev];
-        next[idx] = {
+        const updatedItem = {
           ...next[idx],
           ...safeItem,
           quantity: next[idx].quantity + (item.quantity || 1),
         };
-        return next;
+        next.splice(idx, 1);
+        return [updatedItem, ...next];
       }
-      return [...prev, { ...safeItem, quantity: item.quantity || 1 }];
+      return [{ ...safeItem, quantity: item.quantity || 1 }, ...prev];
     });
   }, []);
 

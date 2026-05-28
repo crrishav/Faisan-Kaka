@@ -604,6 +604,11 @@ const CheckoutForm = ({ cartItems, total, currency }) => {
                           {item.size && (
                             <p className="text-[0.65rem] text-black/40 font-medium">Size: {item.size}</p>
                           )}
+                          {item.customDetails?.description && (
+                            <p className="text-[0.65rem] text-black/50 font-medium italic leading-tight truncate max-w-[180px]" title={item.customDetails.description}>
+                              Note: "{item.customDetails.description}"
+                            </p>
+                          )}
                           <p className="text-[0.65rem] text-black/40 font-medium">Qty: {item.quantity}</p>
                         </div>
                       </div>

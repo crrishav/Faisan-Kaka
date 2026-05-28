@@ -6,6 +6,7 @@ import { Stage, Layer, Image as KonvaImage, Transformer, Group, Rect, Text } fro
 import useImage from 'use-image';
 import Footer from '../Components/footer.jsx';
 import { usePrintContext } from '../Components/printContext.jsx';
+import useCart from '../Components/useCart.jsx';
 import tshirtFrontMock from '../assets/mock images/T-shirt (front).png';
 import tshirtBackMock from '../assets/mock images/T-shirt (back).png';
 import hoodieFrontMock from '../assets/mock images/hoodie (front).png';
@@ -17,47 +18,47 @@ import jeansBackBlueMock from '../assets/mock images/Jeans (back) (blue).png';
 import mockBackground from '../assets/mock images/background.png';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const ACCEPTED_TYPES      = ['image/png','image/svg+xml','image/jpeg','image/jpg','application/pdf'];
-const ACCEPTED_EXTENSIONS = ['.png','.svg','.jpg','.jpeg','.pdf'];
-const MAX_UPLOADS         = 5;
-const MAX_FILE_SIZE       = 10 * 1024 * 1024;
-const DEFAULT_TRANSFORM   = { x: 0, y: 0, scale: 0.28, rotation: 0 };
+const ACCEPTED_TYPES = ['image/png', 'image/svg+xml', 'image/jpeg', 'image/jpg', 'application/pdf'];
+const ACCEPTED_EXTENSIONS = ['.png', '.svg', '.jpg', '.jpeg', '.pdf'];
+const MAX_UPLOADS = 5;
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const DEFAULT_TRANSFORM = { x: 0, y: 0, scale: 0.28, rotation: 0 };
 
 const COLOR_PRESETS = [
-  { hex: '#111111', label: 'Jet Black'  },
-  { hex: '#FFFFFF', label: 'White'      },
-  { hex: '#D9D9D9', label: 'Ash Grey'   },
-  { hex: '#545454', label: 'Graphite'   },
-  { hex: '#0F3D2E', label: 'Forest'     },
-  { hex: '#1E3A8A', label: 'Navy'       },
-  { hex: '#7C2D12', label: 'Burgundy'   },
-  { hex: '#7F1D1D', label: 'Crimson'    },
-  { hex: '#5B21B6', label: 'Violet'     },
-  { hex: '#B45309', label: 'Caramel'    },
-  { hex: '#065F46', label: 'Emerald'    },
+  { hex: '#111111', label: 'Jet Black' },
+  { hex: '#FFFFFF', label: 'White' },
+  { hex: '#D9D9D9', label: 'Ash Grey' },
+  { hex: '#545454', label: 'Graphite' },
+  { hex: '#0F3D2E', label: 'Forest' },
+  { hex: '#1E3A8A', label: 'Navy' },
+  { hex: '#7C2D12', label: 'Burgundy' },
+  { hex: '#7F1D1D', label: 'Crimson' },
+  { hex: '#5B21B6', label: 'Violet' },
+  { hex: '#B45309', label: 'Caramel' },
+  { hex: '#065F46', label: 'Emerald' },
   { hex: '#1E40AF', label: 'Royal Blue' },
 ];
 
 const GARMENT_IMAGE_MAP = {
-  tshirt:        { front: tshirtFrontMock,    back: tshirtBackMock    },
-  hoodie:        { front: hoodieFrontMock,    back: hoodieBackMock    },
-  jeans_default: { front: jeansFrontMock,     back: jeansBackMock     },
-  jeans_blue:    { front: jeansFrontBlueMock, back: jeansBackBlueMock },
+  tshirt: { front: tshirtFrontMock, back: tshirtBackMock },
+  hoodie: { front: hoodieFrontMock, back: hoodieBackMock },
+  jeans_default: { front: jeansFrontMock, back: jeansBackMock },
+  jeans_blue: { front: jeansFrontBlueMock, back: jeansBackBlueMock },
 };
 
 // Keep mask assets independently mapped so you can swap dedicated cutout SVGs later.
 const GARMENT_MASK_MAP = {
-  tshirt:        { front: tshirtFrontMock,    back: tshirtBackMock    },
-  hoodie:        { front: hoodieFrontMock,    back: hoodieBackMock    },
-  jeans_default: { front: jeansFrontMock,     back: jeansBackMock     },
-  jeans_blue:    { front: jeansFrontBlueMock, back: jeansBackBlueMock },
+  tshirt: { front: tshirtFrontMock, back: tshirtBackMock },
+  hoodie: { front: hoodieFrontMock, back: hoodieBackMock },
+  jeans_default: { front: jeansFrontMock, back: jeansBackMock },
+  jeans_blue: { front: jeansFrontBlueMock, back: jeansBackBlueMock },
 };
 
 const GARMENT_LABELS = { tshirt: 'T-Shirt', hoodie: 'Hoodie', jeans: 'Jeans' };
 const DESIGN_ANCHOR_MAP = {
   tshirt: { x: 0.5, y: 0.46 },
   hoodie: { x: 0.5, y: 0.46 },
-  jeans:  { x: 0.5, y: 0.5  },
+  jeans: { x: 0.5, y: 0.5 },
 };
 const MIN_NORM_SCALE = 0.04;
 const MAX_NORM_SCALE = 1.2;
@@ -206,7 +207,7 @@ const useContainedImageRect = (containerRef, imageSrc) => {
 };
 
 // ─── Motion variants ──────────────────────────────────────────────────────────
-const fadeUp  = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] } } };
+const fadeUp = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] } } };
 const stagger = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.08 } } };
 const panelIn = { hidden: { opacity: 0, y: 14, scale: 0.985 }, visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } } };
 
@@ -218,26 +219,26 @@ const Ic = ({ d, size = 16, sw = 1.8 }) => (
   </svg>
 );
 const Icons = {
-  Upload:   () => <Ic size={22} d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />,
-  Trash:    () => <Ic size={14} d="M3 6h18M19 6l-1 14H6L5 6M10 11v6M14 11v6M9 6V4h6v2" />,
+  Upload: () => <Ic size={22} d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />,
+  Trash: () => <Ic size={14} d="M3 6h18M19 6l-1 14H6L5 6M10 11v6M14 11v6M9 6V4h6v2" />,
   Maximize: () => <Ic size={15} d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3" />,
   Minimize: () => <Ic size={15} d="M8 3v3a2 2 0 0 1-2 2H3M21 8h-3a2 2 0 0 1-2-2V3M3 16h3a2 2 0 0 0 2 2v3M16 21v-3a2 2 0 0 1 2-2h3" />,
   RotateCW: () => <Ic size={15} d="M21 2v6h-6M21 13a9 9 0 1 1-3-7.7L21 8" />,
-  Center:   () => <Ic size={15} d="M12 2v20M2 12h20" />,
-  Opacity:  () => <Ic size={15} d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2zm0 18V4" />,
-  LayerUp:  () => <Ic size={14} d="M12 19V5M5 12l7-7 7 7" />,
-  LayerDn:  () => <Ic size={14} d="M12 5v14M5 12l7 7 7-7" />,
-  X:        () => <Ic size={18} d="M18 6 6 18M6 6l12 12" />,
-  Check:    () => <Ic size={14} d="M20 6 9 17l-5-5" />,
-  Info:     () => <Ic size={15} d="M12 16v-4M12 8h.01M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z" />,
-  Copy:     () => <Ic size={14} d="M8 16H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2M10 20h8a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z" />,
+  Center: () => <Ic size={15} d="M12 2v20M2 12h20" />,
+  Opacity: () => <Ic size={15} d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2zm0 18V4" />,
+  LayerUp: () => <Ic size={14} d="M12 19V5M5 12l7-7 7 7" />,
+  LayerDn: () => <Ic size={14} d="M12 5v14M5 12l7 7 7-7" />,
+  X: () => <Ic size={18} d="M18 6 6 18M6 6l12 12" />,
+  Check: () => <Ic size={14} d="M20 6 9 17l-5-5" />,
+  Info: () => <Ic size={15} d="M12 16v-4M12 8h.01M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z" />,
+  Copy: () => <Ic size={14} d="M8 16H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2M10 20h8a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-8a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z" />,
 };
 
 // ─── Reusable UI atoms ────────────────────────────────────────────────────────
 const PillBtn = ({ onClick, active, disabled, children, className = '' }) => (
   <button type="button" onClick={onClick} disabled={disabled}
     className={`px-4 h-9 rounded-full text-sm font-bold transition-all cursor-pointer select-none
-      ${active   ? 'bg-black text-white shadow-sm' : 'bg-black/8 text-black hover:bg-black/15'}
+      ${active ? 'bg-black text-white shadow-sm' : 'bg-black/8 text-black hover:bg-black/15'}
       ${disabled ? 'opacity-35 cursor-not-allowed pointer-events-none' : ''}
       ${className}`}>
     {children}
@@ -265,7 +266,7 @@ const ArtworkNode = ({ artwork, isSelected, onSelect, onChange, activeSide, cent
   const textWidthEstimate = Math.max(120, Math.round(textValue.length * textFontSize * 0.62));
   const textHeightEstimate = Math.max(56, Math.round(textFontSize * 1.2));
   const shapeRef = useRef(null);
-  const trRef    = useRef(null);
+  const trRef = useRef(null);
   const boxWidth = Math.max(garmentBox?.width || 1, 1);
   const boxHeight = Math.max(garmentBox?.height || 1, 1);
   const normX = Number.isFinite(transform.x) ? transform.x : 0;
@@ -310,12 +311,12 @@ const ArtworkNode = ({ artwork, isSelected, onSelect, onChange, activeSide, cent
     const node = shapeRef.current;
     if (!node) return;
     const renderedWidth = baseWidth * Math.abs(node.scaleX());
-    onChange({ 
-      ...transform, 
+    onChange({
+      ...transform,
       x: (node.x() - centerX) / boxWidth,
       y: (node.y() - centerY) / boxHeight,
       scale: clampNormScale(renderedWidth / boxWidth),
-      rotation: node.rotation() 
+      rotation: node.rotation()
     });
   };
 
@@ -435,7 +436,7 @@ const ArtworkNode = ({ artwork, isSelected, onSelect, onChange, activeSide, cent
 
       {isSelected && (
         <Transformer ref={trRef} keepRatio
-          enabledAnchors={['top-left','top-right','bottom-left','bottom-right']}
+          enabledAnchors={['top-left', 'top-right', 'bottom-left', 'bottom-right']}
           rotateEnabled rotateAnchorOffset={isMobile ? 36 : 28}
           borderStroke="rgba(99,179,237,0.9)" borderStrokeWidth={isMobile ? 2 : 1.5}
           borderDash={[]}
@@ -457,10 +458,10 @@ const ArtworkNode = ({ artwork, isSelected, onSelect, onChange, activeSide, cent
 //     the garment image scale in perfect unison regardless of screen size.
 const ResponsiveGarment = ({ activeGarmentImage, activeMaskImage, garmentColor, isJeans }) => {
   const maskId = useMemo(() => `garment-mask-${Math.random().toString(36).slice(2, 9)}`, [activeGarmentImage]);
-  
+
   return (
-    <svg 
-      viewBox="0 0 1000 1000" 
+    <svg
+      viewBox="0 0 1000 1000"
       width="100%" height="100%"
       className="absolute inset-0 w-full h-full pointer-events-none select-none"
       preserveAspectRatio="xMidYMid meet"
@@ -470,8 +471,8 @@ const ResponsiveGarment = ({ activeGarmentImage, activeMaskImage, garmentColor, 
       <defs>
         {/* Premium Background Gradient — Soft Studio Lighting */}
         <radialGradient id="studioGradient" cx="50%" cy="45%" r="65%" fx="50%" fy="40%">
-          <stop offset="0%"   stopColor="#ffffff" />
-          <stop offset="60%"  stopColor="#f2f2f2" />
+          <stop offset="0%" stopColor="#ffffff" />
+          <stop offset="60%" stopColor="#f2f2f2" />
           <stop offset="100%" stopColor="#e0e0e0" />
         </radialGradient>
 
@@ -483,10 +484,10 @@ const ResponsiveGarment = ({ activeGarmentImage, activeMaskImage, garmentColor, 
         {/* Mask for recoloring — uses the mockup image alpha channel */}
         {!isJeans && (
           <mask id={maskId} maskUnits="userSpaceOnUse" x="0" y="0" width="1000" height="1000">
-            <image 
-              href={activeMaskImage} 
+            <image
+              href={activeMaskImage}
               xlinkHref={activeMaskImage}
-              x="0" y="0" width="1000" height="1000" 
+              x="0" y="0" width="1000" height="1000"
               preserveAspectRatio="xMidYMid meet"
             />
           </mask>
@@ -498,19 +499,19 @@ const ResponsiveGarment = ({ activeGarmentImage, activeMaskImage, garmentColor, 
       <rect width="1000" height="1000" fill="url(#softShadow)" />
 
       {/* 2. Garment Base Image (Filtered for depth) */}
-      <image 
-        href={activeGarmentImage} 
+      <image
+        href={activeGarmentImage}
         xlinkHref={activeGarmentImage}
-        x="0" y="0" width="1000" height="1000" 
+        x="0" y="0" width="1000" height="1000"
         preserveAspectRatio="xMidYMid meet"
         style={!isJeans ? { filter: 'grayscale(1) contrast(1.08) brightness(1.04)' } : undefined}
       />
 
       {/* 3. Color Overlay — precisely masked to the garment silhouette */}
       {!isJeans && (
-        <rect 
-          x="0" y="0" width="1000" height="1000" 
-          fill={garmentColor} 
+        <rect
+          x="0" y="0" width="1000" height="1000"
+          fill={garmentColor}
           mask={`url(#${maskId})`}
           style={{ mixBlendMode: 'multiply' }}
         />
@@ -518,15 +519,15 @@ const ResponsiveGarment = ({ activeGarmentImage, activeMaskImage, garmentColor, 
 
       {/* 4. Highlight Sheen — adds depth and texture back on top of the color */}
       {!isJeans && (
-        <image 
-          href={activeGarmentImage} 
+        <image
+          href={activeGarmentImage}
           xlinkHref={activeGarmentImage}
-          x="0" y="0" width="1000" height="1000" 
+          x="0" y="0" width="1000" height="1000"
           preserveAspectRatio="xMidYMid meet"
-          style={{ 
-            filter: 'grayscale(1) contrast(1.2) brightness(1.15)', 
-            opacity: 0.16, 
-            mixBlendMode: 'screen' 
+          style={{
+            filter: 'grayscale(1) contrast(1.2) brightness(1.15)',
+            opacity: 0.16,
+            mixBlendMode: 'screen'
           }}
         />
       )}
@@ -541,6 +542,7 @@ const MockupCanvas = ({
   stageZoom, stagePan,
   onStagePointerDown, onStagePointerMove, onStagePointerUp, onStageWheel,
   heightClass, emptyLabel, isJeans, onContextMenu, onStagePinch, garmentType,
+  stageRef,
 }) => {
   const frameRef = useRef(null);
   const [dim, setDim] = useState({ width: 0, height: 0 });
@@ -557,7 +559,7 @@ const MockupCanvas = ({
   }, []);
 
   const anchor = DESIGN_ANCHOR_MAP[garmentType] || DESIGN_ANCHOR_MAP.tshirt;
-  
+
   // ResponsiveGarment uses a 1000x1000 viewBox with preserveAspectRatio="xMidYMid meet".
   // We need to calculate the actual rendered rect of this 1000x1000 square within 
   // the dim.width x dim.height container to keep Konva artworks perfectly aligned.
@@ -565,12 +567,12 @@ const MockupCanvas = ({
     const cW = dim.width;
     const cH = dim.height;
     if (!cW || !cH) return { left: 0, top: 0, width: 0, height: 0 };
-    
+
     // The SVG content is essentially a 1000x1000 square (1:1 aspect ratio)
     const scale = Math.min(cW / 1000, cH / 1000);
     const rW = 1000 * scale;
     const rH = 1000 * scale;
-    
+
     return {
       left: (cW - rW) / 2,
       top: (cH - rH) / 2,
@@ -619,17 +621,17 @@ const MockupCanvas = ({
     e.evt.preventDefault();
     const [t1, t2] = [e.evt.touches[0], e.evt.touches[1]];
     const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
-    
+
     const touchCenterX = (t1.clientX + t2.clientX) / 2;
     const touchCenterY = (t1.clientY + t2.clientY) / 2;
 
-    if (!lastCenter.current) { 
-      lastCenter.current = { x: touchCenterX, y: touchCenterY }; 
-      lastDist.current = dist; 
-      return; 
+    if (!lastCenter.current) {
+      lastCenter.current = { x: touchCenterX, y: touchCenterY };
+      lastDist.current = dist;
+      return;
     }
     const factor = dist / lastDist.current;
-    
+
     if (onStagePinch) {
       onStagePinch(factor);
     } else if (activeArtworkId) {
@@ -641,7 +643,7 @@ const MockupCanvas = ({
     lastDist.current = dist;
   };
   const handleTouchEnd = () => { lastCenter.current = null; lastDist.current = 0; };
-  const checkDeselect  = (e) => { if (e.target === e.target.getStage()) onSelectArtwork(null); };
+  const checkDeselect = (e) => { if (e.target === e.target.getStage()) onSelectArtwork(null); };
 
   return (
     <div
@@ -657,7 +659,7 @@ const MockupCanvas = ({
           transformOrigin: 'center center',
           transition: stageZoom === 1 && stagePan.x === 0 && stagePan.y === 0 ? 'transform 140ms ease-out' : 'none',
         }}>
-        
+
         <div ref={frameRef} className="absolute inset-2 sm:inset-3 rounded-xl overflow-hidden isolate" onPointerDown={onStagePointerDown}>
           {/* Unified SVG Background + Garment Rendering */}
           <ResponsiveGarment
@@ -668,7 +670,7 @@ const MockupCanvas = ({
           />
 
           <div className="absolute inset-0 z-20">
-            <Stage width={dim.width} height={dim.height}
+            <Stage ref={stageRef} width={dim.width} height={dim.height}
               onMouseDown={checkDeselect} onTouchStart={checkDeselect}
               onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}
               style={{ position: 'absolute', top: 0, left: 0 }}>
@@ -689,7 +691,7 @@ const MockupCanvas = ({
                       shapeRefsMap={shapeRefsMap}
                     />
                   ))}
-                  
+
                   {/* The Mask Image — clips everything above in this group */}
                   {maskImg && (
                     <KonvaImage
@@ -740,43 +742,153 @@ const MockupCanvas = ({
 const PrintStudioPage = () => {
   const location = useLocation();
   const { consumeFile } = usePrintContext();
+  const { addItem } = useCart();
   const inputRef = useRef(null);
   const routeHydrated = useRef(false);
-  const artworksRef   = useRef([]);
+  const artworksRef = useRef([]);
+
+  // stage refs for canvas snapshotting
+  const mainStageRef = useRef(null);
+  const mobileStageRef = useRef(null);
+  const fullscreenStageRef = useRef(null);
 
   // core state
-  const [artworks,        setArtworks]        = useState([]);
+  const [artworks, setArtworks] = useState([]);
   const [activeArtworkId, setActiveArtworkId] = useState(null);
-  const [garment,         setGarment]         = useState('tshirt');
-  const [jeansType,       setJeansType]       = useState('default');
-  const [activeSide,      setActiveSide]      = useState('front');
-  const [garmentColor,    setGarmentColor]    = useState('#111111');
-  const [colorInput,      setColorInput]      = useState('#111111');
-  const [colorError,      setColorError]      = useState('');
-  const [uploadError,     setUploadError]     = useState('');
-  const [dragOver,        setDragOver]        = useState(false);
-  const [contextMenu,     setContextMenu]     = useState(null);
+  const [garment, setGarment] = useState('tshirt');
+  const [jeansType, setJeansType] = useState('default');
+  const [activeSide, setActiveSide] = useState('front');
+  const [garmentColor, setGarmentColor] = useState('#111111');
+  const [colorInput, setColorInput] = useState('#111111');
+  const [colorError, setColorError] = useState('');
+  const [uploadError, setUploadError] = useState('');
+  const [dragOver, setDragOver] = useState(false);
+  const [contextMenu, setContextMenu] = useState(null);
   // canvas
-  const [isFullscreen,   setIsFullscreen]     = useState(false);
-  const [stageZoom,      setStageZoom]        = useState(1);
-  const [stagePan,       setStagePan]         = useState({ x: 0, y: 0 });
-  const [isPanning,      setIsPanning]        = useState(false);
-  const [panStart,       setPanStart]         = useState({ x: 0, y: 0 });
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [stageZoom, setStageZoom] = useState(1);
+  const [stagePan, setStagePan] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   // UI
-  const [mobileTab,      setMobileTab]        = useState('designs');
-  const [showOrder,      setShowOrder]        = useState(false);
-  const [toast,          setToast]            = useState('');
+  const [mobileTab, setMobileTab] = useState('designs');
+  const [showOrder, setShowOrder] = useState(false);
+  const [toast, setToast] = useState('');
+
+  // Sizing & custom instruction notes
+  const [selectedSize, setSelectedSize] = useState('M');
+  const [designDescription, setDesignDescription] = useState('');
+  const [isAtTop, setIsAtTop] = useState(true);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsAtTop(window.scrollY < 80);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const getMergedPreviewImage = async () => {
+    const activeStage = isFullscreen 
+      ? fullscreenStageRef.current 
+      : (window.innerWidth >= 1024 ? mainStageRef.current : mobileStageRef.current);
+      
+    if (!activeStage) return '';
+
+    try {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      const width = activeStage.width() || 600;
+      const height = activeStage.height() || 600;
+      canvas.width = width;
+      canvas.height = height;
+
+      if (activeGarmentImage) {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.src = activeGarmentImage;
+        await new Promise((resolve) => {
+          img.onload = resolve;
+          img.onerror = resolve;
+        });
+
+        if (img.complete && img.naturalWidth) {
+          const scale = Math.min(width / img.naturalWidth, height / img.naturalHeight);
+          const rW = img.naturalWidth * scale;
+          const rH = img.naturalHeight * scale;
+          const dx = (width - rW) / 2;
+          const dy = (height - rH) / 2;
+
+          ctx.fillStyle = '#f5f5f5';
+          ctx.fillRect(0, 0, width, height);
+
+          ctx.drawImage(img, dx, dy, rW, rH);
+
+          if (!isJeans && garmentColor) {
+            ctx.save();
+            ctx.globalCompositeOperation = 'multiply';
+            ctx.fillStyle = garmentColor;
+            ctx.fillRect(dx, dy, rW, rH);
+            ctx.restore();
+
+            ctx.save();
+            ctx.globalCompositeOperation = 'screen';
+            ctx.globalAlpha = 0.16;
+            ctx.drawImage(img, dx, dy, rW, rH);
+            ctx.restore();
+          }
+        }
+      }
+
+      const konvaCanvas = activeStage.toCanvas();
+      ctx.drawImage(konvaCanvas, 0, 0);
+
+      return canvas.toDataURL('image/png');
+    } catch (err) {
+      console.error('Error rendering merged mockup preview:', err);
+      return activeStage.toDataURL({ pixelRatio: 2 });
+    }
+  };
+
+  const handleAddToCart = async () => {
+    showToast("Adding custom design to cart...");
+    const previewUrl = await getMergedPreviewImage();
+    
+    const price = garment === 'tshirt' ? 2000 : garment === 'hoodie' ? 3500 : 3000;
+    const title = `Custom ${garmentName} (${activeSide.charAt(0).toUpperCase() + activeSide.slice(1)} Print)`;
+    
+    const itemPayload = {
+      id: `custom-${garment}-${Date.now()}`,
+      title,
+      priceINR: price,
+      priceNPR: price,
+      quantity: 1,
+      size: selectedSize,
+      frontImage: previewUrl,
+      backImage: previewUrl,
+      customDetails: {
+        garment,
+        color: garmentColor,
+        jeansType,
+        description: designDescription,
+      }
+    };
+    
+    addItem(itemPayload);
+    showToast("Added to Cart!");
+  };
 
   // ── Derived ──
-  const isJeans      = garment === 'jeans';
-  const mockKey      = isJeans ? (jeansType === 'blue' ? 'jeans_blue' : 'jeans_default') : garment;
+  const isJeans = garment === 'jeans';
+  const mockKey = isJeans ? (jeansType === 'blue' ? 'jeans_blue' : 'jeans_default') : garment;
   const activeGarmentImage = GARMENT_IMAGE_MAP[mockKey][activeSide];
   const activeMaskImage = GARMENT_MASK_MAP[mockKey][activeSide];
   // artworks visible on this side
   const sideArtworks = useMemo(() => artworks.filter((a) => !a.visible || a.visible[activeSide] !== false), [artworks, activeSide]);
   const activeArtwork = useMemo(() => artworks.find((a) => a.id === activeArtworkId) || null, [artworks, activeArtworkId]);
   const activeArtworkOnThisSide = useMemo(() => activeArtwork && (!activeArtwork.visible || activeArtwork.visible[activeSide] !== false) ? activeArtwork : null, [activeArtwork, activeSide]);
-  const hasUploads   = artworks.length > 0;
+  const hasUploads = artworks.length > 0;
 
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 2600); };
 
@@ -893,12 +1005,14 @@ const PrintStudioPage = () => {
     setArtworks((p) => {
       if (p.length >= MAX_UPLOADS) { showToast('Max 5 designs'); return p; }
       const src = p.find((a) => a.id === id); if (!src) return p;
-      const copy = { ...src, id: `${id}-copy-${Math.random().toString(36).slice(2,6)}`,
+      const copy = {
+        ...src, id: `${id}-copy-${Math.random().toString(36).slice(2, 6)}`,
         visible: { front: true, back: true },
         transforms: {
           front: { ...src.transforms.front, x: src.transforms.front.x + 0.015, y: src.transforms.front.y + 0.015 },
-          back:  { ...src.transforms.back,  x: src.transforms.back.x  + 0.015, y: src.transforms.back.y  + 0.015 },
-        }};
+          back: { ...src.transforms.back, x: src.transforms.back.x + 0.015, y: src.transforms.back.y + 0.015 },
+        }
+      };
       const idx = p.findIndex((a) => a.id === id);
       const n = [...p]; n.splice(idx + 1, 0, copy);
       setTimeout(() => setActiveArtworkId(copy.id), 0);
@@ -912,7 +1026,7 @@ const PrintStudioPage = () => {
       const idx = p.findIndex((a) => a.id === id);
       const t = dir === 'up' ? idx - 1 : idx + 1;
       if (t < 0 || t >= p.length) return p;
-      const n = [...p]; [n[idx], n[t]] = [n[t], n[idx]]; return n;
+      const n = [...p];[n[idx], n[t]] = [n[t], n[idx]]; return n;
     });
   }, []);
 
@@ -932,13 +1046,13 @@ const PrintStudioPage = () => {
   }, []);
 
   const upActive = (fn) => { if (!activeArtworkOnThisSide) return; updateArtworkTransform(activeArtworkOnThisSide.id, activeSide, fn); };
-  const centerArtwork  = () => upActive((t) => ({ ...t, x: 0, y: 0 }));
-  const scaleUp        = () => upActive((t) => ({ ...t, scale: clampNormScale(+(t.scale + 0.03).toFixed(3)) }));
-  const scaleDown      = () => upActive((t) => ({ ...t, scale: clampNormScale(+(t.scale - 0.03).toFixed(3)) }));
-  const rotateCW       = () => upActive((t) => ({ ...t, rotation: ((t.rotation || 0) + 15) % 360 }));
-  const rotateCCW      = () => upActive((t) => ({ ...t, rotation: ((t.rotation || 0) - 15 + 360) % 360 }));
+  const centerArtwork = () => upActive((t) => ({ ...t, x: 0, y: 0 }));
+  const scaleUp = () => upActive((t) => ({ ...t, scale: clampNormScale(+(t.scale + 0.03).toFixed(3)) }));
+  const scaleDown = () => upActive((t) => ({ ...t, scale: clampNormScale(+(t.scale - 0.03).toFixed(3)) }));
+  const rotateCW = () => upActive((t) => ({ ...t, rotation: ((t.rotation || 0) + 15) % 360 }));
+  const rotateCCW = () => upActive((t) => ({ ...t, rotation: ((t.rotation || 0) - 15 + 360) % 360 }));
   const resetTransform = () => upActive(() => ({ ...DEFAULT_TRANSFORM }));
-  const setOpacity     = (id, v) => setArtworks((p) => p.map((a) => a.id !== id ? a : { ...a, opacity: { ...a.opacity, [activeSide]: v } }));
+  const setOpacity = (id, v) => setArtworks((p) => p.map((a) => a.id !== id ? a : { ...a, opacity: { ...a.opacity, [activeSide]: v } }));
 
   // ── Color ops ──
   const commitColor = useCallback((raw) => {
@@ -1039,7 +1153,7 @@ const PrintStudioPage = () => {
             <motion.div
               className="bg-white w-full sm:max-w-md rounded-t-[28px] sm:rounded-[28px] p-6 sm:p-8 shadow-2xl"
               initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}
-              transition={{ duration: 0.35, ease: [0.22,1,0.36,1] }}
+              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
               onClick={(e) => e.stopPropagation()}>
               <div className="w-10 h-1 bg-black/15 rounded-full mx-auto mb-5 sm:hidden" />
               <div className="flex items-start justify-between mb-5">
@@ -1099,10 +1213,10 @@ const PrintStudioPage = () => {
                   <button onClick={resetView}
                     className="px-3 h-9 rounded-full bg-white/10 text-white text-[10px] font-bold active:bg-white/20 transition">Reset View</button>
                 </div>
-                
+
                 <div className="flex items-center gap-2 shrink-0">
                   <div className="flex bg-white/10 rounded-full p-1">
-                    {['tshirt','hoodie','jeans'].map((g) => (
+                    {['tshirt', 'hoodie', 'jeans'].map((g) => (
                       <button key={g} onClick={() => setGarment(g)}
                         className={`px-2.5 h-6 rounded-full text-[10px] font-bold transition-all ${garment === g ? 'bg-white text-black' : 'text-white/60'}`}>
                         {g === 'tshirt' ? 'Tee' : g === 'hoodie' ? 'Hoodie' : 'Jeans'}
@@ -1110,7 +1224,7 @@ const PrintStudioPage = () => {
                     ))}
                   </div>
                   <div className="flex bg-white/10 rounded-full p-1">
-                    {['front','back'].map((s) => (
+                    {['front', 'back'].map((s) => (
                       <button key={s} onClick={() => setActiveSide(s)}
                         className={`px-2.5 h-6 rounded-full text-[10px] font-bold transition-all uppercase ${activeSide === s ? 'bg-white text-black' : 'text-white/60'}`}>
                         {s.charAt(0)}
@@ -1139,7 +1253,7 @@ const PrintStudioPage = () => {
                 </button>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
-                {['tshirt','hoodie','jeans'].map((g) => (
+                {['tshirt', 'hoodie', 'jeans'].map((g) => (
                   <button key={g} onClick={() => setGarment(g)}
                     className={`px-3 h-8 rounded-full text-xs font-bold transition cursor-pointer
                       ${garment === g ? 'bg-white text-black' : 'bg-white/12 text-white hover:bg-white/20'}`}>
@@ -1147,7 +1261,7 @@ const PrintStudioPage = () => {
                   </button>
                 ))}
                 <div className="w-px h-5 bg-white/15 mx-1" />
-                {['front','back'].map((s) => (
+                {['front', 'back'].map((s) => (
                   <button key={s} onClick={() => setActiveSide(s)}
                     className={`px-3 h-8 rounded-full text-xs font-bold transition cursor-pointer capitalize
                       ${activeSide === s ? 'bg-white text-black' : 'bg-white/12 text-white hover:bg-white/20'}`}>
@@ -1197,6 +1311,7 @@ const PrintStudioPage = () => {
             {/* canvas area */}
             <div className="flex-1 px-4 pb-4 pt-4 lg:pt-0">
               <MockupCanvas {...canvasProps}
+                stageRef={fullscreenStageRef}
                 stageZoom={stageZoom} stagePan={stagePan}
                 onStagePointerDown={handlePointerDown}
                 onStagePointerMove={handlePointerMove}
@@ -1238,27 +1353,27 @@ const PrintStudioPage = () => {
             <div className="flex lg:hidden flex-col gap-3 px-3 py-3 pb-6 sm:pb-8 border-t border-white/10 shrink-0 bg-black">
               {/* Transform controls row */}
               <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
-                 <button disabled={!activeArtworkOnThisSide} onClick={() => moveLayer(activeArtworkOnThisSide?.id, 'up')} className="px-3 h-10 shrink-0 rounded-full bg-white/10 text-white text-[11px] font-bold active:bg-white/20 transition disabled:opacity-20 disabled:pointer-events-none flex items-center gap-1"><Icons.LayerUp /> Up</button>
-                 <button disabled={!activeArtworkOnThisSide} onClick={() => moveLayer(activeArtworkOnThisSide?.id, 'down')} className="px-3 h-10 shrink-0 rounded-full bg-white/10 text-white text-[11px] font-bold active:bg-white/20 transition disabled:opacity-20 disabled:pointer-events-none flex items-center gap-1"><Icons.LayerDn /> Down</button>
-                 <div className="w-px h-6 bg-white/15 shrink-0 mx-0.5" />
-                 <button disabled={!activeArtworkOnThisSide} onClick={rotateCCW} className="w-10 h-10 shrink-0 rounded-full bg-white/10 text-white flex items-center justify-center active:bg-white/20 transition disabled:opacity-20 disabled:pointer-events-none"><Icons.RotateCW /></button>
-                 <button disabled={!activeArtworkOnThisSide} onClick={rotateCW} className="w-10 h-10 shrink-0 rounded-full bg-white/10 text-white flex items-center justify-center active:bg-white/20 transition disabled:opacity-20 disabled:pointer-events-none" style={{ transform: 'scaleX(-1)' }}><Icons.RotateCW /></button>
-                 <button disabled={!activeArtworkOnThisSide} onClick={centerArtwork} className="px-3 h-10 shrink-0 rounded-full bg-white/10 text-white text-[11px] font-bold active:bg-white/20 transition disabled:opacity-20 disabled:pointer-events-none">Center</button>
-                 <button disabled={!activeArtworkOnThisSide} onClick={resetTransform} className="px-3 h-10 shrink-0 rounded-full bg-white/10 text-white text-[11px] font-bold active:bg-white/20 transition disabled:opacity-20 disabled:pointer-events-none">Reset</button>
-                 <button disabled={!activeArtworkOnThisSide} onClick={scaleDown} className="w-10 h-10 shrink-0 rounded-full bg-white/10 text-white text-base font-bold active:bg-white/20 transition disabled:opacity-20 disabled:pointer-events-none">−</button>
-                 <button disabled={!activeArtworkOnThisSide} onClick={scaleUp} className="w-10 h-10 shrink-0 rounded-full bg-white/10 text-white text-base font-bold active:bg-white/20 transition disabled:opacity-20 disabled:pointer-events-none">+</button>
+                <button disabled={!activeArtworkOnThisSide} onClick={() => moveLayer(activeArtworkOnThisSide?.id, 'up')} className="px-3 h-10 shrink-0 rounded-full bg-white/10 text-white text-[11px] font-bold active:bg-white/20 transition disabled:opacity-20 disabled:pointer-events-none flex items-center gap-1"><Icons.LayerUp /> Up</button>
+                <button disabled={!activeArtworkOnThisSide} onClick={() => moveLayer(activeArtworkOnThisSide?.id, 'down')} className="px-3 h-10 shrink-0 rounded-full bg-white/10 text-white text-[11px] font-bold active:bg-white/20 transition disabled:opacity-20 disabled:pointer-events-none flex items-center gap-1"><Icons.LayerDn /> Down</button>
+                <div className="w-px h-6 bg-white/15 shrink-0 mx-0.5" />
+                <button disabled={!activeArtworkOnThisSide} onClick={rotateCCW} className="w-10 h-10 shrink-0 rounded-full bg-white/10 text-white flex items-center justify-center active:bg-white/20 transition disabled:opacity-20 disabled:pointer-events-none"><Icons.RotateCW /></button>
+                <button disabled={!activeArtworkOnThisSide} onClick={rotateCW} className="w-10 h-10 shrink-0 rounded-full bg-white/10 text-white flex items-center justify-center active:bg-white/20 transition disabled:opacity-20 disabled:pointer-events-none" style={{ transform: 'scaleX(-1)' }}><Icons.RotateCW /></button>
+                <button disabled={!activeArtworkOnThisSide} onClick={centerArtwork} className="px-3 h-10 shrink-0 rounded-full bg-white/10 text-white text-[11px] font-bold active:bg-white/20 transition disabled:opacity-20 disabled:pointer-events-none">Center</button>
+                <button disabled={!activeArtworkOnThisSide} onClick={resetTransform} className="px-3 h-10 shrink-0 rounded-full bg-white/10 text-white text-[11px] font-bold active:bg-white/20 transition disabled:opacity-20 disabled:pointer-events-none">Reset</button>
+                <button disabled={!activeArtworkOnThisSide} onClick={scaleDown} className="w-10 h-10 shrink-0 rounded-full bg-white/10 text-white text-base font-bold active:bg-white/20 transition disabled:opacity-20 disabled:pointer-events-none">−</button>
+                <button disabled={!activeArtworkOnThisSide} onClick={scaleUp} className="w-10 h-10 shrink-0 rounded-full bg-white/10 text-white text-base font-bold active:bg-white/20 transition disabled:opacity-20 disabled:pointer-events-none">+</button>
               </div>
 
               {/* Opacity Row */}
               <div className="flex items-center gap-3 px-2">
                 <div className="text-white/60"><Icons.Opacity /></div>
                 <input type="range" min="0.1" max="1" step="0.05"
-                    disabled={!activeArtworkOnThisSide}
-                    value={activeArtworkOnThisSide?.opacity?.[activeSide] ?? 1}
-                    onChange={(e) => { if(activeArtworkOnThisSide) setOpacity(activeArtworkOnThisSide.id, parseFloat(e.target.value)) }}
-                    className="flex-1 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-white disabled:opacity-20" />
+                  disabled={!activeArtworkOnThisSide}
+                  value={activeArtworkOnThisSide?.opacity?.[activeSide] ?? 1}
+                  onChange={(e) => { if (activeArtworkOnThisSide) setOpacity(activeArtworkOnThisSide.id, parseFloat(e.target.value)) }}
+                  className="flex-1 h-1 bg-white/20 rounded-lg appearance-none cursor-pointer accent-white disabled:opacity-20" />
                 <span className="text-white/60 text-[10px] font-bold w-10 text-right">
-                   {activeArtworkOnThisSide ? Math.round((activeArtworkOnThisSide.opacity?.[activeSide] ?? 1) * 100) + '%' : '---'}
+                  {activeArtworkOnThisSide ? Math.round((activeArtworkOnThisSide.opacity?.[activeSide] ?? 1) * 100) + '%' : '---'}
                 </span>
                 <div className="w-px h-6 bg-white/15 mx-1 shrink-0" />
                 {!isJeans ? (
@@ -1272,9 +1387,9 @@ const PrintStudioPage = () => {
                     <button onClick={() => setJeansType('blue')} className={`px-2 h-7 rounded-full text-[10px] font-bold ${jeansType === 'blue' ? 'bg-white text-black' : 'text-white/60'}`}>Blue</button>
                   </div>
                 )}
-                <button disabled={!activeArtworkOnThisSide} onClick={() => { if(activeArtworkOnThisSide) { removeArtwork(activeArtworkOnThisSide.id); showToast('Deleted'); setIsFullscreen(false); } }}
-                    className="w-8 h-8 shrink-0 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center active:bg-red-500/40 transition disabled:opacity-20 disabled:pointer-events-none ml-1">
-                    <Icons.Trash />
+                <button disabled={!activeArtworkOnThisSide} onClick={() => { if (activeArtworkOnThisSide) { removeArtwork(activeArtworkOnThisSide.id); showToast('Deleted'); setIsFullscreen(false); } }}
+                  className="w-8 h-8 shrink-0 rounded-full bg-red-500/20 text-red-500 flex items-center justify-center active:bg-red-500/40 transition disabled:opacity-20 disabled:pointer-events-none ml-1">
+                  <Icons.Trash />
                 </button>
               </div>
             </div>
@@ -1384,14 +1499,20 @@ const PrintStudioPage = () => {
               <div className="rounded-[24px] border border-black/10 bg-white/75 backdrop-blur-sm shadow-[0_12px_28px_rgba(0,0,0,0.07)] p-5">
                 <p className="text-[11px] font-black uppercase tracking-[0.18em] text-black/45 mb-3">Garment</p>
                 <div className="flex flex-wrap gap-2">
-                  {['tshirt','hoodie','jeans'].map((g) => (
+                  {['tshirt', 'hoodie', 'jeans'].map((g) => (
                     <PillBtn key={g} active={garment === g} onClick={() => setGarment(g)}>{GARMENT_LABELS[g]}</PillBtn>
                   ))}
                 </div>
                 <p className="text-[11px] font-black uppercase tracking-[0.18em] text-black/45 mb-3 mt-4">Side</p>
                 <div className="flex gap-2">
                   <PillBtn active={activeSide === 'front'} onClick={() => setActiveSide('front')}>Front</PillBtn>
-                  <PillBtn active={activeSide === 'back'}  onClick={() => setActiveSide('back')}>Back</PillBtn>
+                  <PillBtn active={activeSide === 'back'} onClick={() => setActiveSide('back')}>Back</PillBtn>
+                </div>
+                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-black/45 mb-3 mt-4">Size</p>
+                <div className="flex gap-2">
+                  {['S', 'M', 'L', 'XL'].map((s) => (
+                    <PillBtn key={s} active={selectedSize === s} onClick={() => setSelectedSize(s)} className="min-w-[40px] text-center px-0">{s}</PillBtn>
+                  ))}
                 </div>
                 {isJeans && (
                   <>
@@ -1399,7 +1520,7 @@ const PrintStudioPage = () => {
                     <div className="flex gap-2">
                       <PillBtn active={jeansType === 'default'} onClick={() => setJeansType('default')}>Default</PillBtn>
                       <PillBtn active={jeansType === 'blue'} onClick={() => setJeansType('blue')}
-                        className={jeansType === 'blue' ? '!bg-blue-700 !text-white' : ''}>Blue Wash</PillBtn>
+                         className={jeansType === 'blue' ? '!bg-blue-700 !text-white' : ''}>Blue Wash</PillBtn>
                     </div>
                   </>
                 )}
@@ -1434,7 +1555,7 @@ const PrintStudioPage = () => {
                         style={{ background: hex, boxShadow: '0 1px 3px rgba(0,0,0,0.15)' }}>
                         {garmentColor === hex && (
                           <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                            <span className={`text-[9px] font-black ${['#FFFFFF','#D9D9D9'].includes(hex) ? 'text-black' : 'text-white'}`}>✓</span>
+                            <span className={`text-[9px] font-black ${['#FFFFFF', '#D9D9D9'].includes(hex) ? 'text-black' : 'text-white'}`}>✓</span>
                           </span>
                         )}
                       </button>
@@ -1448,12 +1569,12 @@ const PrintStudioPage = () => {
                 <p className="text-[11px] font-black uppercase tracking-[0.18em] text-black/45 mb-3">Design Controls</p>
 
                 <div className="grid grid-cols-2 gap-2">
-                  <CtrlBtn onClick={centerArtwork}  disabled={!activeArtwork} className="col-span-1"><Icons.Center /> Center</CtrlBtn>
+                  <CtrlBtn onClick={centerArtwork} disabled={!activeArtwork} className="col-span-1"><Icons.Center /> Center</CtrlBtn>
                   <CtrlBtn onClick={resetTransform} disabled={!activeArtwork} className="col-span-1">↺ Reset</CtrlBtn>
-                  <CtrlBtn onClick={scaleUp}   disabled={!activeArtwork}>Scale +</CtrlBtn>
+                  <CtrlBtn onClick={scaleUp} disabled={!activeArtwork}>Scale +</CtrlBtn>
                   <CtrlBtn onClick={scaleDown} disabled={!activeArtwork}>Scale −</CtrlBtn>
                   <CtrlBtn onClick={rotateCCW} disabled={!activeArtwork}>↺ CCW</CtrlBtn>
-                  <CtrlBtn onClick={rotateCW}  disabled={!activeArtwork}>↻ CW</CtrlBtn>
+                  <CtrlBtn onClick={rotateCW} disabled={!activeArtwork}>↻ CW</CtrlBtn>
                 </div>
 
                 {artworks.length > 1 && activeArtwork && (
@@ -1511,72 +1632,97 @@ const PrintStudioPage = () => {
               </div>
 
               {/* CTA */}
-              <button type="button" disabled={!hasUploads} onClick={() => setShowOrder(true)}
+              <button type="button" disabled={!hasUploads} onClick={handleAddToCart}
                 className={`w-full h-12 rounded-2xl font-black text-sm transition-all
                   ${hasUploads ? 'bg-black text-white hover:opacity-85 cursor-pointer shadow-[0_4px_14px_rgba(0,0,0,0.18)]' : 'bg-black/10 text-black/35 cursor-not-allowed'}`}>
-                Proceed to Print →
+                Add to Cart
               </button>
             </div>
 
             {/* ── Right: Canvas ── */}
-            <div className="rounded-[24px] border border-black/10 bg-[#ececec] shadow-[0_12px_28px_rgba(0,0,0,0.07)] p-4 sm:p-5">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <p className="text-sm font-black text-black/80">Mockup Preview</p>
-                  <p className="text-xs text-black/40 mt-0.5">
-                    {garmentName} · {activeSide.charAt(0).toUpperCase() + activeSide.slice(1)}
-                    {!isJeans ? ` · ${garmentColor.toUpperCase()}` : ` · ${jeansType === 'blue' ? 'Blue Wash' : 'Default'}`}
-                  </p>
+            <div className="flex flex-col gap-5">
+              <div className="rounded-[24px] border border-black/10 bg-[#ececec] shadow-[0_12px_28px_rgba(0,0,0,0.07)] p-4 sm:p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-sm font-black text-black/80">Mockup Preview</p>
+                    <p className="text-xs text-black/40 mt-0.5">
+                      {garmentName} · {activeSide.charAt(0).toUpperCase() + activeSide.slice(1)}
+                      {!isJeans ? ` · ${garmentColor.toUpperCase()}` : ` · ${jeansType === 'blue' ? 'Blue Wash' : 'Default'}`}
+                    </p>
+                  </div>
+                  <button onClick={() => { resetView(); setIsFullscreen(true); }}
+                    className="flex items-center gap-1.5 px-3.5 h-9 rounded-xl bg-black text-white text-xs font-bold hover:opacity-85 transition cursor-pointer">
+                    <Icons.Maximize /> Fullscreen Editor
+                  </button>
                 </div>
-                <button onClick={() => { resetView(); setIsFullscreen(true); }}
-                  className="flex items-center gap-1.5 px-3.5 h-9 rounded-xl bg-black text-white text-xs font-bold hover:opacity-85 transition cursor-pointer">
-                  <Icons.Maximize /> Fullscreen Editor
-                </button>
+
+                <MockupCanvas {...canvasProps}
+                  stageRef={mainStageRef}
+                  stageZoom={1} stagePan={{ x: 0, y: 0 }}
+                  onStagePointerDown={() => { }}
+                  onStagePointerMove={handlePointerMove}
+                  onStagePointerUp={stopPan}
+                  onStageWheel={() => { }}
+                  heightClass="h-[500px] xl:h-[580px]"
+                  emptyLabel="Upload artwork to preview"
+                />
+
+                <p className="mt-3 text-center text-[11px] text-black/30 font-medium tracking-wide">
+                  Click to select · Drag to move · Corner handles to resize · Open Fullscreen for zoom + pan
+                </p>
+                {activeArtworkOnThisSide && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.2 }}
+                    className="mt-2 text-center text-[10px] bg-blue-50 border border-blue-200 text-blue-700 rounded-lg px-3 py-2 font-semibold"
+                  >
+                    💡 Drag design to move · Use corner handles to resize & rotate
+                  </motion.div>
+                )}
               </div>
 
-              <MockupCanvas {...canvasProps}
-                stageZoom={1} stagePan={{ x: 0, y: 0 }}
-                onStagePointerDown={() => {}}
-                onStagePointerMove={handlePointerMove}
-                onStagePointerUp={stopPan}
-                onStageWheel={() => {}}
-                heightClass="h-[500px] xl:h-[580px]"
-                emptyLabel="Upload artwork to preview"
-              />
-
-              <p className="mt-3 text-center text-[11px] text-black/30 font-medium tracking-wide">
-                Click to select · Drag to move · Corner handles to resize · Open Fullscreen for zoom + pan
-              </p>
-              {activeArtworkOnThisSide && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: 0.2 }}
-                  className="mt-2 text-center text-[10px] bg-blue-50 border border-blue-200 text-blue-700 rounded-lg px-3 py-2 font-semibold"
-                >
-                  💡 Drag design to move · Use corner handles to resize & rotate
-                </motion.div>
-              )}
+              {/* Special Instructions / Design Notes */}
+              <div className="rounded-[24px] border border-black/10 bg-white/75 backdrop-blur-sm shadow-[0_12px_28px_rgba(0,0,0,0.07)] p-5">
+                <p className="text-[11px] font-black uppercase tracking-[0.18em] text-black/45 mb-2.5">Special Instructions / Custom Notes</p>
+                <textarea
+                  value={designDescription}
+                  onChange={(e) => setDesignDescription(e.target.value)}
+                  placeholder="Describe where you want the print, specific alignment, sizing request, print style, or any other notes..."
+                  className="w-full h-24 rounded-2xl border border-black/16 bg-white px-4 py-3 text-sm font-bold text-black outline-none focus:border-black/45 transition resize-none placeholder-black/30"
+                />
+              </div>
             </div>
           </motion.div>
 
-                    {/* ═══ MOBILE LAYOUT (APP-LIKE) ═════════════════════════════════ */}
+          {/* ═══ MOBILE LAYOUT (APP-LIKE) ═════════════════════════════════ */}
           <motion.div variants={panelIn} className="mt-4 lg:hidden flex flex-col">
             {/* Minimal Top Nav */}
             <div className="flex flex-col gap-2.5 mb-2">
               <div className="flex items-center justify-between">
                 <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
-                  {['tshirt','hoodie','jeans'].map((g) => (
-                    <button key={g} onClick={() => setGarment(g)} 
+                  {['tshirt', 'hoodie', 'jeans'].map((g) => (
+                    <button key={g} onClick={() => setGarment(g)}
                       className={`shrink-0 px-3.5 h-8 rounded-full text-xs font-bold transition-all ${garment === g ? 'bg-black text-white shadow-md' : 'bg-black/5 text-black hover:bg-black/10'}`}>
                       {GARMENT_LABELS[g]}
                     </button>
                   ))}
                 </div>
                 <div className="flex gap-1 bg-black/5 p-1 rounded-full shrink-0">
-                  {['front','back'].map((s) => (
-                    <button key={s} onClick={() => setActiveSide(s)} 
+                  {['front', 'back'].map((s) => (
+                    <button key={s} onClick={() => setActiveSide(s)}
                       className={`px-3 h-6 rounded-full text-[10px] uppercase tracking-wide font-black transition-all ${activeSide === s ? 'bg-white text-black shadow-sm' : 'text-black/40'}`}>
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-center justify-between mt-1 px-1">
+                <span className="text-[10px] font-black uppercase tracking-wider text-black/40">Select Size:</span>
+                <div className="flex bg-black/5 p-0.5 rounded-full">
+                  {['S', 'M', 'L', 'XL'].map((s) => (
+                    <button key={s} type="button" onClick={() => setSelectedSize(s)}
+                      className={`px-3 h-6 rounded-full text-[10px] font-black transition-all cursor-pointer ${selectedSize === s ? 'bg-white text-black shadow-sm' : 'text-black/45'}`}>
                       {s}
                     </button>
                   ))}
@@ -1592,11 +1738,11 @@ const PrintStudioPage = () => {
 
             {/* Canvas container: Maximized height */}
             <div className="rounded-[24px] shadow-[0_12px_32px_rgba(0,0,0,0.08)] bg-[#ececec] border border-black/10 overflow-hidden relative isolate">
-              
+
               {/* Top tools on canvas */}
               <div className="absolute top-3 right-3 z-[40] flex gap-2">
                 {activeArtworkOnThisSide && (
-                  <button onClick={() => { removeArtworkFromSide(activeArtworkOnThisSide.id, activeSide); showToast(`Removed from ${activeSide}`); }} 
+                  <button onClick={() => { removeArtworkFromSide(activeArtworkOnThisSide.id, activeSide); showToast(`Removed from ${activeSide}`); }}
                     className="w-8 h-8 rounded-full bg-white/90 backdrop-blur shadow-sm flex items-center justify-center text-red-500 active:scale-95 transition">
                     <Icons.Trash />
                   </button>
@@ -1608,17 +1754,29 @@ const PrintStudioPage = () => {
               </div>
 
               <MockupCanvas {...canvasProps}
+                stageRef={mobileStageRef}
                 stageZoom={1} stagePan={{ x: 0, y: 0 }}
-                onStagePointerDown={() => {}}
+                onStagePointerDown={() => { }}
                 onStagePointerMove={handlePointerMove}
                 onStagePointerUp={stopPan}
-                onStageWheel={() => {}}
+                onStageWheel={() => { }}
                 heightClass="h-[48vh] min-h-[400px]"
                 emptyLabel="Design preview"
               />
 
               {/* Bottom gradient on canvas to visually cleanly separate floating action bar */}
               <div className="absolute bottom-0 inset-x-0 h-12 bg-gradient-to-t from-black/5 to-transparent pointer-events-none" />
+            </div>
+
+            {/* Mobile Special Instructions Box */}
+            <div className="mt-4 rounded-[24px] border border-black/10 bg-white/75 backdrop-blur-sm shadow-[0_12px_32px_rgba(0,0,0,0.08)] p-5 mb-24">
+              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-black/45 mb-2.5">Special Instructions / Custom Notes</p>
+              <textarea
+                value={designDescription}
+                onChange={(e) => setDesignDescription(e.target.value)}
+                placeholder="Describe where you want the print, specific alignment, sizing request, print style, or any other notes..."
+                className="w-full h-24 rounded-2xl border border-black/16 bg-white px-4 py-3 text-sm font-bold text-black outline-none focus:border-black/45 transition resize-none placeholder-black/30"
+              />
             </div>
 
           </motion.div>
@@ -1628,7 +1786,7 @@ const PrintStudioPage = () => {
       {/* ── Fixed Bottom Actions (Mobile) ── */}
       <div className="lg:hidden fixed bottom-0 inset-x-0 z-[100] bg-white border-t border-black/5 pb-safe pt-2 px-3 shadow-[0_-12px_40px_rgba(0,0,0,0.08)]">
         <div className="flex gap-2 items-center h-14 pb-2">
-          
+
           <button onClick={() => setMobileTab('designs')}
             className={`flex-1 h-full rounded-2xl flex flex-col items-center justify-center transition-all ${mobileTab === 'designs' ? 'bg-black text-white shadow-lg scale-105' : 'bg-black/4 text-black/50 hover:bg-black/8 hover:text-black active:scale-95'}`}>
             {artworks.length > 0 && mobileTab !== 'designs' && (
@@ -1637,7 +1795,7 @@ const PrintStudioPage = () => {
             <Icons.Upload />
             <span className="text-[9px] font-black mt-1">Design</span>
           </button>
-          
+
           {!isJeans && (
             <button onClick={() => setMobileTab('color')}
               className={`flex-1 h-full rounded-2xl flex flex-col items-center justify-center transition-all ${mobileTab === 'color' ? 'bg-black text-white shadow-lg scale-105' : 'bg-black/4 text-black/50 hover:bg-black/8 hover:text-black active:scale-95'}`}>
@@ -1658,10 +1816,9 @@ const PrintStudioPage = () => {
             <span className="text-[9px] font-black mt-1">Layers</span>
           </button>
 
-          <button disabled={!hasUploads} onClick={() => setShowOrder(true)}
+          <button disabled={!hasUploads} onClick={handleAddToCart}
             className={`flex-[1.5] h-full rounded-2xl flex flex-col items-center justify-center transition-all shadow-md ${hasUploads ? 'bg-black text-white active:scale-95 hover:bg-black/85' : 'bg-black/10 text-black/30 cursor-not-allowed'}`}>
-            <span className="text-[13px] font-black leading-tight">Order</span>
-            <span className="text-[9px] font-semibold opacity-80 mt-0.5">Ready →</span>
+            <span className="text-[13px] font-black leading-tight">Add to Cart</span>
           </button>
 
         </div>
@@ -1672,7 +1829,7 @@ const PrintStudioPage = () => {
         {mobileTab && (
           <React.Fragment key="mobile-sheet">
             {/* Backdrop */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setMobileTab(null)}
               className="lg:hidden fixed inset-0 z-[110] bg-black/20 backdrop-blur-sm"
@@ -1688,7 +1845,7 @@ const PrintStudioPage = () => {
               <div className="w-full flex justify-center py-2 cursor-grab active:cursor-grabbing">
                 <div className="w-10 h-1.5 rounded-full bg-black/15" />
               </div>
-              
+
               <div className="flex items-center justify-between px-5 pb-2 border-b border-black/5">
                 <h3 className="text-base font-black capitalize tracking-wide text-black/80">{mobileTab}</h3>
                 <button onClick={() => setMobileTab(null)} className="w-8 h-8 bg-black/5 rounded-full flex items-center justify-center active:scale-90 transition">
@@ -1729,7 +1886,7 @@ const PrintStudioPage = () => {
                       {artworks.map((aw) => {
                         const isAct = aw.id === activeArtworkId;
                         const onFront = !aw.visible || aw.visible.front !== false;
-                        const onBack  = !aw.visible || aw.visible.back  !== false;
+                        const onBack = !aw.visible || aw.visible.back !== false;
                         return (
                           <div key={aw.id} onClick={() => setActiveArtworkId(aw.id)}
                             className={`flex items-center gap-3 rounded-2xl border p-2 cursor-pointer transition-all active:scale-[0.99]
@@ -1784,7 +1941,7 @@ const PrintStudioPage = () => {
                         className="h-14 w-14 rounded-2xl border-2 border-black/10 bg-white p-2 cursor-pointer shrink-0" />
                     </div>
                     {colorError && <p className="mb-2 text-xs text-red-600 font-semibold">{colorError}</p>}
-                    
+
                     <p className="text-[10px] font-black uppercase tracking-wide text-black/40 mt-1">Palette</p>
                     <div className="grid grid-cols-6 gap-2 sm:gap-3">
                       {COLOR_PRESETS.map(({ hex, label }) => (
@@ -1794,7 +1951,7 @@ const PrintStudioPage = () => {
                           style={{ background: hex }}>
                           {garmentColor === hex && (
                             <span className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                              <span className={`text-xs font-black ${['#FFFFFF','#D9D9D9'].includes(hex) ? 'text-black' : 'text-white'}`}>✓</span>
+                              <span className={`text-xs font-black ${['#FFFFFF', '#D9D9D9'].includes(hex) ? 'text-black' : 'text-white'}`}>✓</span>
                             </span>
                           )}
                         </button>
@@ -1815,12 +1972,12 @@ const PrintStudioPage = () => {
                       <>
                         <div className="grid grid-cols-2 gap-2">
                           {[
-                            { label: 'Center',   fn: centerArtwork,  icon: <Icons.Center /> },
-                            { label: 'Reset',    fn: resetTransform, icon: null },
-                            { label: 'Scale +',  fn: scaleUp,        icon: null },
-                            { label: 'Scale −',  fn: scaleDown,      icon: null },
+                            { label: 'Center', fn: centerArtwork, icon: <Icons.Center /> },
+                            { label: 'Reset', fn: resetTransform, icon: null },
+                            { label: 'Scale +', fn: scaleUp, icon: null },
+                            { label: 'Scale −', fn: scaleDown, icon: null },
                             { label: '↺ Rotate CCw', fn: rotateCCW, icon: null },
-                            { label: '↻ Rotate CW',  fn: rotateCW,  icon: null },
+                            { label: '↻ Rotate CW', fn: rotateCW, icon: null },
                           ].map(({ label, fn, icon }) => (
                             <button key={label} onClick={fn}
                               className="h-12 rounded-xl bg-black/4 border border-black/5 text-black/80 text-[13px] font-bold flex items-center justify-center gap-2 hover:bg-black/8 active:bg-black/10 active:scale-[0.98] transition">
@@ -1864,7 +2021,7 @@ const PrintStudioPage = () => {
                             </div>
                           </div>
                         )}
-                        
+
                         <button onClick={() => { removeArtwork(activeArtworkOnThisSide.id); showToast('Deleted'); setMobileTab(null); }}
                           className="mt-1 w-full h-12 rounded-xl bg-red-50 text-red-500 text-[13px] font-bold flex items-center justify-center gap-2 active:bg-red-100 active:scale-[0.98] transition">
                           <Icons.Trash /> Delete Design Completely
@@ -1897,20 +2054,20 @@ const PrintStudioPage = () => {
                                 : <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-black/20"><span className="text-[10px] font-black">{aw.type === 'text' ? 'TXT' : 'PDF'}</span></div>
                               }
                               <p className={`flex-1 text-sm font-bold truncate ${isAct ? 'text-white' : 'text-black'}`}>{aw.name}</p>
-                              
+
                               <button onClick={(e) => {
-                                  e.stopPropagation();
-                                  if (!onThisSide) {
-                                    setArtworks((p) => p.map((a) => a.id !== aw.id ? a : { ...a, visible: { ...a.visible, [activeSide]: true } }));
-                                  } else {
-                                    removeArtworkFromSide(aw.id, activeSide);
-                                  }
-                                }}
+                                e.stopPropagation();
+                                if (!onThisSide) {
+                                  setArtworks((p) => p.map((a) => a.id !== aw.id ? a : { ...a, visible: { ...a.visible, [activeSide]: true } }));
+                                } else {
+                                  removeArtworkFromSide(aw.id, activeSide);
+                                }
+                              }}
                                 className={`w-10 h-10 rounded-xl flex items-center justify-center text-xs font-black transition active:scale-90
                                   ${isAct ? 'bg-white/15 hover:bg-white/25 text-white' : 'bg-black/5 hover:bg-black/10 text-black/40'}`}>
                                 {onThisSide ? 'ON' : 'OFF'}
                               </button>
-                              
+
                               <div className="flex flex-col gap-1 pr-1">
                                 <button onClick={(e) => { e.stopPropagation(); moveLayer(aw.id, 'up'); }} disabled={realIdx === artworks.length - 1}
                                   className={`w-8 h-5 rounded-md flex items-center justify-center transition active:bg-black/10 disabled:opacity-20
@@ -1930,6 +2087,23 @@ const PrintStudioPage = () => {
               </div>
             </motion.div>
           </React.Fragment>
+        )}
+      </AnimatePresence>
+      {/* Options Indicator Pill (visible when at the top) */}
+      <AnimatePresence>
+        {isAtTop && (
+          <motion.button
+            initial={{ opacity: 0, y: 20, x: '-50%' }}
+            animate={{ opacity: 1, y: 0, x: '-50%' }}
+            exit={{ opacity: 0, y: 20, x: '-50%' }}
+            transition={{ duration: 0.3 }}
+            onClick={() => {
+              window.scrollTo({ top: 450, behavior: 'smooth' });
+            }}
+            className="fixed bottom-6 left-1/2 z-[105] px-5 py-3 rounded-full bg-black/80 backdrop-blur text-white text-xs font-black tracking-wide shadow-lg border border-white/10 hover:bg-black active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
+          >
+            Customization Options ↓
+          </motion.button>
         )}
       </AnimatePresence>
       <Footer />

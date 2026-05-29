@@ -387,20 +387,10 @@ const ProductDetailsPage = () => {
                 slug={productData.slug}
                 frontImage={frontImg}
                 backImage={backImg}
+                inStock={productData.inStock}
               />
               
-              {/* Stock Status */}
-              <div className="mt-4 flex justify-center md:justify-start">
-                {productData.inStock !== false ? (
-                  <span className="px-4 py-2 bg-green-100 text-green-700 rounded-full text-sm font-medium">
-                    {typeof productData.stock === 'number' ? `${productData.stock} in stock` : 'In Stock'}
-                  </span>
-                ) : (
-                  <span className="px-4 py-2 bg-red-100 text-red-700 rounded-full text-sm font-medium">
-                    Out of Stock
-                  </span>
-                )}
-              </div>
+              {/* Stock Status - Removed from here as it's now inside ProductDetails next to colors */}
             </div>
           </div>
             </div>

@@ -474,6 +474,7 @@ const CollectionsPage = () => {
                         backImage={product.backImage}
                         frontImage={product.frontImage}
                         slug={product.slug}
+                        inStock={product.inStock}
                       />
                     </div>
                   </motion.div>

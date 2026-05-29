@@ -9,7 +9,7 @@ import { normalizeMoneyValue } from '../lib/money.js';
 const QUICK_SIZES = ['S', 'M', 'L', 'XL'];
 const QUICK_COLORS = ['#111111', '#2f2f2f', '#d9d9d9', '#1e3a8a'];
 
-const ProductCard = ({ title, price, backImage, frontImage, slug, priceINR, priceNPR }) => {
+const ProductCard = ({ title, price, backImage, frontImage, slug, priceINR, priceNPR, inStock }) => {
   const navigate = useNavigate();
   const { addItem } = useCart();
   const { currency } = useCurrency();
@@ -109,7 +109,8 @@ const ProductCard = ({ title, price, backImage, frontImage, slug, priceINR, pric
       <div className="relative w-full aspect-[3/4] mb-3 overflow-hidden rounded-[24px]">
         <img
           {...primaryImageProps}
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+          draggable={false}
           style={{
             opacity: hovered && backImage ? 0 : 1,
             transition: 'opacity 0.35s ease',
@@ -118,7 +119,8 @@ const ProductCard = ({ title, price, backImage, frontImage, slug, priceINR, pric
         {backImage && (
           <img
             {...hoverImageProps}
-            className="absolute inset-0 w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+            draggable={false}
             style={{
               opacity: hovered ? 1 : 0,
               transition: 'opacity 0.35s ease',
@@ -177,8 +179,9 @@ const ProductCard = ({ title, price, backImage, frontImage, slug, priceINR, pric
               <button
                 key={`${slug || title}-size-${size}`}
                 type="button"
+                disabled={inStock === false}
                 onClick={() => handleQuickPick(size, null)}
-                className="flex-1 h-[42px] rounded-xl text-[11px] font-bold cursor-pointer transition-colors duration-150"
+                className={`flex-1 h-[42px] rounded-xl text-[11px] font-bold transition-colors duration-150 ${inStock === false ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
                 style={{
                   backgroundColor: selectedSize === size ? '#111' : 'rgba(0,0,0,0.1)',
                   color: selectedSize === size ? '#fff' : '#111',
@@ -195,8 +198,9 @@ const ProductCard = ({ title, price, backImage, frontImage, slug, priceINR, pric
                 <button
                   key={`${slug || title}-color-${color}`}
                   type="button"
+                  disabled={inStock === false}
                   onClick={() => handleQuickPick(null, color)}
-                  className="rounded-full cursor-pointer transition-transform duration-150 hover:scale-110"
+                  className={`rounded-full transition-transform duration-150 ${inStock === false ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:scale-110'}`}
                   style={{
                     width: '18px',
                     height: '18px',

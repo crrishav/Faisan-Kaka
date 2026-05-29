@@ -15,7 +15,8 @@ const ProductDetails = ({
   sizes = ["M", "L", "S"],
   slug = undefined,
   frontImage = null,
-  backImage = null
+  backImage = null,
+  inStock = true
 }) => {
   const [quantity, setQuantity] = useState(1);
   const [selectedColor, setSelectedColor] = useState(colors[0]);
@@ -266,7 +267,18 @@ const ProductDetails = ({
           </p>
 
           <div className="flex flex-col gap-3">
-            <span className="text-[0.72rem] tracking-[0.14em] uppercase font-bold text-black/45">Color</span>
+            <div className="flex items-center gap-3">
+              <span className="text-[0.72rem] tracking-[0.14em] uppercase font-bold text-black/45">Color</span>
+              {inStock === false ? (
+                <span className="px-2.5 py-1 rounded-full bg-red-100 text-red-600 text-[10px] font-black uppercase tracking-wider border border-red-200">
+                  Out of Stock
+                </span>
+              ) : (
+                <span className="px-2.5 py-1 rounded-full bg-green-100 text-green-600 text-[10px] font-black uppercase tracking-wider border border-green-200">
+                  In Stock
+                </span>
+              )}
+            </div>
             <div className="flex flex-wrap gap-2.5 md:pl-2">
               {colors.map((color, index) => (
                 <button

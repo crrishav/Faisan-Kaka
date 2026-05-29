@@ -4,6 +4,12 @@ set -eu
 ROOT_DIR="$(git rev-parse --show-toplevel)"
 cd "$ROOT_DIR"
 
+if [ -f ".env.local" ]; then
+  set -a
+  . ./.env.local
+  set +a
+fi
+
 RELEVANT_CHANGES="$(git diff --cached --name-only --diff-filter=ACMRT -- \
   migrate-products.mjs \
   src/assets/Collection/T-Shirts)"

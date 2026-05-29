@@ -1,0 +1,21 @@
+#!/bin/sh
+set -eu
+
+ROOT_DIR="$(git rev-parse --show-toplevel)"
+cd "$ROOT_DIR"
+
+RELEVANT_CHANGES="$(git diff --cached --name-only --diff-filter=ACMRT -- \
+  migrate-products.mjs \
+  src/assets/Collection/T-Shirts)"
+
+if [ -z "$RELEVANT_CHANGES" ]; then
+  exit 0
+fi
+
+if [ -z "${SANITY_API_TOKEN:-}" ]; then
+  echo "SANITY_API_TOKEN is required to sync T-Shirts before commit." >&2
+  exit 1
+fi
+
+echo "Running T-Shirts sync before commit..."
+node migrate-products.mjs --category=T-Shirts

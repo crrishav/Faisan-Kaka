@@ -10,6 +10,7 @@
     "build:web": "vite build",
     "build:studio-static": "sanity build dist/studio --base-path /studio -y",
     "migrate:tshirts": "node migrate-products.mjs",
+    "migrate:hoodies": "node migrate-hoodies.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "studio": "sanity dev",

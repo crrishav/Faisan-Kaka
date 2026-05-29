@@ -45,15 +45,10 @@ const client = createClient({
   useCdn: false,
 });
 
-const COLLECTION_PATH = path.join(__dirname, 'src', 'assets', 'T-shirt Designs');
-
-function normalizeTitle(value) {
-  return String(value || '')
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, ' ')
-    .replace(/\s+/g, ' ');
-}
+const HOODIE_PATH = path.join(__dirname, 'src', 'assets', 'Hoodie designs');
+const CATEGORY = 'Hoodies';
+const PRICE_INR = 1000;
+const PRICE_NPR = 2000;
 
 function slugify(value) {
   return String(value || '')
@@ -65,34 +60,16 @@ function slugify(value) {
 
 function parseFilename(filename) {
   const cleanName = filename.replace(/\.(png|jpg|jpeg|webp)$/i, '');
-  const prefixedMatch = cleanName.match(/^(\d+)\s+(front|back)(?:\s*(?:\(([^)]+)\)|(.+)))?$/i);
+  const match = cleanName.match(/^(\d+)\s+(front|back)$/i);
 
-  if (prefixedMatch) {
-    return {
-      serial: prefixedMatch[1],
-      variant: prefixedMatch[2].toLowerCase(),
-      variantLabel: (prefixedMatch[3] || prefixedMatch[4] || '').trim() || null,
-      rawName: cleanName,
-    };
+  if (!match) {
+    return null;
   }
 
-  return null;
-}
-
-function getImagePriority(variant, variantLabel) {
-  if (variant === 'front' && !variantLabel) {
-    return 4;
-  }
-
-  if (variant === 'back' && !variantLabel) {
-    return 3;
-  }
-
-  if (variant === 'front' && variantLabel) {
-    return 2;
-  }
-
-  return 1;
+  return {
+    serial: match[1],
+    variant: match[2].toLowerCase(),
+  };
 }
 
 async function uploadImage(filePath) {
@@ -121,78 +98,39 @@ async function uploadImage(filePath) {
   }
 }
 
-async function fetchExistingProducts(category) {
-  const products = await client.fetch(
-    `*[_type == "product" && category == $category] {
-      _id,
-      title,
-      priceINR,
-      priceNPR,
-      description,
-      sizes,
-      colors,
-      featured,
-      inStock,
-      stock
-    }`,
-    { category }
+async function deleteExistingProducts() {
+  const existingProducts = await client.fetch(
+    `*[_type == "product" && category == $category] { _id }`,
+    { category: CATEGORY }
   );
 
-  return Array.isArray(products) ? products : [];
-}
-
-async function deleteExistingProducts(category) {
-  const existingProducts = await fetchExistingProducts(category);
-
-  if (existingProducts.length === 0) {
-    console.log(`No existing ${category} products found to delete.`);
-    return new Map();
+  if (!Array.isArray(existingProducts) || existingProducts.length === 0) {
+    console.log(`No existing ${CATEGORY} products found to delete.`);
+    return;
   }
 
-  console.log(`Deleting ${existingProducts.length} existing ${category} products...`);
+  console.log(`Deleting ${existingProducts.length} existing ${CATEGORY} products...`);
   for (const product of existingProducts) {
     await client.delete(product._id);
   }
-
-  return new Map(existingProducts.map((product) => [normalizeTitle(product.title), product]));
 }
 
-function buildProductDefaults(serial) {
-  const title = serial;
+async function migrateHoodies() {
+  await deleteExistingProducts();
 
-  return {
-    title,
-    category: 'T-Shirts',
-    priceINR: 600,
-    priceNPR: 1200,
-    description: `T-Shirt ${serial} - Premium quality T-Shirts from Faisan Kaka.`,
-    sizes: ['S', 'M', 'L', 'XL'],
-    colors: ['#111111', '#2f2f2f', '#d9d9d9', '#1e3a8a'],
-    featured: false,
-    inStock: true,
-    stock: 0,
-  };
-}
-
-async function migrateProducts() {
-  const products = {};
-
-  await deleteExistingProducts('T-Shirts');
-
-  const categoryPath = COLLECTION_PATH;
-
-  if (!fs.existsSync(categoryPath)) {
-    console.log(`Category folder not found: ${categoryPath}`);
+  if (!fs.existsSync(HOODIE_PATH)) {
+    console.log(`Category folder not found: ${HOODIE_PATH}`);
     return;
   }
 
   const files = fs
-    .readdirSync(categoryPath)
+    .readdirSync(HOODIE_PATH)
     .filter((file) => /\.(png|jpg|jpeg|webp)$/i.test(file))
     .sort((left, right) => left.localeCompare(right, undefined, { numeric: true, sensitivity: 'base' }));
 
+  const products = {};
+
   for (const file of files) {
-    const filePath = path.join(categoryPath, file);
     const info = parseFilename(file);
 
     if (!info) {
@@ -200,13 +138,22 @@ async function migrateProducts() {
       continue;
     }
 
+    const filePath = path.join(HOODIE_PATH, file);
     const productKey = info.serial;
 
     if (!products[productKey]) {
       products[productKey] = {
-        ...buildProductDefaults(info.serial),
+        title: info.serial,
+        category: CATEGORY,
+        priceINR: PRICE_INR,
+        priceNPR: PRICE_NPR,
+        description: `Hoodie ${info.serial} - Premium quality hoodies from Faisan Kaka.`,
+        sizes: ['S', 'M', 'L', 'XL'],
+        colors: ['#111111', '#2f2f2f', '#d9d9d9', '#1e3a8a'],
+        featured: false,
+        inStock: true,
+        stock: 0,
         mainImage: null,
-        mainImagePriority: 0,
         images: [],
       };
     }
@@ -218,12 +165,15 @@ async function migrateProducts() {
       continue;
     }
 
-    products[productKey].images.push(imageAsset);
-
-    const imagePriority = getImagePriority(info.variant, info.variantLabel);
-    if (imagePriority > products[productKey].mainImagePriority) {
+    if (info.variant === 'front' && !products[productKey].mainImage) {
       products[productKey].mainImage = imageAsset;
-      products[productKey].mainImagePriority = imagePriority;
+    } else {
+      products[productKey].images.push(imageAsset);
+    }
+
+    if (!products[productKey].mainImage && products[productKey].images.length > 0) {
+      products[productKey].mainImage = products[productKey].images[0];
+      products[productKey].images = products[productKey].images.slice(1);
     }
   }
 
@@ -235,13 +185,11 @@ async function migrateProducts() {
       continue;
     }
 
-    const slug = slugify(product.title);
-
     try {
       await client.create({
         _type: 'product',
         title: product.title,
-        slug: { _type: 'slug', current: slug },
+        slug: { _type: 'slug', current: slugify(product.title) },
         category: product.category,
         description: product.description,
         priceINR: product.priceINR,
@@ -261,10 +209,10 @@ async function migrateProducts() {
     }
   }
 
-  console.log('\nMigration complete!');
+  console.log('\nHoodie migration complete!');
 }
 
-migrateProducts().catch((error) => {
+migrateHoodies().catch((error) => {
   console.error(error);
   process.exitCode = 1;
 });

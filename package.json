@@ -9,6 +9,7 @@
     "build": "npm run build:web && npm run build:studio-static",
     "build:web": "vite build",
     "build:studio-static": "sanity build dist/studio --base-path /studio -y",
+    "migrate:tshirts": "node migrate-products.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "studio": "sanity dev",

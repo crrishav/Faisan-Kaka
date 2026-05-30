@@ -2103,7 +2103,15 @@ const PrintStudioPage = () => {
             exit={{ opacity: 0, y: 20, x: '-50%' }}
             transition={{ duration: 0.3 }}
             onClick={() => {
-              window.scrollTo({ top: 450, behavior: 'smooth' });
+              const footer = document.querySelector('footer');
+              const footerTop = footer ? footer.getBoundingClientRect().top + window.scrollY : document.documentElement.scrollHeight;
+              const targetTop = Math.max(0, footerTop - window.innerHeight + 24);
+
+              if (window.lenis && typeof window.lenis.scrollTo === 'function') {
+                window.lenis.scrollTo(targetTop);
+              } else {
+                window.scrollTo({ top: targetTop, behavior: 'smooth' });
+              }
             }}
             className="fixed bottom-6 left-1/2 z-[105] px-5 py-3 rounded-full bg-black/80 backdrop-blur text-white text-xs font-black tracking-wide shadow-lg border border-white/10 hover:bg-black active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
           >

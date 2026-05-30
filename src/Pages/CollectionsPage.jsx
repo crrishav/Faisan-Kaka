@@ -436,7 +436,7 @@ const CollectionsPage = () => {
             {Array.from({ length: 8 }).map((_, i) => (
               <motion.div
                 key={i}
-                className="rounded-[32px] bg-[#f0f0f0] aspect-[3/4]"
+                className="rounded-[32px] bg-[#f0f0f0] aspect-[9/16]"
                 animate={{ opacity: [0.5, 1, 0.5] }}
                 transition={{ duration: 1.4, repeat: Infinity, delay: i * 0.1 }}
               />

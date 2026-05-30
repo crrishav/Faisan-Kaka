@@ -106,26 +106,24 @@ const ProductCard = ({ title, price, backImage, frontImage, slug, priceINR, pric
       onClick={handleNavigate}
     >
       {/* Image */}
-      <div className="relative w-full aspect-[9/16] mb-3 overflow-hidden rounded-[24px]">
+      <div className="relative w-full aspect-[3/4] mb-3 overflow-hidden rounded-[24px]">
         <img
           {...primaryImageProps}
-          className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+          className="absolute inset-0 w-full h-full object-cover object-[center_35%] md:object-[center_85%] pointer-events-none"
           draggable={false}
           style={{
             opacity: hovered && backImage ? 0 : 1,
             transition: 'opacity 0.35s ease',
-            objectPosition: 'center'
           }}
         />
         {backImage && (
           <img
             {...hoverImageProps}
-            className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+            className="absolute inset-0 w-full h-full object-cover object-[center_35%] md:object-[center_85%] pointer-events-none"
             draggable={false}
             style={{
               opacity: hovered ? 1 : 0,
               transition: 'opacity 0.35s ease',
-              objectPosition: 'center'
             }}
           />
         )}

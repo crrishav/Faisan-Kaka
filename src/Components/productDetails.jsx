@@ -190,7 +190,7 @@ const ProductDetails = ({
               >
                 <img
                   {...activeMobileImageProps}
-                  className="w-full aspect-[9/16] object-cover"
+                  className="w-full h-[300px] sm:h-[360px] object-cover"
                 />
               </button>
 
@@ -231,7 +231,7 @@ const ProductDetails = ({
                     key={`${img}-${index}`}
                     type="button"
                     onClick={() => setCurrentImageIndex(index)}
-                    className={`w-12 aspect-[9/16] rounded-lg overflow-hidden border-2 transition-all ${
+                    className={`w-12 h-12 rounded-lg overflow-hidden border-2 transition-all ${
                       index === currentImageIndex
                         ? 'border-black scale-105'
                         : 'border-black/10 opacity-80 hover:opacity-100'

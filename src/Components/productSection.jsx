@@ -215,7 +215,7 @@ const ProductSection = ({ title }) => {
       <section data-product-section className="w-full py-12 flex flex-col items-center relative mt-8 outline-none max-w-[100vw]">
         {renderHeader()}
         <div className="w-full h-40 flex items-center justify-center">
-          <p className="text-gray-400 text-lg">No products available in this category.</p>
+          <p className="text-gray-400 text-2xl md:text-3xl font-medium">Coming Soon</p>
         </div>
       </section>
     );

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Footer from '../Components/footer.jsx';
 import { listOrders } from '../lib/ordersService.js';
@@ -89,12 +89,43 @@ const INITIAL = {
   orderId: '',
 };
 
+const EKART_TRACKING_BASE = 'https://ekartlogistics.com/ekartlogistics-web/shipmenttrack/';
+const REDIRECT_COUNTDOWN = 5;
+
+const normalize = (value) => String(value || '').trim().toLowerCase();
+
+const getOrderContactValues = (order) => [
+  order?.customer?.email,
+  order?.raw?.customer?.email,
+  order?.email,
+  order?.contactEmail,
+  order?.phone,
+  order?.raw?.customer?.phone,
+].filter(Boolean);
+
 const OrderTrackingPage = () => {
   const [fields, setFields] = useState(INITIAL);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [trackingData, setTrackingData] = useState(null);
+  const [redirectState, setRedirectState] = useState(null);
+
+  useEffect(() => {
+    if (!redirectState) return undefined;
+
+    if (redirectState.secondsLeft <= 0) {
+      window.location.assign(`${EKART_TRACKING_BASE}${encodeURIComponent(redirectState.orderId)}`);
+      return undefined;
+    }
+
+    const timer = window.setTimeout(() => {
+      setRedirectState((current) => {
+        if (!current) return current;
+        return { ...current, secondsLeft: current.secondsLeft - 1 };
+      });
+    }, 1000);
+
+    return () => window.clearTimeout(timer);
+  }, [redirectState]);
 
   const handleChange = useCallback((e) => {
     const { name, value } = e.target;
@@ -118,23 +149,25 @@ const OrderTrackingPage = () => {
 
     try {
       const orders = await listOrders();
-      const order = orders.find(o => 
-        (o.id.toLowerCase() === fields.orderId.toLowerCase() || o.id.replace('ORD-', '').toLowerCase() === fields.orderId.toLowerCase()) &&
-        (o.phone === fields.contact || o.raw?.customer?.email === fields.contact)
-      );
+      const enteredOrderId = normalize(fields.orderId);
+      const enteredContact = normalize(fields.contact);
+
+      const order = orders.find((o) => {
+        const orderIdMatches = [o?.id, o?.id?.replace(/^ORD-/i, '')]
+          .filter(Boolean)
+          .some((candidate) => normalize(candidate) === enteredOrderId);
+
+        const contactMatches = getOrderContactValues(o)
+          .some((candidate) => normalize(candidate) === enteredContact);
+
+        return orderIdMatches && contactMatches;
+      });
 
       if (order) {
-        const tracking = {
+        setRedirectState({
           orderId: order.id,
-          status: order.status,
-          steps: [
-            { label: 'Order Confirmed', completed: true, date: order.date },
-            { label: 'Processing', completed: order.status !== 'Pending', date: order.status === 'Pending' ? 'In queue' : 'In progress' },
-            { label: 'Shipped', completed: order.status === 'Shipped', date: order.tracking ? `Tracking: ${order.tracking}` : 'Awaiting dispatch' },
-          ],
-        };
-        setTrackingData(tracking);
-        setSubmitted(true);
+          secondsLeft: REDIRECT_COUNTDOWN,
+        });
       } else {
         setErrors({ contact: 'Order not found with these details.' });
       }
@@ -146,162 +179,31 @@ const OrderTrackingPage = () => {
     }
   };
 
-  /* ── Tracking result state ── */
-  if (submitted && trackingData) {
+  if (redirectState) {
     return (
       <div className="min-h-screen bg-white flex flex-col">
-        <div className="flex-grow w-full max-w-5xl mx-auto px-4 md:px-16 lg:px-24 pt-32 pb-16 md:pt-40 md:pb-20">
-          {/* ── Page heading ── */}
+        <div className="flex-grow w-full max-w-5xl mx-auto px-4 md:px-16 lg:px-24 pt-32 pb-16 md:pt-40 md:pb-20 flex items-center">
           <motion.div
-            className="mb-16"
+            className="w-full rounded-3xl bg-[#f5f5f5] p-8 md:p-10"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
           >
             <p className="text-[0.65rem] font-bold tracking-[0.2em] uppercase text-black/40 mb-2">
-              Order #{trackingData.orderId}
+              Order #{redirectState.orderId}
             </p>
-            <h1 className="text-5xl md:text-6xl font-black tracking-tighter text-black leading-none">
-              Track Your Order
+            <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-black leading-none mb-4">
+              Redirecting to Ekart
             </h1>
-          </motion.div>
-
-          {/* ── Status card ── */}
-          <motion.div
-            className="rounded-3xl bg-[#f5f5f5] p-8 mb-12"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
-          >
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <p className="text-[0.65rem] font-bold tracking-[0.18em] uppercase text-black/50 mb-1">
-                  Current Status
-                </p>
-                <p className="text-2xl md:text-3xl font-black text-black">
-                  {trackingData.status}
-                </p>
-              </div>
-              <motion.div
-                className="w-16 h-16 rounded-full bg-black flex items-center justify-center"
-                initial={{ scale: 0, rotate: -20 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{
-                  type: 'spring',
-                  stiffness: 300,
-                  damping: 18,
-                  delay: 0.2,
-                }}
-              >
-                <svg
-                  width="28"
-                  height="28"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="white"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-              </motion.div>
-            </div>
-          </motion.div>
-
-          {/* ── Timeline ── */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.55, delay: 0.2 }}
-          >
-            <p className="text-[0.65rem] font-bold tracking-[0.18em] uppercase text-black mb-8">
-              Order Progress
+            <p className="text-base md:text-lg font-medium text-black/60 max-w-2xl">
+              Your order was found. We&apos;re sending you to Ekart&apos;s tracking site where you can track your shipment.
             </p>
-            <div className="space-y-0">
-              {trackingData.steps.map((step, index) => (
-                <motion.div
-                  key={index}
-                  className="flex gap-6 pb-8 relative"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{
-                    duration: 0.5,
-                    delay: 0.3 + index * 0.08,
-                    ease: [0.22, 1, 0.36, 1],
-                  }}
-                >
-                  {/* Timeline line and dot */}
-                  <div className="flex flex-col items-center">
-                    <motion.div
-                      className={`w-3.5 h-3.5 rounded-full ring-4 ${
-                        step.completed
-                          ? 'bg-black ring-black/10'
-                          : 'bg-white ring-black/15 border-2 border-black/30'
-                      }`}
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{
-                        type: 'spring',
-                        stiffness: 300,
-                        damping: 15,
-                        delay: 0.3 + index * 0.08,
-                      }}
-                    />
-                    {index < trackingData.steps.length - 1 && (
-                      <motion.div
-                        className={`w-0.5 h-12 ${
-                          step.completed
-                            ? 'bg-black/20'
-                            : 'bg-black/10'
-                        }`}
-                        initial={{ height: 0 }}
-                        animate={{ height: 48 }}
-                        transition={{
-                          duration: 0.4,
-                          delay: 0.4 + index * 0.08,
-                        }}
-                      />
-                    )}
-                  </div>
-
-                  {/* Step details */}
-                  <div className="flex-1 pt-1">
-                    <p
-                      className={`text-sm font-bold ${
-                        step.completed
-                          ? 'text-black'
-                          : 'text-black/50'
-                      }`}
-                    >
-                      {step.label}
-                    </p>
-                    <p className="text-xs text-black/40 font-medium mt-0.5">
-                      {step.date}
-                    </p>
-                  </div>
-                </motion.div>
-              ))}
+            <div className="mt-8 inline-flex items-center gap-3 rounded-full bg-black text-white px-5 py-3">
+              <span className="text-sm font-bold tracking-wide">
+                Redirecting in {redirectState.secondsLeft} second{redirectState.secondsLeft === 1 ? '' : 's'}
+              </span>
+              <span className="w-2.5 h-2.5 rounded-full bg-white/80 animate-pulse" />
             </div>
-          </motion.div>
-
-          {/* ── Back button ── */}
-          <motion.div
-            className="mt-16 flex gap-3"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: 0.6 }}
-          >
-            <button
-              onClick={() => {
-                setSubmitted(false);
-                setFields(INITIAL);
-                setTrackingData(null);
-              }}
-              className="px-6 py-3 rounded-2xl bg-black text-white text-sm font-bold hover:bg-black/90 transition-colors cursor-pointer"
-            >
-              Search Another Order
-            </button>
           </motion.div>
         </div>
         <Footer />

@@ -106,6 +106,7 @@ const CheckoutForm = ({ cartItems, total, currency }) => {
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponError, setCouponError] = useState('');
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
+  const skipRazorpayCheckout = import.meta.env.VITE_SKIP_RAZORPAY_CHECKOUT === 'true';
 
   const effectiveCartItems = cartItems ?? cart.items;
   const subtotal = total ?? cart.total;
@@ -254,6 +255,32 @@ const CheckoutForm = ({ cartItems, total, currency }) => {
     });
 
     try {
+      if (skipRazorpayCheckout) {
+        const verifyRes = await fetch('/api/verify-payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            razorpay_payment_id: `test_payment_${Date.now()}`,
+            razorpay_order_id: `test_order_${Date.now()}`,
+            razorpay_signature: 'test_signature',
+            orderPayload: payload,
+            bypassVerification: true,
+          }),
+        });
+        let verifyJson;
+        try {
+          verifyJson = await verifyRes.json();
+        } catch {
+          const text = await verifyRes.text().catch(() => '');
+          throw new Error(text ? `Test checkout returned non-JSON response: ${text}` : 'Test checkout endpoint is not available locally. Use Vercel dev or deploy to Vercel to test the API route.');
+        }
+        if (!verifyRes.ok) throw new Error(verifyJson.error || 'Test checkout failed');
+
+        cart.clear();
+        setSubmitted(true);
+        return;
+      }
+
       // 1) Create order on server (uses RAZORPAY_KEY_ID/SECRET from env on server)
       const createRes = await fetch('/api/create-order', {
         method: 'POST',

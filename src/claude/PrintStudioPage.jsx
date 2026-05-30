@@ -2096,7 +2096,7 @@ const PrintStudioPage = () => {
       </AnimatePresence>
       {/* Options Indicator Pill (visible when at the top) */}
       <AnimatePresence>
-        {isAtTop && (
+            {isAtTop && !isMobile && (
           <motion.button
             initial={{ opacity: 0, y: 20, x: '-50%' }}
             animate={{ opacity: 1, y: 0, x: '-50%' }}

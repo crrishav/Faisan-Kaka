@@ -24,7 +24,7 @@ const AdminGuard = ({ children }) => {
 
   if (isAuthenticated === null) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="min-h-screen flex items-start justify-center bg-white px-4 pt-24 pb-4 md:pt-32">
         <div className="w-8 h-8 border-4 border-black border-t-transparent rounded-full animate-spin"></div>
       </div>
     );

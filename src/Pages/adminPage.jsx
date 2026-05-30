@@ -90,6 +90,77 @@ const Pill = ({ children, className = '' }) => (
   </span>
 );
 
+const EKART_TRACKING_PATTERNS = [
+  /^[A-Z]{4}\d{10}$/,
+  /^[A-Z]{2}\d{9}[A-Z]{2}$/,
+];
+
+const normalizeTrackingId = (value = '') => value.toUpperCase().replace(/\s+/g, '');
+
+const isValidTrackingId = (value = '') => {
+  const tracking = normalizeTrackingId(value);
+  return tracking === '' || EKART_TRACKING_PATTERNS.some((pattern) => pattern.test(tracking));
+};
+
+const getTrackingHint = (value = '') => {
+  const tracking = normalizeTrackingId(value);
+  if (!tracking) return 'Ekart formats: ABCD1234567890 or FM123456789IN.';
+  if (isValidTrackingId(tracking)) return 'Ekart formats: ABCD1234567890 or FM123456789IN.';
+  return 'Use 4 letters + 10 digits, or 2 letters + 9 digits + 2 letters.';
+};
+
+const TrackingEditor = ({ value, onChange, onSave, savedValue = '', className = '' }) => {
+  const tracking = normalizeTrackingId(value);
+  const valid = isValidTrackingId(tracking);
+  const hasError = Boolean(tracking) && !valid;
+
+  return (
+    <div className={`w-full ${className}`}>
+      <div className="flex flex-col sm:flex-row gap-2">
+        <input
+          type="text"
+          value={tracking}
+          onChange={(e) => onChange(normalizeTrackingId(e.target.value))}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && tracking && valid) {
+              e.preventDefault();
+              onSave(tracking);
+            }
+          }}
+          placeholder="ABCD1234567890"
+          autoComplete="off"
+          autoCapitalize="characters"
+          spellCheck="false"
+          maxLength={14}
+          aria-invalid={hasError}
+          className={`flex-1 min-w-0 px-4 py-2.5 rounded-2xl border-2 text-sm font-bold outline-none transition-colors ${
+            hasError
+              ? 'border-red-300 bg-red-50 text-red-700 placeholder-red-300 focus:border-red-500'
+              : 'border-black/10 bg-[#f5f5f5] text-black placeholder-black/30 focus:border-black'
+          }`}
+        />
+        <button
+          onClick={() => onSave(tracking)}
+          disabled={!tracking || !valid}
+          className="shrink-0 px-4 py-2.5 rounded-2xl bg-black text-white text-sm font-black hover:bg-black/80 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          Save
+        </button>
+      </div>
+      <div className="mt-2 flex flex-col gap-1">
+        <p className={`text-[10px] font-semibold ${hasError ? 'text-red-500' : 'text-black/35'}`}>
+          {getTrackingHint(tracking)}
+        </p>
+        {savedValue ? (
+          <p className="text-[10px] font-mono font-bold text-black/35">
+            Saved: {normalizeTrackingId(savedValue)}
+          </p>
+        ) : null}
+      </div>
+    </div>
+  );
+};
+
 /* ─── Settlement Countdown Hook ─────────────────────────────────── */
 
 const useCountdown = (targetDate) => {
@@ -121,15 +192,24 @@ const PrintModal = ({ order, onClose }) => {
     return () => document.removeEventListener('keydown', esc);
   }, [order, onClose]);
 
+  useEffect(() => {
+    if (!order) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [order]);
+
   return (
     <AnimatePresence>
       {order && (
         <motion.div className="fixed inset-0 z-[90] flex items-center justify-center p-4"
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          style={{ touchAction: 'none' }}>
           <motion.div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose}
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
           <motion.div
-            className="relative bg-white rounded-[28px] w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl"
+            className="relative bg-white rounded-[28px] w-full max-w-3xl max-h-[90dvh] overflow-y-auto overscroll-contain shadow-2xl"
+            style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}
             initial={{ opacity: 0, scale: 0.94, y: 24 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.94, y: 24 }}
@@ -206,106 +286,109 @@ const OrderDrawer = ({ order, onClose, onStatusChange, onTrackingUpdate }) => {
     return () => document.removeEventListener('keydown', esc);
   }, [order, onClose]);
 
+  useEffect(() => {
+    if (!order) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [order]);
+
   return (
     <>
       <PrintModal order={printOrder} onClose={() => setPrintOrder(null)} />
       <AnimatePresence>
         {order && (
           <motion.div className="fixed inset-0 z-[70] flex items-center justify-center p-4"
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            style={{ touchAction: 'none' }}>
             <motion.div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose}
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
             <motion.div
-              className="relative bg-white rounded-[28px] w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col"
+                className="relative bg-white rounded-[28px] w-full max-w-md max-h-[90dvh] overflow-hidden overscroll-contain shadow-2xl flex flex-col"
+                style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}
               initial={{ opacity: 0, scale: 0.94, y: 24 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.94, y: 24 }}
               transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
             >
-              {/* Header */}
-              <div className="p-6 border-b-2 border-black/6 flex items-start justify-between gap-3">
-                <div>
-                  <Label>Order Detail</Label>
-                  <p className="text-xl font-black text-black tracking-tight">{order.id}</p>
-                  <p className="text-sm font-bold text-black/50">{order.date}</p>
-                </div>
-                <button onClick={onClose}
-                  className="w-9 h-9 rounded-full bg-black/6 flex items-center justify-center hover:bg-black/12 transition-colors mt-1 flex-shrink-0">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
-                    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                </button>
-              </div>
-
-              {/* Design preview */}
-              <div className="p-6 border-b-2 border-black/6">
-                <Label>Design Preview</Label>
-                <div className="rounded-[20px] overflow-hidden border-2 border-black/8 h-52 sm:h-60 bg-black/4 mt-2">
-                  <img src={order.preview} alt="Design" loading="lazy" decoding="async" className="w-full h-full object-contain" />
-                </div>
-                <button onClick={() => setPrintOrder(order)} disabled={!order?.hiRes}
-                  className="mt-3 w-full py-2.5 rounded-2xl bg-black text-white text-sm font-black hover:bg-black/80 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-                  View Print Files ↗
-                </button>
-              </div>
-
-              {/* Customer */}
-              <div className="p-6 border-b-2 border-black/6">
-                <Label>Customer</Label>
-                <p className="text-base font-black text-black">{order.customer}</p>
-                <p className="text-sm font-semibold text-black/50">{order.phone}</p>
-                <p className="text-sm font-semibold text-black/40 mt-1">{order.address}</p>
-              </div>
-
-              {/* Status update */}
-              <div className="p-6 border-b-2 border-black/6">
-                <Label>Update Status</Label>
-                <div className="flex gap-2 mt-2 flex-wrap">
-                  {STATUS_ORDER.map((s) => (
-                    <button key={s} onClick={() => onStatusChange(order.id, s)}
-                      className={`px-4 py-2 rounded-2xl text-xs font-black border-2 transition-all duration-200 ${
-                        order.status === s ? 'bg-black text-white border-black' : 'bg-white text-black border-black/15 hover:border-black/40'
-                      }`}>
-                      {s}
+                <div className="sticky top-0 z-20 bg-white border-b-2 border-black/6">
+                  <div className="p-6 flex items-start justify-between gap-3">
+                    <div>
+                      <Label>Order Detail</Label>
+                      <p className="text-xl font-black text-black tracking-tight">{order.id}</p>
+                      <p className="text-sm font-bold text-black/50">{order.date}</p>
+                    </div>
+                    <button onClick={onClose}
+                      className="w-9 h-9 rounded-full bg-black/6 flex items-center justify-center hover:bg-black/12 transition-colors mt-1 flex-shrink-0">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+                        <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
                     </button>
-                  ))}
+                  </div>
                 </div>
-                {order.status !== 'Shipped' && (
-                  <button onClick={() => onStatusChange(order.id, STATUS_NEXT[order.status])}
-                    className="mt-3 w-full py-2.5 rounded-2xl bg-black/6 text-black text-sm font-black hover:bg-black/12 transition-colors">
-                    Advance → {STATUS_NEXT[order.status]}
-                  </button>
-                )}
-              </div>
 
-              {/* Shiprocket paste */}
-              <div className="p-6 border-b-2 border-black/6">
-                <Label>Shiprocket Tracking ID</Label>
-                <div className="flex gap-2 mt-2">
-                  <input
-                    type="text"
-                    value={trackingInput}
-                    onChange={(e) => setTrackingInput(e.target.value)}
-                    placeholder="Paste tracking ID…"
-                    className="flex-1 px-4 py-2.5 rounded-2xl border-2 border-black/10 bg-[#f5f5f5] text-black font-bold text-sm placeholder-black/30 outline-none focus:border-black transition-colors"
-                  />
-                  <button onClick={() => onTrackingUpdate(order.id, trackingInput)}
-                    className="px-4 py-2.5 rounded-2xl bg-black text-white text-sm font-black hover:bg-black/80 transition-colors">
-                    Save
-                  </button>
-                </div>
-                {order.tracking && (
-                  <p className="text-xs font-mono font-bold text-black/40 mt-2">Current: {order.tracking}</p>
-                )}
-              </div>
+                <div className="flex-1 overflow-y-auto overscroll-contain" style={{ WebkitOverflowScrolling: 'touch' }}>
+                  {/* Design preview */}
+                  <div className="p-6 border-b-2 border-black/6">
+                    <Label>Design Preview</Label>
+                      <div className="rounded-[20px] overflow-hidden border-2 border-black/8 bg-black/4 mt-2 w-full" style={{ maxHeight: '260px', minHeight: '180px' }}>
+                        <img src={order.preview} alt="Design" loading="lazy" decoding="async" className="w-full h-full object-contain" style={{ maxHeight: '260px' }} />
+                    </div>
+                    <button onClick={() => setPrintOrder(order)} disabled={!order?.hiRes}
+                      className="mt-3 w-full py-2.5 rounded-2xl bg-black text-white text-sm font-black hover:bg-black/80 transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                      View Print Files ↗
+                    </button>
+                  </div>
 
-              {/* Financials */}
-              <div className="p-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div><Label>Order Amount</Label><p className="text-lg font-black text-black">₹{order.amount.toLocaleString()}</p></div>
-                  <div><Label>Ship Cost</Label><p className="text-lg font-black text-black">₹{order.shippingCost}</p></div>
+                  {/* Customer */}
+                  <div className="p-6 border-b-2 border-black/6">
+                    <Label>Customer</Label>
+                    <p className="text-base font-black text-black">{order.customer}</p>
+                    <p className="text-sm font-semibold text-black/50">{order.phone}</p>
+                    <p className="text-sm font-semibold text-black/40 mt-1">{order.address}</p>
+                  </div>
+
+                  {/* Status update */}
+                  <div className="p-6 border-b-2 border-black/6">
+                    <Label>Update Status</Label>
+                    <div className="flex gap-2 mt-2 flex-wrap">
+                      {STATUS_ORDER.map((s) => (
+                        <button key={s} onClick={() => onStatusChange(order.id, s)}
+                          className={`px-4 py-2 rounded-2xl text-xs font-black border-2 transition-all duration-200 ${
+                            order.status === s ? 'bg-black text-white border-black' : 'bg-white text-black border-black/15 hover:border-black/40'
+                          }`}>
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                    {order.status !== 'Shipped' && (
+                      <button onClick={() => onStatusChange(order.id, STATUS_NEXT[order.status])}
+                        className="mt-3 w-full py-2.5 rounded-2xl bg-black/6 text-black text-sm font-black hover:bg-black/12 transition-colors">
+                        Advance → {STATUS_NEXT[order.status]}
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Tracking ID */}
+                  <div className="p-6 border-b-2 border-black/6">
+                    <Label>Tracking ID</Label>
+                    <TrackingEditor
+                      value={trackingInput}
+                      onChange={setTrackingInput}
+                      onSave={(tracking) => onTrackingUpdate(order.id, tracking)}
+                      savedValue={order.tracking}
+                      className="mt-2"
+                    />
+                  </div>
+
+                  {/* Financials */}
+                  <div className="p-6">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div><Label>Order Amount</Label><p className="text-lg font-black text-black">₹{order.amount.toLocaleString()}</p></div>
+                      <div><Label>Ship Cost</Label><p className="text-lg font-black text-black">₹{order.shippingCost}</p></div>
+                    </div>
+                  </div>
                 </div>
-              </div>
             </motion.div>
           </motion.div>
         )}
@@ -329,6 +412,22 @@ const OrderListTab = ({ orders, setOrders }) => {
     setToast(msg);
     setTimeout(() => setToast(null), 2500);
   };
+
+  const [trackingDrafts, setTrackingDrafts] = useState({});
+
+  useEffect(() => {
+    setTrackingDrafts((prev) => {
+      const next = {};
+      for (const order of orders) {
+        if (Object.prototype.hasOwnProperty.call(prev, order.id)) {
+          next[order.id] = prev[order.id];
+        } else if (order.tracking) {
+          next[order.id] = normalizeTrackingId(order.tracking);
+        }
+      }
+      return next;
+    });
+  }, [orders]);
 
   const filtered = useMemo(() => {
     let list = orders;
@@ -361,9 +460,20 @@ const OrderListTab = ({ orders, setOrders }) => {
   };
 
   const handleTrackingUpdate = async (id, tracking) => {
-    setOrders((prev) => prev.map((o) => o.id === id ? { ...o, tracking } : o));
-    if (drawerOrder?.id === id) setDrawerOrder((o) => ({ ...o, tracking }));
-    await updateOrderTracking(id, tracking);
+    const nextTracking = normalizeTrackingId(tracking);
+    if (!nextTracking) {
+      showToast('Enter a tracking ID before saving.');
+      return;
+    }
+    if (!isValidTrackingId(nextTracking)) {
+      showToast('Use a valid Ekart tracking ID format.');
+      return;
+    }
+
+    setOrders((prev) => prev.map((o) => o.id === id ? { ...o, tracking: nextTracking } : o));
+    setTrackingDrafts((prev) => ({ ...prev, [id]: nextTracking }));
+    if (drawerOrder?.id === id) setDrawerOrder((o) => ({ ...o, tracking: nextTracking }));
+    await updateOrderTracking(id, nextTracking);
     showToast(`Tracking saved for ${id}`);
   };
 
@@ -515,15 +625,25 @@ const OrderListTab = ({ orders, setOrders }) => {
 
         {/* ── Desktop Table ── */}
         <div className="hidden md:block bg-white rounded-[28px] border-2 border-black/8 overflow-hidden">
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[1100px]">
             <thead>
               <tr className="border-b-2 border-black/6">
                 <th className="px-5 py-4 w-10">
                   <input type="checkbox" checked={allSelected} onChange={toggleAll}
                     className="w-4 h-4 rounded accent-black cursor-pointer" />
                 </th>
-                {['Preview','Order','Customer','Design','Status','Tracking','Amount','Actions'].map((h) => (
-                  <th key={h} className="px-4 py-4 text-left text-[10px] font-black tracking-[0.15em] uppercase text-black/35">{h}</th>
+                {[
+                  { label: 'Preview', cls: 'w-16' },
+                  { label: 'Order',   cls: 'w-36' },
+                  { label: 'Customer',cls: 'w-40' },
+                  { label: 'Design',  cls: 'w-28' },
+                  { label: 'Status',  cls: 'w-24' },
+                  { label: 'Tracking',cls: 'w-56' },
+                  { label: 'Amount',  cls: 'w-24' },
+                  { label: 'Actions', cls: 'w-40' },
+                ].map(({ label, cls }) => (
+                  <th key={label} className={`px-4 py-4 text-left text-[10px] font-black tracking-[0.15em] uppercase text-black/35 ${cls}`}>{label}</th>
                 ))}
               </tr>
             </thead>
@@ -564,21 +684,24 @@ const OrderListTab = ({ orders, setOrders }) => {
                       </select>
                     </td>
                     <td className="px-4 py-3.5">
-                      <span className="font-mono text-xs font-bold text-black/50">
-                        {order.tracking || <span className="text-black/20">—</span>}
-                      </span>
+                      <TrackingEditor
+                        value={trackingDrafts[order.id] ?? order.tracking ?? ''}
+                        onChange={(nextValue) => setTrackingDrafts((prev) => ({ ...prev, [order.id]: nextValue }))}
+                        onSave={(tracking) => handleTrackingUpdate(order.id, tracking)}
+                        savedValue={order.tracking}
+                      />
                     </td>
                     <td className="px-4 py-3.5">
                       <span className="font-black text-black">₹{order.amount.toLocaleString()}</span>
                     </td>
                     <td className="px-4 py-3.5">
-                      <div className="grid grid-cols-2 gap-2 min-w-[170px]">
+                      <div className="flex gap-2">
                         <button onClick={() => setDrawerOrder(order)}
-                          className="px-3 py-1.5 rounded-xl bg-black/6 text-black text-[11px] font-black hover:bg-black/12 transition-colors text-center">
+                          className="flex-1 px-3 py-1.5 rounded-xl bg-black/6 text-black text-[11px] font-black hover:bg-black/12 transition-colors text-center whitespace-nowrap">
                           Details
                         </button>
                         <button onClick={() => setPrintOrder(order)} disabled={!order.hiRes}
-                          className="px-3 py-1.5 rounded-xl bg-black text-white text-[11px] font-black hover:bg-black/80 transition-colors disabled:opacity-30 disabled:cursor-not-allowed text-center">
+                          className="flex-1 px-3 py-1.5 rounded-xl bg-black text-white text-[11px] font-black hover:bg-black/80 transition-colors disabled:opacity-30 disabled:cursor-not-allowed text-center whitespace-nowrap">
                           Print ↗
                         </button>
                       </div>
@@ -588,6 +711,7 @@ const OrderListTab = ({ orders, setOrders }) => {
               </AnimatePresence>
             </tbody>
           </table>
+          </div>
         </div>
 
         {/* ── Mobile Cards ── */}
@@ -615,33 +739,38 @@ const OrderListTab = ({ orders, setOrders }) => {
                   <p className="text-xs font-bold text-black/50 truncate">{order.customer} · {order.design}</p>
                 </div>
               </div>
-              <div className="overflow-x-auto pb-1 border-b border-black/6 mb-3">
-                <div className="grid grid-cols-3 gap-2 min-w-[320px] pb-2">
-                <div>
-                  <p className="text-[10px] font-black tracking-widest uppercase text-black/30">Date</p>
-                  <p className="text-xs font-bold text-black/70 truncate">{order.date}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-black tracking-widest uppercase text-black/30">Amount</p>
-                  <p className="text-xs font-black text-black">₹{order.amount.toLocaleString()}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-black tracking-widest uppercase text-black/30">Tracking</p>
-                  <p className="text-xs font-mono font-bold text-black/60 truncate">{order.tracking || '—'}</p>
-                </div>
+              <div className="border-b border-black/6 mb-3 pb-3">
+                <div className="grid grid-cols-1 gap-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <p className="text-[10px] font-black tracking-widest uppercase text-black/30">Date</p>
+                      <p className="text-xs font-bold text-black/70 truncate">{order.date}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black tracking-widest uppercase text-black/30">Amount</p>
+                      <p className="text-xs font-black text-black">₹{order.amount.toLocaleString()}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black tracking-widest uppercase text-black/30 mb-2">Tracking</p>
+                    <TrackingEditor
+                      value={trackingDrafts[order.id] ?? order.tracking ?? ''}
+                      onChange={(nextValue) => setTrackingDrafts((prev) => ({ ...prev, [order.id]: nextValue }))}
+                      onSave={(tracking) => handleTrackingUpdate(order.id, tracking)}
+                      savedValue={order.tracking}
+                    />
+                  </div>
                 </div>
               </div>
-              <div className="overflow-x-auto">
-                <div className="grid grid-cols-2 gap-2 min-w-[220px]">
+              <div className="grid grid-cols-2 gap-2">
                 <button onClick={() => setDrawerOrder(order)}
-                  className="flex-1 py-2 rounded-xl bg-black/6 text-black text-xs font-black hover:bg-black/12 transition-colors">
+                  className="py-2 rounded-xl bg-black/6 text-black text-xs font-black hover:bg-black/12 transition-colors">
                   Details
                 </button>
                 <button onClick={() => setPrintOrder(order)} disabled={!order.hiRes}
-                  className="flex-1 py-2 rounded-xl bg-black text-white text-xs font-black hover:bg-black/80 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
+                  className="py-2 rounded-xl bg-black text-white text-xs font-black hover:bg-black/80 transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
                   Print ↗
                 </button>
-                </div>
               </div>
             </motion.div>
           ))}
@@ -1005,8 +1134,21 @@ const AdminPage = () => {
     return () => { mounted = false; };
   }, []);
 
+  useEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+    const prevHtml = html.style.scrollBehavior;
+    const prevBody = body.style.scrollBehavior;
+    html.style.scrollBehavior = 'smooth';
+    body.style.scrollBehavior = 'smooth';
+    return () => {
+      html.style.scrollBehavior = prevHtml;
+      body.style.scrollBehavior = prevBody;
+    };
+  }, []);
+
   return (
-    <div className="min-h-screen bg-[#fafafa] overflow-x-hidden [&_button]:cursor-pointer">
+    <div className="min-h-screen bg-[#fafafa] overflow-x-hidden scroll-smooth [&_button]:cursor-pointer">
 
       {/* ── Header ── */}
       <motion.div

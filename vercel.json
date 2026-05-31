@@ -4,6 +4,6 @@
     { "source": "/static/:path*", "destination": "/studio/static/:path*" },
     { "source": "/studio", "destination": "/studio/index.html" },
     { "source": "/studio/:path*", "destination": "/studio/index.html" },
-    { "source": "/((?!studio/|static/|api/).*)", "destination": "/index.html" }
+    { "source": "/((?!studio/|static/|api/|src/|@vite/|@react-refresh/).*)", "destination": "/index.html" }
   ]
 }

@@ -43,7 +43,7 @@ export const order = defineType({
     }),
     defineField({
       name: 'razorpayPaymentId',
-      title: 'Razorpay Payment ID',
+      title: 'Payment Reference ID',
       type: 'string',
     }),
     defineField({

@@ -149,7 +149,7 @@ const PaymentCard = () => {
   const total = MOCK.payments.captured + MOCK.payments.pending + MOCK.payments.failed;
   return (
     <Card custom={1}>
-      <Label>Razorpay Payments</Label>
+      <Label>Order Payments</Label>
       <BigNum>{total}</BigNum>
       <p className="text-xs font-semibold text-black/35 mb-4">total transactions</p>
       <div className="flex flex-col gap-2">
@@ -473,7 +473,7 @@ const PartnershipSection = () => {
         <Card custom={1}>
           <Label>Pending Settlement</Label>
           <BigNum sub="INR">₹{MOCK.payout.pending.toLocaleString()}</BigNum>
-          <p className="text-xs font-semibold text-amber-600 mt-1 font-bold">Held in Razorpay · 3-day window</p>
+          <p className="text-xs font-semibold text-amber-600 mt-1 font-bold">Held for the 3-day window</p>
           <div className="mt-4 pt-4 border-t-2 border-black/6">
             <Label>Each founder receives</Label>
             <p className="text-lg font-black text-black/60 tracking-tight">

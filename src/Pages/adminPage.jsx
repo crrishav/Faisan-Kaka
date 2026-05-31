@@ -1084,7 +1084,7 @@ const PartnershipSection = () => {
         <Card custom={1}>
           <Label>Pending Settlement</Label>
           <BigNum sub="INR">₹{MOCK.payout.pending.toLocaleString()}</BigNum>
-          <p className="text-xs font-semibold text-amber-600 mt-1">Held in Razorpay · 3-day window</p>
+          <p className="text-xs font-semibold text-amber-600 mt-1">Held for the 3-day window</p>
           {/* Live countdown */}
           <div className="mt-4 pt-4 border-t-2 border-black/6">
             <Label>Payout In</Label>

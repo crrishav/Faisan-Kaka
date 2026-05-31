@@ -106,7 +106,6 @@ const CheckoutForm = ({ cartItems, total, currency }) => {
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponError, setCouponError] = useState('');
   const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
-  const skipRazorpayCheckout = import.meta.env.VITE_SKIP_RAZORPAY_CHECKOUT === 'true';
 
   const effectiveCartItems = cartItems ?? cart.items;
   const subtotal = total ?? cart.total;
@@ -244,120 +243,24 @@ const CheckoutForm = ({ cartItems, total, currency }) => {
 
     console.log('[CheckoutForm] Submitting payload:', payload);
 
-    // Create a Razorpay order on the server, then open Razorpay Checkout
-    const loadRazorpay = () => new Promise((resolve) => {
-      if (window.Razorpay) return resolve(true);
-      const s = document.createElement('script');
-      s.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      s.onload = () => resolve(true);
-      s.onerror = () => resolve(false);
-      document.body.appendChild(s);
-    });
-
     try {
-      if (skipRazorpayCheckout) {
-        const verifyRes = await fetch('/api/verify-payment', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            razorpay_payment_id: `test_payment_${Date.now()}`,
-            razorpay_order_id: `test_order_${Date.now()}`,
-            razorpay_signature: 'test_signature',
-            orderPayload: payload,
-            bypassVerification: true,
-          }),
-        });
-        let verifyJson;
-        try {
-          verifyJson = await verifyRes.json();
-        } catch {
-          const text = await verifyRes.text().catch(() => '');
-          throw new Error(text ? `Test checkout returned non-JSON response: ${text}` : 'Test checkout endpoint is not available locally. Use Vercel dev or deploy to Vercel to test the API route.');
-        }
-        if (!verifyRes.ok) throw new Error(verifyJson.error || 'Test checkout failed');
-
-        cart.clear();
-        setSubmitted(true);
-        return;
-      }
-
-      // 1) Create order on server (uses RAZORPAY_KEY_ID/SECRET from env on server)
-      const createRes = await fetch('/api/create-order', {
+      const placeOrderRes = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ payload }),
       });
-      let createJson;
+      let placeOrderJson;
       try {
-        createJson = await createRes.json();
+        placeOrderJson = await placeOrderRes.json();
       } catch {
-        const text = await createRes.text().catch(() => '<unreadable body>');
-        console.error('[create-order] non-JSON response', text);
-        throw new Error(`Invalid response from create-order: ${text}`);
+        const text = await placeOrderRes.text().catch(() => '<unreadable body>');
+        console.error('[orders] non-JSON response', text);
+        throw new Error(`Invalid response from order placement: ${text}`);
       }
-      if (!createRes.ok) throw new Error(createJson.error || 'Unable to create payment order');
+      if (!placeOrderRes.ok) throw new Error(placeOrderJson.error || 'Unable to place order');
 
-      const { razorpayOrderId, amount, key } = createJson;
-
-      // 2) Load Razorpay SDK
-      const ok = await loadRazorpay();
-      if (!ok) throw new Error('Failed to load Razorpay SDK');
-
-      // 3) Open Razorpay Checkout
-      const options = {
-        key, // key_id
-        amount: amount, // in paise
-        currency: 'INR',
-        name: 'Faisan Kaka',
-        description: 'Order payment',
-        order_id: razorpayOrderId,
-        handler: async function (response) {
-          // Called when payment succeeds in the Checkout UI
-          setLoading(true);
-          try {
-            const verifyRes = await fetch('/api/verify-payment', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_signature: response.razorpay_signature,
-                orderPayload: payload,
-              }),
-            });
-            const verifyJson = await verifyRes.json();
-            if (!verifyRes.ok) throw new Error(verifyJson.error || 'Payment verification failed');
-
-            // The verification endpoint already persists the paid order.
-            cart.clear();
-            setSubmitted(true);
-          } catch (err) {
-            console.error('[Payment] verify error', err);
-            alert(err.message || 'Payment verification failed');
-            setLoading(false);
-          }
-        },
-        prefill: {
-          name: fields.fullName,
-          email: fields.email,
-          contact: fields.phone,
-        },
-        modal: {
-          ondismiss: () => {
-            setLoading(false);
-          },
-        },
-        theme: { color: '#000000' },
-      };
-
-      const rzp = new window.Razorpay(options);
-      rzp.on('payment.failed', function (resp) {
-        console.error('Payment failed', resp);
-        alert('Payment failed. Please try again.');
-        setLoading(false);
-      });
-      rzp.open();
-      return;
+      cart.clear();
+      setSubmitted(true);
     } catch (err) {
       console.error(err);
       setLoading(false);
@@ -593,7 +496,7 @@ const CheckoutForm = ({ cartItems, total, currency }) => {
               </label>
             </motion.div>
 
-            {/* Pay Now — mobile only (shows below form on small screens) */}
+            {/* Place Order — mobile only (shows below form on small screens) */}
             <motion.div className="lg:hidden" variants={fieldVariants}>
               <PayButton loading={loading} displayTotal={displayTotal} disabled={!hasAcceptedPolicies} />
             </motion.div>
@@ -735,7 +638,7 @@ const CheckoutForm = ({ cartItems, total, currency }) => {
 
             {/* Trust badges */}
             <div className="flex items-center justify-center gap-5 mt-5 flex-wrap">
-              {['Secure Payment', 'Genuine Products'].map((badge) => (
+              {['Order Confirmation', 'Genuine Products'].map((badge) => (
                 <div key={badge} className="flex items-center gap-1.5">
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="20 6 9 17 4 12" />
@@ -780,7 +683,7 @@ const PayButton = ({ loading, disabled = false, onClick }) => (
       </>
     ) : (
       <>
-        Complete Checkout
+        Place Order
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <path d="M5 12h14M12 5l7 7-7 7" />
         </svg>

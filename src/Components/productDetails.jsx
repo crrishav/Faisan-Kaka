@@ -10,8 +10,7 @@ const ProductDetails = ({
   title = "T-Shirt (White)", 
   priceINR = "0", 
   priceNPR = "0", 
-  description = "It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using Lorem Ipsum is that it has a more-or-less normal distribution of letters, as opposed to using 'Content here, content here', making it look like readable English. Many desktop publishing packages and web page editors now use Lorem Ipsum as their default model text, and a search for 'lorem ipsum' will uncover many web sites still in their infancy. Various versions have", 
-  colors = ["#3D5443", "#4D3434", "#4A4A4A"], 
+  description = "It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using Lorem Ipsum is that it has a more-or-less normal distribution of letters, as opposed to using 'Content here, content here', making it look like readable English. Many desktop publishing packages and web page editors now use Lorem Ipsum as their default model text, and a search for 'lorem ipsum' will uncover many web sites still in their infancy. Various versions have",
   sizes = ["M", "L", "S"],
   slug = undefined,
   frontImage = null,
@@ -19,7 +18,6 @@ const ProductDetails = ({
   inStock = true
 }) => {
   const [quantity, setQuantity] = useState(1);
-  const [selectedColor, setSelectedColor] = useState(colors[0]);
   const [selectedSize, setSelectedSize] = useState(sizes[0]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
@@ -139,7 +137,7 @@ const ProductDetails = ({
   
   const handleAddToCart = () => {
     const baseId = slug || title.toLowerCase().replace(/\s+/g, '-');
-    const id = `${baseId}-${selectedColor}-${selectedSize}`;
+    const id = `${baseId}-${selectedSize}`;
     addItem({
       id,
       title,
@@ -149,7 +147,6 @@ const ProductDetails = ({
       displayPriceNPR: String(priceNPR || resolvedPriceNPR),
       quantity,
       size: selectedSize,
-      color: selectedColor,
       frontImage,
       backImage,
       slug: baseId,
@@ -266,35 +263,16 @@ const ProductDetails = ({
             {description}
           </p>
 
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center gap-3">
-              <span className="text-[0.72rem] tracking-[0.14em] uppercase font-bold text-black/45">Color</span>
-              {inStock === false ? (
-                <span className="px-2.5 py-1 rounded-full bg-red-100 text-red-600 text-[10px] font-black uppercase tracking-wider border border-red-200">
-                  Out of Stock
-                </span>
-              ) : (
-                <span className="px-2.5 py-1 rounded-full bg-green-100 text-green-600 text-[10px] font-black uppercase tracking-wider border border-green-200">
-                  In Stock
-                </span>
-              )}
-            </div>
-            <div className="flex flex-wrap gap-2.5 md:pl-2">
-              {colors.map((color, index) => (
-                <button
-                  key={`${color}-${index}`}
-                  type="button"
-                  onClick={() => setSelectedColor(color)}
-                  className={`w-9 h-9 rounded-full border-2 transition-all ${
-                    selectedColor === color
-                      ? 'border-black scale-110'
-                      : 'border-transparent hover:border-black/20'
-                  } cursor-pointer`}
-                  style={{ backgroundColor: color }}
-                  aria-label={`Select color ${index + 1}`}
-                />
-              ))}
-            </div>
+          <div className="flex items-center gap-3">
+            {inStock === false ? (
+              <span className="px-2.5 py-1 rounded-full bg-red-100 text-red-600 text-[10px] font-black uppercase tracking-wider border border-red-200">
+                Out of Stock
+              </span>
+            ) : (
+              <span className="px-2.5 py-1 rounded-full bg-green-100 text-green-600 text-[10px] font-black uppercase tracking-wider border border-green-200">
+                In Stock
+              </span>
+            )}
           </div>
 
           <div className="flex flex-col gap-3">

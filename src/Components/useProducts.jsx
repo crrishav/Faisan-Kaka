@@ -40,7 +40,6 @@ const useProducts = () => {
           backImage: product.images?.[0]?.asset?.url || product.mainImage?.asset?.url,
           images: product.images || [],
           sizes: product.sizes || [],
-          colors: product.colors || [],
           inStock: product.inStock,
           featured: product.featured,
           publishedAt: product.publishedAt,

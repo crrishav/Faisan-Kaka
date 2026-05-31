@@ -69,10 +69,12 @@ const ProductCard = ({ title, price, backImage, frontImage, slug, priceINR, pric
       <div className="relative w-full aspect-[3/4] mb-3 overflow-hidden rounded-[24px]">
         <img
           {...primaryImageProps}
-          /* Replaced layout utility classes to explicitly size and slide the 9:16 asset upward on mobile */
-          className="absolute max-w-none w-[135%] -top-7 left-1/2 -translate-x-1/2 h-auto object-contain md:inset-0 md:w-full md:h-full md:object-cover md:translate-x-0 md:top-0 md:left-0 pointer-events-none"
+          /* Using object-contain and scale to let oversized shirts sit comfortably without clipping the hem */
+          className="absolute inset-0 w-full h-full object-contain scale-115 md:scale-100 md:object-cover pointer-events-none"
           draggable={false}
           style={{
+            /* Shifts the focal center down on mobile to center the graphic and show the collar/hem nicely */
+            objectPosition: isMobile ? 'center 40%' : 'center center',
             opacity: hovered && backImage ? 0 : 1,
             transition: 'opacity 0.35s ease',
           }}
@@ -80,10 +82,10 @@ const ProductCard = ({ title, price, backImage, frontImage, slug, priceINR, pric
         {backImage && (
           <img
             {...hoverImageProps}
-            /* Matched identical alignment properties here for the hover state */
-            className="absolute max-w-none w-[135%] -top-7 left-1/2 -translate-x-1/2 h-auto object-contain md:inset-0 md:w-full md:h-full md:object-cover md:translate-x-0 md:top-0 md:left-0 pointer-events-none"
+            className="absolute inset-0 w-full h-full object-contain scale-115 md:scale-100 md:object-cover pointer-events-none"
             draggable={false}
             style={{
+              objectPosition: isMobile ? 'center 40%' : 'center center',
               opacity: hovered ? 1 : 0,
               transition: 'opacity 0.35s ease',
             }}

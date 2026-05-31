@@ -10,6 +10,7 @@ const utapi = new UTApi({
 
 const resendApiKey = process.env.RESEND_API_KEY?.trim();
 const resend = resendApiKey ? new Resend(resendApiKey) : null;
+const resendFromEmail = process.env.RESEND_FROM_EMAIL?.trim() || 'Faisan Kaka <onboarding@resend.dev>';
 
 const makeOrderId = () => `ORD-${Date.now().toString().slice(-6)}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
 
@@ -53,8 +54,8 @@ async function sendOrderConfirmation(customerEmail) {
   }
 
   try {
-    const data = await resend.emails.send({
-      from: 'onboarding@resend.dev',
+    const { data, error } = await resend.emails.send({
+      from: resendFromEmail,
       to: customerEmail,
       subject: '📦 Your Faisan Kaka Order Is Confirmed!',
       html: `
@@ -71,6 +72,11 @@ async function sendOrderConfirmation(customerEmail) {
         </div>
       `,
     });
+
+    if (error) {
+      console.error('[orders] Resend API returned an error:', error);
+      return { success: false, error };
+    }
 
     return { success: true, data };
   } catch (error) {

@@ -155,12 +155,8 @@ const ProductDetailsPage = () => {
     const defaultDescription = `${normalizedTitle} is crafted with premium materials and designed for everyday comfort, durability, and clean style.`;
     const normalizedDescription = toText(product.description, defaultDescription);
 
-    const normalizedColors = colorItems
-      .map((c) => {
-        if (typeof c === 'string') return c;
-        return c?.hex || c?.color;
-      })
-      .filter(Boolean);
+    // colors removed — kept for backwards compatibility in Sanity but not used in UI
+    const normalizedColors = [];
 
     const normalizedSizes = sizeItems
       .map((size) => (typeof size === 'string' ? size : String(size || '')))
@@ -172,7 +168,7 @@ const ProductDetailsPage = () => {
       priceNPR: normalizeMoneyValue(product.priceNPR, product.priceNPR?.toString()),
       stock: typeof product.stock === 'number' ? product.stock : null,
       description: normalizedDescription,
-      colors: normalizedColors.length > 0 ? normalizedColors : ["#3D5443", "#4D3434", "#4A4A4A"],
+      // colors removed from productData
       sizes: normalizedSizes.length > 0 ? normalizedSizes : ["M", "L", "S"],
       slug: product.slug?.current || slug,
       frontImage,
@@ -382,7 +378,6 @@ const ProductDetailsPage = () => {
                 priceINR={productData.priceINR}
                 priceNPR={productData.priceNPR}
                 description={productData.description}
-                colors={productData.colors}
                 sizes={productData.sizes}
                 slug={productData.slug}
                 frontImage={frontImg}

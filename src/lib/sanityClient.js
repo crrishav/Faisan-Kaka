@@ -57,7 +57,6 @@ export const getProductsByCategory = async (category) => {
     priceNPR,
     stock,
     sizes,
-    colors,
     featured,
     publishedAt
   }`;
@@ -113,7 +112,6 @@ export const getProductBySlug = async (slug) => {
     priceNPR,
     stock,
     sizes,
-    colors,
     featured,
     publishedAt
   }`;

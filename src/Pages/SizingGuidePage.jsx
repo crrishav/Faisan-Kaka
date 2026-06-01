@@ -8,6 +8,7 @@ const rows = [
   { size: 'M', chest: '38-40 in', length: '27 in', fit: 'Regular' },
   { size: 'L', chest: '40-42 in', length: '28 in', fit: 'Regular to Relaxed' },
   { size: 'XL', chest: '42-44 in', length: '29 in', fit: 'Relaxed' },
+  { size: 'XXL', chest: '44-46 in', length: '30 in', fit: 'Relaxed to Oversized' },
 ];
 
 const SizingGuidePage = () => {

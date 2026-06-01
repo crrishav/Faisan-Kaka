@@ -1513,7 +1513,7 @@ const PrintStudioPage = () => {
                 </div>
                 <p className="text-[11px] font-black uppercase tracking-[0.18em] text-black/45 mb-3 mt-4">Size</p>
                 <div className="flex gap-2">
-                  {['S', 'M', 'L', 'XL'].map((s) => (
+                  {['S', 'M', 'L', 'XL', 'XXL'].map((s) => (
                     <PillBtn key={s} active={selectedSize === s} onClick={() => setSelectedSize(s)} className="min-w-[40px] text-center px-0">{s}</PillBtn>
                   ))}
                 </div>
@@ -1725,7 +1725,7 @@ const PrintStudioPage = () => {
               <div className="flex items-center justify-between mt-1 px-1">
                 <span className="text-[10px] font-black uppercase tracking-wider text-black/40">Select Size:</span>
                 <div className="flex bg-black/5 p-0.5 rounded-full">
-                  {['S', 'M', 'L', 'XL'].map((s) => (
+                  {['S', 'M', 'L', 'XL', 'XXL'].map((s) => (
                     <button key={s} type="button" onClick={() => setSelectedSize(s)}
                       className={`px-3 h-6 rounded-full text-[10px] font-black transition-all cursor-pointer ${selectedSize === s ? 'bg-white text-black shadow-sm' : 'text-black/45'}`}>
                       {s}

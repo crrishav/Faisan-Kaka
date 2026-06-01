@@ -18,7 +18,7 @@ const MOCK = {
   ],
   logistics: { avgDelivery: 4.2, rtoRate: 3.8, totalShipped: 203 },
   inventory: [
-    { size: 'S', count: 48 }, { size: 'M', count: 72 }, { size: 'L', count: 61 }, { size: 'XL', count: 39 },
+    { size: 'S', count: 48 }, { size: 'M', count: 72 }, { size: 'L', count: 61 }, { size: 'XL', count: 39 }, { size: 'XXL', count: 0 },
   ],
   topDesigns: [
     { name: 'Solar Flare Drop', sold: 87, pct: 82 },

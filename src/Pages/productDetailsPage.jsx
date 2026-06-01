@@ -169,7 +169,7 @@ const ProductDetailsPage = () => {
       stock: typeof product.stock === 'number' ? product.stock : null,
       description: normalizedDescription,
       // colors removed from productData
-      sizes: normalizedSizes.length > 0 ? normalizedSizes : ["M", "L", "S"],
+      sizes: normalizedSizes.length > 0 ? normalizedSizes : ["S", "M", "L", "XL", "XXL"],
       slug: product.slug?.current || slug,
       frontImage,
       backImage,

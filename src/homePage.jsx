@@ -84,8 +84,13 @@ const HomePage = ({ isLoaded }) => {
   const videoRef = useRef(null);
 
   useEffect(() => {
-    if (isLoaded && videoRef.current) {
-      videoRef.current.play().catch(error => console.warn('Video play prevented:', error));
+    if (videoRef.current) {
+      videoRef.current.play().catch(error => {
+        // Only warn if it's not a deliberate pause
+        if (error.name !== 'AbortError') {
+          console.warn('Video play prevented:', error);
+        }
+      });
     }
   }, [isLoaded]);
 
@@ -154,7 +159,7 @@ const HomePage = ({ isLoaded }) => {
   return (
     <div className="min-h-screen bg-white overflow-x-hidden max-w-[100vw]">
       {/* Hero Section */}
-      <div className="w-full h-screen flex items-center justify-center bg-white max-w-[100vw] overflow-x-hidden relative">
+      <div className="w-full h-screen flex items-center justify-center bg-black max-w-[100vw] overflow-x-hidden relative">
         <video 
           ref={videoRef}
           src={heroVideo}
@@ -162,6 +167,7 @@ const HomePage = ({ isLoaded }) => {
           muted
           loop
           playsInline
+          autoPlay
         />
         {/* Gradient overlay to blend with the white section below */}
         <div className="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>

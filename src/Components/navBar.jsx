@@ -174,17 +174,27 @@ const NavBar = () => {
         setMobileSubmenu(null);
       }
 
-      if (location.pathname === '/') {
+      const isHome = location.pathname === '/';
+      if (isHome) {
         setIsHeroVisible(window.scrollY < window.innerHeight - 80);
       } else {
         setIsHeroVisible(false);
       }
     };
 
-    handleScroll(); // initial check
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    // If navigating TO home, delay the visibility switch to match page transition
+    if (location.pathname === '/') {
+      const timer = setTimeout(handleScroll, 1000);
+      window.addEventListener('scroll', handleScroll, { passive: true });
+      return () => {
+        clearTimeout(timer);
+        window.removeEventListener('scroll', handleScroll);
+      };
+    } else {
+      handleScroll();
+      window.addEventListener('scroll', handleScroll, { passive: true });
+      return () => window.removeEventListener('scroll', handleScroll);
+    }
   }, [location.pathname]);
 
   // Outside-tap collapse: close all mobile panels when tapping outside the nav

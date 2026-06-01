@@ -776,6 +776,8 @@ const PrintStudioPage = () => {
   const [showOrder, setShowOrder] = useState(false);
   const [toast, setToast] = useState('');
 
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 1024;
+
   // Sizing & custom instruction notes
   const [selectedSize, setSelectedSize] = useState('M');
   const [designDescription, setDesignDescription] = useState('');

@@ -631,7 +631,8 @@ const PrintStudioPage = () => {
   // UI
   const [mobileTab,      setMobileTab]        = useState('designs');
   const [showOrder,      setShowOrder]        = useState(false);
-  const [toast,          setToast]            = useState('');
+  const [isScrolled,     setIsScrolled]      = useState(false);
+  const controlsRef = useRef(null);
 
   // ── Derived ──
   const isJeans      = garment === 'jeans';
@@ -650,6 +651,18 @@ const PrintStudioPage = () => {
   useEffect(() => {
     [...Object.values(GARMENT_IMAGE_MAP).flatMap((e) => Object.values(e)), ...Object.values(GARMENT_MASK_MAP).flatMap((e) => Object.values(e)), mockBackground]
       .forEach((src) => { const i = new Image(); i.src = src; });
+  }, []);
+
+  // ── Scroll observer for floating pill ──
+  useEffect(() => {
+    const handleScroll = () => {
+      const controlsTop = controlsRef.current?.getBoundingClientRect().top || 0;
+      const viewportTop = 80; // Adjust this to match navbar height or desired trigger point
+      setIsScrolled(controlsTop < viewportTop);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll(); // Initial check
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   // ── Route / context hydration ──
@@ -1123,11 +1136,28 @@ const PrintStudioPage = () => {
             Upload artwork, choose your garment, dial in the color, and position your design with precision.
           </motion.p>
 
+          {/* ── Floating Customization Pill ── */}
+          <AnimatePresence>
+            {isScrolled && (
+              <motion.div
+                initial={{ y: -20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: -20, opacity: 0 }}
+                transition={{ duration: 0.3, ease: 'easeInOut' }}
+                className="fixed top-20 left-1/2 -translate-x-1/2 z-50 hidden lg:block"
+              >
+                <div className="bg-white/80 backdrop-blur-lg shadow-lg rounded-full border border-black/10 px-4 py-2 text-xs font-bold text-black">
+                  Customization Options
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {/* ═══ DESKTOP LAYOUT ═══════════════════════════════════════════ */}
           <motion.div variants={panelIn} className="mt-8 hidden lg:grid grid-cols-[390px_1fr] gap-5 items-start">
 
             {/* ── Left sidebar ── */}
-            <div className="flex flex-col gap-4">
+            <div ref={controlsRef} className="flex flex-col gap-4">
 
               {/* Upload */}
               <div className="rounded-[24px] border border-black/10 bg-white/75 backdrop-blur-sm shadow-[0_12px_28px_rgba(0,0,0,0.07)] p-5">

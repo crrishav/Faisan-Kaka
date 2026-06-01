@@ -133,7 +133,6 @@ const Footer = () => {
             <ul className="mt-2 space-y-1 text-[#d4d4d4]">
               <li><button className="hover:text-white transition-colors cursor-pointer" onClick={() => handleShopItemClick('T-Shirts')}>T-Shirts</button></li>
               <li><button className="hover:text-white transition-colors cursor-pointer" onClick={() => handleShopItemClick('Hoodies')}>Hoodies</button></li>
-              <li><button className="hover:text-white transition-colors cursor-pointer" onClick={() => handleShopItemClick('Pants')}>Pants</button></li>
             </ul>
           </div>
 

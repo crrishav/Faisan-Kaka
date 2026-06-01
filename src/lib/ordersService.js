@@ -1,3 +1,5 @@
+import { normalizeReturnStatus, safeArray } from './returnWorkflow.js';
+
 const STORAGE_KEY = 'fk_orders';
 
 const readLocalOrders = () => {
@@ -35,6 +37,79 @@ const apiRequest = async (method, body = null, query = '') => {
 
 // ── Logic ───────────────────────────────────────────────────────────────────
 
+export const normalizeOrder = (o) => {
+  if (!o) return null;
+  const id = o.id || o.orderId || makeOrderId();
+  
+  // Normalize customer name (must be a string)
+  let customer = 'Anonymous';
+  if (typeof o.customer === 'string') {
+    customer = o.customer;
+  } else if (o.customer && typeof o.customer === 'object') {
+    customer = `${o.customer.fullName || ''}`.trim() || 'Anonymous';
+  } else if (o.customerName) {
+    customer = o.customerName;
+  }
+
+  // Normalize phone
+  const phone = o.phone || (o.customer && typeof o.customer === 'object' ? o.customer.phone : '') || '';
+
+  // Normalize address
+  let address = o.address || o.fullAddress || '';
+  if (!address && o.customer && typeof o.customer === 'object') {
+    address = [o.customer.house, o.customer.area, o.customer.city, o.customer.pincode]
+      .filter(Boolean).join(', ');
+  }
+
+  // Normalize items
+  const items = Array.isArray(o.items) ? o.items : (Array.isArray(o.cartItems) ? o.cartItems : []);
+  const firstItem = items[0] || null;
+
+  // Normalize preview
+  const preview = o.preview || firstItem?.frontImage || firstItem?.backImage || firstItem?.preview || '';
+
+  // Normalize amount
+  const amount = Number(o.amount ?? o.totalAmount ?? 0);
+
+  // Normalize date
+  let date = o.date || '';
+  if (!date && o.timestamp) {
+    try {
+      date = new Date(o.timestamp).toLocaleDateString('en-IN');
+    } catch {
+      date = new Date().toLocaleDateString('en-IN');
+    }
+  } else if (!date) {
+    date = new Date().toLocaleDateString('en-IN');
+  }
+
+  // Normalize design
+  const design = o.design || (items.length > 1 ? `${firstItem?.title || 'Custom'} + ${items.length - 1} more` : (firstItem?.title || 'Custom Order'));
+
+  return {
+    ...o,
+    id,
+    customer,
+    phone,
+    address,
+    status: o.status || 'Pending',
+    design,
+    preview,
+    hiRes: o.hiRes || firstItem?.hiRes || '',
+    tracking: o.tracking || '',
+    shippingCost: o.shippingCost || o.raw?.order?.shippingCost || 0,
+    date,
+    amount,
+    items,
+    timestamp: o.timestamp || Date.now(),
+    // Return Workflow fields
+    returnStatus: normalizeReturnStatus(o.returnStatus),
+    returnReason: o.returnReason || '',
+    returnImages: safeArray(o.returnImages),
+    ekartReturnTrackingId: o.ekartReturnTrackingId || '',
+  };
+};
+
 const mapPayloadToOrder = (payload) => {
   const id = payload.id || makeOrderId();
   const customer = `${payload.customer?.fullName || ''}`.trim() || 'Anonymous';
@@ -45,7 +120,7 @@ const mapPayloadToOrder = (payload) => {
   const items = Array.isArray(payload.order?.items) ? payload.order.items : [];
   const firstItem = items[0] || null;
   
-  return {
+  return normalizeOrder({
     id,
     customer,
     phone,
@@ -60,7 +135,7 @@ const mapPayloadToOrder = (payload) => {
     amount: Number(payload.order?.total || 0),
     items: items,
     timestamp: payload.timestamp || Date.now(),
-  };
+  });
 };
 
 export const submitOrder = async (payload) => {
@@ -86,11 +161,15 @@ export const listOrders = async () => {
   // 3. Merge & Deduplicate
   const all = [...(Array.isArray(remote) ? remote : []), ...local];
   const seen = new Set();
-  return all.filter(o => {
-    if (seen.has(o.id)) return false;
-    seen.add(o.id);
-    return true;
-  }).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+  return all
+    .map(normalizeOrder)
+    .filter(Boolean)
+    .filter(o => {
+      if (seen.has(o.id)) return false;
+      seen.add(o.id);
+      return true;
+    })
+    .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 };
 
 export const updateOrderStatus = async (id, status) => {
@@ -124,6 +203,29 @@ export const updateOrderTracking = async (id, tracking) => {
   return true;
 };
 
+export const updateOrderReturn = async (id, returnData) => {
+  const orders = await listOrders();
+  const target = orders.find(o => o.id === id);
+  if (!target) return false;
+
+  const returnStatus = normalizeReturnStatus(returnData.returnStatus || 'Pending Approval');
+
+  const updated = {
+    ...target,
+    returnStatus,
+    returnReason: returnData.returnReason || '',
+    returnImages: safeArray(returnData.returnImages),
+    ekartReturnTrackingId: returnData.ekartReturnTrackingId || '',
+  };
+
+  writeLocalOrders(readLocalOrders().map(o => o.id === id ? updated : o));
+
+  // Update Cloud
+  await apiRequest('POST', updated);
+
+  return true;
+};
+
 export const deleteOrder = async (id) => {
   const orders = await listOrders();
   const target = orders.find(o => o.id === id);
@@ -140,5 +242,7 @@ export const deleteOrder = async (id) => {
   return true;
 };
 
-export default { submitOrder, listOrders, updateOrderStatus, updateOrderTracking, deleteOrder };
+export default { submitOrder, listOrders, updateOrderStatus, updateOrderTracking, updateOrderReturn, deleteOrder };
+
+export { buildEkartTrackingUrl } from './returnWorkflow.js';
 

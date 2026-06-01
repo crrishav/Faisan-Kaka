@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Footer from '../Components/footer.jsx';
 import { listOrders } from '../lib/ordersService.js';
+import { buildEkartTrackingUrl, normalizeOrderIdInput, normalizePhoneInput } from '../lib/returnWorkflow.js';
 
 /* ─── Validation ────────────────────────────────────────────────── */
 
@@ -89,7 +90,6 @@ const INITIAL = {
   orderId: '',
 };
 
-const EKART_TRACKING_BASE = 'https://ekartlogistics.com/ekartlogistics-web/shipmenttrack/';
 const REDIRECT_COUNTDOWN = 5;
 
 const normalize = (value) => String(value || '').trim().toLowerCase();
@@ -113,7 +113,10 @@ const OrderTrackingPage = () => {
     if (!redirectState) return undefined;
 
     if (redirectState.secondsLeft <= 0) {
-      window.location.assign(`${EKART_TRACKING_BASE}${encodeURIComponent(redirectState.orderId)}`);
+      const targetUrl = buildEkartTrackingUrl(redirectState.trackingId);
+      if (targetUrl) {
+        window.location.assign(targetUrl);
+      }
       return undefined;
     }
 
@@ -149,23 +152,25 @@ const OrderTrackingPage = () => {
 
     try {
       const orders = await listOrders();
-      const enteredOrderId = normalize(fields.orderId);
-      const enteredContact = normalize(fields.contact);
+      const enteredOrderId = normalizeOrderIdInput(fields.orderId).toLowerCase();
+      const enteredContact = normalizePhoneInput(fields.contact).toLowerCase();
 
       const order = orders.find((o) => {
         const orderIdMatches = [o?.id, o?.id?.replace(/^ORD-/i, '')]
           .filter(Boolean)
-          .some((candidate) => normalize(candidate) === enteredOrderId);
+          .some((candidate) => normalizeOrderIdInput(candidate).toLowerCase() === enteredOrderId);
 
         const contactMatches = getOrderContactValues(o)
-          .some((candidate) => normalize(candidate) === enteredContact);
+          .some((candidate) => normalizePhoneInput(candidate).toLowerCase() === enteredContact);
 
         return orderIdMatches && contactMatches;
       });
 
       if (order) {
+        const trackingId = order.tracking || order.trackingId || order.ekartTrackingId || '';
         setRedirectState({
           orderId: order.id,
+          trackingId,
           secondsLeft: REDIRECT_COUNTDOWN,
         });
       } else {
@@ -198,6 +203,11 @@ const OrderTrackingPage = () => {
             <p className="text-base md:text-lg font-medium text-black/60 max-w-2xl">
               Your order was found. We&apos;re sending you to Ekart&apos;s tracking site where you can track your shipment.
             </p>
+            {!redirectState.trackingId && (
+              <p className="mt-3 text-sm font-semibold text-red-500 max-w-2xl">
+                We found the order, but no Ekart tracking ID is stored yet.
+              </p>
+            )}
             <div className="mt-8 inline-flex items-center gap-3 rounded-full bg-black text-white px-5 py-3">
               <span className="text-sm font-bold tracking-wide">
                 Redirecting in {redirectState.secondsLeft} second{redirectState.secondsLeft === 1 ? '' : 's'}

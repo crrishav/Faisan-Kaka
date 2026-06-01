@@ -2,7 +2,8 @@ import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence, useInView } from 'framer-motion';
 import Footer from '../Components/footer';
 import CouponsAdminPanel from '../Components/CouponsAdminPanel.jsx';
-import { listOrders, updateOrderStatus, updateOrderTracking, deleteOrder } from '../lib/ordersService.js';
+import { listOrders, updateOrderStatus, updateOrderTracking, updateOrderReturn, deleteOrder } from '../lib/ordersService.js';
+import { RETURN_STATUS_OPTIONS, buildEkartTrackingUrl, normalizeText, safeArray } from '../lib/returnWorkflow.js';
 
 /* ─── Mock Data ─────────────────────────────────────────────────── */
 
@@ -45,8 +46,15 @@ const STATUS_COLORS = {
   Printing: 'bg-blue-100 text-blue-800',
   Shipped:  'bg-emerald-100 text-emerald-800',
 };
+const RETURN_STATUS_COLORS = {
+  'No Return': 'bg-black/5 text-black/50',
+  'Pending Approval': 'bg-amber-100 text-amber-800 border border-amber-300',
+  'Approved': 'bg-blue-100 text-blue-800 border border-blue-300',
+  'Rejected': 'bg-red-100 text-red-800 border border-red-300',
+  'Returned': 'bg-emerald-100 text-emerald-800 border border-emerald-300',
+};
 const LOW_STOCK_THRESHOLD = 15;
-const TABS = ['Overview', 'Order List', 'Coupons'];
+const TABS = ['Overview', 'Order List', 'Returns', 'Coupons'];
 
 /* ─── Variants ──────────────────────────────────────────────────── */
 
@@ -1106,6 +1114,255 @@ const PartnershipSection = () => {
   );
 };
 
+/* ─── Returns Admin Panel ────────────────────────────────────────── */
+
+const ReturnsAdminPanel = ({ orders, setOrders }) => {
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [activeImage, setActiveImage] = useState(null);
+  const [trackingInputs, setTrackingInputs] = useState({});
+  const [toast, setToast] = useState('');
+
+  const showToast = (msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(''), 2500);
+  };
+
+  const returnOrders = useMemo(() => {
+    let list = orders.filter((o) => normalizeText(o?.returnStatus) && o.returnStatus !== 'No Return');
+    if (statusFilter !== 'All') {
+      list = list.filter((o) => o.returnStatus === statusFilter);
+    }
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter((o) => normalizeText(o.id).toLowerCase().includes(q) || normalizeText(o.customer).toLowerCase().includes(q));
+    }
+    return list;
+  }, [orders, search, statusFilter]);
+
+  const handleReturnStatusUpdate = async (id, nextStatus) => {
+    setOrders(prev => prev.map(o => o.id === id ? { ...o, returnStatus: nextStatus } : o));
+    await updateOrderReturn(id, {
+      returnStatus: nextStatus,
+      returnReason: orders.find(o => o.id === id)?.returnReason || '',
+      returnImages: safeArray(orders.find(o => o.id === id)?.returnImages),
+      ekartReturnTrackingId: orders.find(o => o.id === id)?.ekartReturnTrackingId || '',
+    });
+    showToast(`Status updated: ${nextStatus}`);
+  };
+
+  const handleEkartTrackingSave = async (id) => {
+    const trackingVal = trackingInputs[id]?.trim() || '';
+    const currentOrder = orders.find(o => o.id === id);
+    if (!currentOrder) return;
+
+    setOrders(prev => prev.map(o => o.id === id ? { ...o, ekartReturnTrackingId: trackingVal } : o));
+    await updateOrderReturn(id, {
+      returnStatus: currentOrder.returnStatus,
+      returnReason: currentOrder.returnReason,
+      returnImages: safeArray(currentOrder.returnImages),
+      ekartReturnTrackingId: trackingVal,
+    });
+    showToast(`Ekart return tracking ID saved`);
+  };
+
+  return (
+    <>
+      {/* Lightbox Modal */}
+      <AnimatePresence>
+        {activeImage && (
+          <motion.div
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setActiveImage(null)}
+          >
+            <motion.div className="relative max-w-full max-h-[90vh] flex flex-col items-center">
+              <motion.img
+                src={activeImage}
+                alt="Proof full screen"
+                className="max-w-full max-h-[85vh] object-contain rounded-2xl border border-white/10"
+                initial={{ scale: 0.95 }}
+                animate={{ scale: 1 }}
+                exit={{ scale: 0.95 }}
+              />
+              <button 
+                onClick={() => setActiveImage(null)}
+                className="mt-4 px-5 py-2 rounded-full bg-white text-black font-black text-xs hover:bg-white/80 transition-colors"
+              >
+                Close Fullscreen
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Toast */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[90] bg-black text-white text-sm font-black px-5 py-3 rounded-2xl shadow-xl"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 12 }}
+          >
+            {toast}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="flex flex-col gap-4">
+        {/* Filters */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search return order ID or customer…"
+            className="flex-1 px-4 py-3 rounded-2xl border-2 border-black/10 bg-white text-black font-semibold text-sm placeholder-black/30 outline-none focus:border-black transition-colors"
+          />
+          <div className="flex gap-1.5 flex-wrap">
+            {['All', ...RETURN_STATUS_OPTIONS.filter((status) => status !== 'No Return')].map((status) => (
+              <button
+                key={status}
+                onClick={() => setStatusFilter(status)}
+                className={`px-4 py-3 rounded-2xl text-xs font-black border-2 transition-all duration-200 ${
+                  statusFilter === status ? 'bg-black text-white border-black' : 'bg-white text-black border-black/15 hover:border-black/40'
+                }`}
+              >
+                {status}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* List of return requests */}
+        {returnOrders.length === 0 ? (
+          <Card className="py-16 text-center">
+            <p className="text-sm font-black text-black/30">No return requests found.</p>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 gap-4">
+            {returnOrders.map((order) => (
+              <Card key={order.id} className="relative border-2 border-black/10 hover:border-black/25 transition-all">
+                <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
+                  
+                  {/* Left: Customer Info and Reason */}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2 flex-wrap">
+                      <span className="text-lg font-black text-black">{order.id}</span>
+                      <Pill className={RETURN_STATUS_COLORS[order.returnStatus] || RETURN_STATUS_COLORS['No Return']}>{order.returnStatus}</Pill>
+                      <span className="text-xs font-semibold text-black/40">{order.date}</span>
+                    </div>
+
+                    <p className="text-sm font-bold text-black mb-1">Customer: {order.customer} ({order.phone})</p>
+                    <p className="text-sm font-medium text-black/75 bg-black/[0.02] border border-black/5 rounded-2xl p-4 mt-3 whitespace-pre-line leading-relaxed">
+                      {order.returnReason || 'No return reason provided.'}
+                    </p>
+
+                    {/* Ekart tracking links */}
+                    {order.tracking && (
+                      <div className="mt-4 text-xs font-semibold text-black/50">
+                        Original Shipment Tracking:{' '}
+                        <a
+                          href={buildEkartTrackingUrl(order.tracking)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-black hover:underline"
+                        >
+                          {order.tracking} ↗
+                        </a>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Right: Images Uploaded */}
+                  {safeArray(order.returnImages).length > 0 && (
+                    <div className="w-full md:w-[240px] shrink-0">
+                      <Label>Proof Images ({safeArray(order.returnImages).length})</Label>
+                      <div className="grid grid-cols-3 gap-2 mt-2">
+                        {safeArray(order.returnImages).map((img, i) => (
+                          <div
+                            key={i}
+                            onClick={() => setActiveImage(img)}
+                            className="aspect-square rounded-xl border border-black/10 overflow-hidden bg-black/5 cursor-zoom-in hover:opacity-85 transition-opacity"
+                          >
+                            <img src={img} alt="Proof thumbnail" className="w-full h-full object-cover" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                </div>
+
+                <div className="w-full h-px bg-black/8 my-5" />
+
+                {/* Actions & Ekart return input */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex gap-2 flex-wrap">
+                    {order.returnStatus === 'Pending Approval' && (
+                      <>
+                        <button
+                          onClick={() => handleReturnStatusUpdate(order.id, 'Approved')}
+                          className="px-4 py-2 rounded-xl bg-black text-white text-xs font-black hover:opacity-80 transition-opacity"
+                        >
+                          Approve Return
+                        </button>
+                        <button
+                          onClick={() => handleReturnStatusUpdate(order.id, 'Rejected')}
+                          className="px-4 py-2 rounded-xl bg-red-100 text-red-800 border border-red-200 text-xs font-black hover:bg-red-200 transition-colors"
+                        >
+                          Reject Return
+                        </button>
+                      </>
+                    )}
+                    {order.returnStatus === 'Approved' && (
+                      <button
+                        onClick={() => handleReturnStatusUpdate(order.id, 'Returned')}
+                        className="px-4 py-2 rounded-xl bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-black hover:bg-emerald-200 transition-colors"
+                      >
+                        Mark as Returned (Received)
+                      </button>
+                    )}
+                    {(order.returnStatus === 'Returned' || order.returnStatus === 'Rejected') && (
+                      <button
+                        onClick={() => handleReturnStatusUpdate(order.id, 'Pending Approval')}
+                        className="px-3 py-1.5 rounded-xl bg-black/5 text-black text-xs font-bold hover:bg-black/10 transition-colors"
+                      >
+                        Re-evaluate Request
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Ekart Return Tracking Id */}
+                  <div className="flex items-center gap-2 max-w-[320px] w-full">
+                    <input
+                      type="text"
+                      placeholder="Ekart Return Tracking ID"
+                      value={trackingInputs[order.id] ?? order.ekartReturnTrackingId ?? ''}
+                      onChange={(e) => setTrackingInputs(prev => ({ ...prev, [order.id]: e.target.value }))}
+                      className="flex-1 px-3 py-2 rounded-xl border border-black/10 text-xs font-semibold placeholder-black/35 outline-none focus:border-black"
+                    />
+                    <button
+                      onClick={() => handleEkartTrackingSave(order.id)}
+                      className="px-3 py-2 rounded-xl bg-black text-white text-xs font-black hover:opacity-85 transition-opacity"
+                    >
+                      Save
+                    </button>
+                  </div>
+                </div>
+
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+    </>
+  );
+};
+
 /* ─── Main Dashboard ─────────────────────────────────────────────── */
 
 const AdminPage = () => {
@@ -1244,6 +1501,14 @@ const AdminPage = () => {
                 Order List
               </motion.p>
               <OrderListTab orders={orders} setOrders={setOrders} />
+              <div className="h-16" />
+            </motion.div>
+          ) : activeTab === 'Returns' ? (
+            <motion.div initial="hidden" animate="visible" variants={stagger}>
+              <motion.p variants={fadeUp} className="text-2xl font-black text-black tracking-tighter mb-6">
+                Return Requests Management
+              </motion.p>
+              <ReturnsAdminPanel orders={orders} setOrders={setOrders} />
               <div className="h-16" />
             </motion.div>
           ) : (

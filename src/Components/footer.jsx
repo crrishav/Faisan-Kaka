@@ -69,6 +69,10 @@ const Footer = () => {
     navigate('/print');
   };
 
+  const handleReturnsClick = () => {
+    navigate('/returns');
+  };
+
   const handleTermsClick = () => {
     navigate('/terms-of-service');
   };
@@ -120,6 +124,7 @@ const Footer = () => {
               <li><button className="hover:text-white transition-colors cursor-pointer" onClick={handleCollectionsClick}>Collections</button></li>
               <li><button className="hover:text-white transition-colors cursor-pointer" onClick={handlePrintStudioClick}>Print Studio</button></li>
               <li><button className="hover:text-white transition-colors cursor-pointer" onClick={() => navigate('/track-order')}>Track Your Order</button></li>
+              <li><button type="button" aria-label="Request a return" className="hover:text-white transition-colors cursor-pointer" onClick={handleReturnsClick}>Returns</button></li>
             </ul>
           </div>
 

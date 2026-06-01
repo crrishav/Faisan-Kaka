@@ -135,6 +135,43 @@ export const order = defineType({
       type: 'text',
       description: 'Internal notes for admin use only',
     }),
+
+    defineField({
+      name: 'returnStatus',
+      title: 'Return Status',
+      type: 'string',
+      options: {
+        list: [
+          { title: 'No Return', value: 'No Return' },
+          { title: 'Pending Approval', value: 'Pending Approval' },
+          { title: 'Approved', value: 'Approved' },
+          { title: 'Rejected', value: 'Rejected' },
+          { title: 'Returned', value: 'Returned' },
+        ],
+        layout: 'dropdown',
+      },
+      initialValue: 'No Return',
+      validation: (Rule) => Rule.required(),
+    }),
+    defineField({
+      name: 'returnReason',
+      title: 'Return Reason',
+      type: 'text',
+      description: 'Customer-provided reason and notes for the return request',
+    }),
+    defineField({
+      name: 'returnImages',
+      title: 'Return Images',
+      type: 'array',
+      of: [{ type: 'string' }],
+      description: 'Array of proof image URLs or data URLs supplied by the customer',
+    }),
+    defineField({
+      name: 'ekartReturnTrackingId',
+      title: 'Ekart Return Tracking ID',
+      type: 'string',
+      description: 'Ekart tracking ID for the reverse pickup or return shipment',
+    }),
   ],
   preview: {
     select: {

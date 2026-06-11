@@ -144,9 +144,16 @@ const ReviewSection = () => {
   const isInView = useInView(sectionRef, { amount: 0.15, once: false });
 
   const [activeIndex, setActiveIndex] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const dragStartX = useRef(0);
-  const dragStartScroll = useRef(0);
+  
+  // Drag-to-scroll refs (Desktop only, matches productSection)
+  const isDragging = useRef(false);
+  const startX = useRef(0);
+  const scrollLeftStart = useRef(0);
+  const hasMoved = useRef(false);
+  const velocity = useRef(0);
+  const lastX = useRef(0);
+  const lastTime = useRef(0);
+  const animationFrameId = useRef(null);
 
   const handleScroll = useCallback(() => {
     if (!trackRef.current) return;
@@ -165,37 +172,97 @@ const ReviewSection = () => {
     return () => el.removeEventListener('scroll', handleScroll);
   }, [handleScroll]);
 
-  const onMouseDown = useCallback((e) => {
-    if (!trackRef.current) return;
-    setIsDragging(true);
-    dragStartX.current = e.clientX;
-    dragStartScroll.current = trackRef.current.scrollLeft;
-    e.preventDefault();
+  const applyMomentum = () => {
+    if (Math.abs(velocity.current) > 0.1 && !isDragging.current && trackRef.current) {
+      trackRef.current.scrollLeft -= velocity.current;
+      velocity.current *= 0.95; // Friction
+      animationFrameId.current = requestAnimationFrame(applyMomentum);
+    } else {
+      velocity.current = 0;
+      if (trackRef.current) {
+        trackRef.current.style.scrollBehavior = 'smooth';
+      }
+    }
+  };
+
+  const handleMouseMove = useCallback((e) => {
+    if (!isDragging.current || !trackRef.current) return;
+    
+    const x = e.pageX - trackRef.current.offsetLeft;
+    const now = Date.now();
+    const dt = now - lastTime.current;
+    const dx = e.pageX - lastX.current;
+    
+    if (dt > 0) {
+      velocity.current = dx / (dt / 16); // Normalized to 60fps
+    }
+    
+    lastX.current = e.pageX;
+    lastTime.current = now;
+
+    const walk = (x - startX.current) * 1.5; // Scroll speed multiplier
+    
+    if (Math.abs(walk) > 5) {
+      hasMoved.current = true;
+    }
+    
+    trackRef.current.scrollLeft = scrollLeftStart.current - walk;
   }, []);
 
-  // Global mouse move listener
+  const handleMouseUp = useCallback(() => {
+    if (!isDragging.current) return;
+    isDragging.current = false;
+    
+    if (trackRef.current) {
+      trackRef.current.classList.remove('dragging');
+      trackRef.current.style.scrollBehavior = 'smooth';
+      trackRef.current.style.cursor = 'grab';
+      trackRef.current.style.removeProperty('user-select');
+      
+      // If we were moving fast, apply momentum
+      if (Math.abs(velocity.current) > 1) {
+        trackRef.current.style.scrollBehavior = 'auto'; // Disable smooth for momentum
+        animationFrameId.current = requestAnimationFrame(applyMomentum);
+      }
+    }
+
+    window.removeEventListener('mousemove', handleMouseMove);
+    window.removeEventListener('mouseup', handleMouseUp);
+  }, [handleMouseMove]);
+
+  const onMouseDown = useCallback((e) => {
+    // Only for desktop (innerWidth >= 768)
+    if (window.innerWidth < 768) return;
+    if (!trackRef.current) return;
+    
+    isDragging.current = true;
+    hasMoved.current = false;
+    startX.current = e.pageX - trackRef.current.offsetLeft;
+    scrollLeftStart.current = trackRef.current.scrollLeft;
+    lastX.current = e.pageX;
+    lastTime.current = Date.now();
+    velocity.current = 0;
+    
+    if (animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
+    
+    // Disable smooth scroll during drag
+    trackRef.current.classList.add('dragging');
+    trackRef.current.style.scrollBehavior = 'auto';
+    trackRef.current.style.cursor = 'grabbing';
+    trackRef.current.style.userSelect = 'none';
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    e.preventDefault();
+  }, [handleMouseMove, handleMouseUp]);
+
   useEffect(() => {
-    if (!isDragging) return;
-
-    const handleMouseMove = (e) => {
-      if (!trackRef.current) return;
-      const delta = dragStartX.current - e.clientX;
-      trackRef.current.scrollLeft = dragStartScroll.current + delta;
-    };
-
-    const handleMouseUp = () => {
-      setIsDragging(false);
-    };
-
-    // Attach to window for smooth dragging outside element
-    window.addEventListener('mousemove', handleMouseMove, { passive: true });
-    window.addEventListener('mouseup', handleMouseUp, { passive: true });
-
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
+      if (animationFrameId.current) cancelAnimationFrame(animationFrameId.current);
     };
-  }, [isDragging]);
+  }, [handleMouseMove, handleMouseUp]);
 
   const scrollToIndex = useCallback((idx) => {
     if (!trackRef.current) return;
@@ -251,9 +318,8 @@ const ReviewSection = () => {
       >
         <div
           ref={trackRef}
-          className={`review-track${isDragging ? ' dragging' : ''}`}
+          className="review-track"
           onMouseDown={onMouseDown}
-          style={{ userSelect: isDragging ? 'none' : 'auto' }}
         >
           {REVIEWS.map((review, i) => (
             <motion.div

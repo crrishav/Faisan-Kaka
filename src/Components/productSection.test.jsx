@@ -47,10 +47,8 @@ describe('ProductSection mobile layout', () => {
     );
     const scrollDiv = container.querySelector('div.flex.overflow-x-auto');
     expect(scrollDiv).toBeTruthy();
-    // simulate measurable width so the centering effect runs
-    Object.defineProperty(scrollDiv, 'scrollWidth', { value: 1000, configurable: true });
-    window.dispatchEvent(new Event('resize'));
-    expect(scrollDiv.style.transform).toMatch(/translateX\(/);
+    expect(scrollDiv.className).toContain('snap-x');
+    expect(scrollDiv.className).toContain('px-[10vw]');
 
     // ensure each card includes mx-auto so left/right margins are equal
     const cards = container.querySelectorAll('.carousel-item');

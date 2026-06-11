@@ -2,29 +2,24 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { prefetchProductBySlug } from '../lib/sanityClient.js';
 import { buildSanityImageUrl, getResponsiveImageProps } from '../lib/responsiveImage.js';
+import useCart from './useCart.jsx';
 import useCurrency from './currencyContext.jsx';
 import { normalizeMoneyValue } from '../lib/money.js';
 
-const useIsMobile = () => {
-  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 767px)');
-    const handler = (e) => setIsMobile(e.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  }, []);
-  return isMobile;
-};
+const QUICK_SIZES = ['S', 'M', 'L', 'XL'];
+const QUICK_COLORS = ['#111111', '#2f2f2f', '#d9d9d9', '#1e3a8a'];
 
-const ProductCard = ({ title, price, backImage, frontImage, slug, priceINR, priceNPR, inStock }) => {
+const ProductCard = ({ title, price, backImage, frontImage, slug, priceINR, priceNPR }) => {
   const navigate = useNavigate();
+  const { addItem } = useCart();
   const { currency } = useCurrency();
   const [hovered, setHovered] = useState(false);
-  const isMobile = useIsMobile();
+  const [selectedSize, setSelectedSize] = useState(null);
+  const [selectedColor, setSelectedColor] = useState(null);
+  const [addedFlash, setAddedFlash] = useState(false);
 
-  // Preload both images
   useEffect(() => {
-    if (backImage)  { const img = new Image(); img.src = buildSanityImageUrl(backImage,  { width: 560, quality: 72 }); }
+    if (backImage) { const img = new Image(); img.src = buildSanityImageUrl(backImage, { width: 560, quality: 72 }); }
     if (frontImage) { const img = new Image(); img.src = buildSanityImageUrl(frontImage, { width: 560, quality: 72 }); }
   }, [backImage, frontImage]);
 
@@ -49,8 +44,53 @@ const ProductCard = ({ title, price, backImage, frontImage, slug, priceINR, pric
     loading: 'lazy',
   });
 
+  useEffect(() => {
+    if (!addedFlash) return undefined;
+    const timer = setTimeout(() => setAddedFlash(false), 950);
+    return () => clearTimeout(timer);
+  }, [addedFlash]);
+
   const resolvedPriceINR = normalizeMoneyValue(priceINR || (currency === 'INR' ? price : 0), price);
   const resolvedPriceNPR = normalizeMoneyValue(priceNPR || (currency === 'NPR' ? price : 0), price);
+
+  const handleMouseEnter = () => {
+    setSelectedSize(null);
+    setSelectedColor(null);
+    setAddedFlash(false);
+    setHovered(true);
+  };
+
+  const handleMouseLeave = () => {
+    setHovered(false);
+  };
+
+  const handleQuickPick = (nextSize, nextColor) => {
+    const finalSize = nextSize !== null ? nextSize : selectedSize;
+    const finalColor = nextColor !== null ? nextColor : selectedColor;
+
+    if (nextSize !== null) setSelectedSize(nextSize);
+    if (nextColor !== null) setSelectedColor(nextColor);
+
+    if (!finalSize || !finalColor) return;
+
+    const baseId = slug || title.toLowerCase().replace(/\s+/g, '-');
+    const id = `${baseId}-${finalColor}-${finalSize}`;
+    addItem({
+      id,
+      title,
+      priceINR: resolvedPriceINR,
+      priceNPR: resolvedPriceNPR,
+      displayPriceINR: String(priceINR || price || resolvedPriceINR),
+      displayPriceNPR: String(priceNPR || price || resolvedPriceNPR),
+      quantity: 1,
+      size: finalSize,
+      color: finalColor,
+      frontImage,
+      backImage,
+      slug: baseId,
+    });
+    setAddedFlash(true);
+  };
 
   const handleNavigate = () => {
     if (!slug) return;
@@ -61,17 +101,15 @@ const ProductCard = ({ title, price, backImage, frontImage, slug, priceINR, pric
   return (
     <div
       className="w-[80vw] max-w-[280px] md:w-[280px] min-w-0 flex-shrink-0 mx-auto rounded-[32px] bg-[#D9D9D9] p-4 flex flex-col items-center text-center shadow-md hover:shadow-2xl transition-shadow duration-300 cursor-pointer"
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       onClick={handleNavigate}
     >
-      {/* Image — original 3/4 card preserved */}
+      {/* Image */}
       <div className="relative w-full aspect-[3/4] mb-3 overflow-hidden rounded-[24px]">
         <img
           {...primaryImageProps}
-          /* Replaced layout utility classes to explicitly size and slide the 9:16 asset upward on mobile */
-          className="absolute max-w-none w-[135%] -top-7 left-1/2 -translate-x-1/2 h-auto object-contain md:inset-0 md:w-full md:h-full md:object-cover md:translate-x-0 md:top-0 md:left-0 pointer-events-none"
-          draggable={false}
+          className="absolute inset-0 w-full h-full object-cover"
           style={{
             opacity: hovered && backImage ? 0 : 1,
             transition: 'opacity 0.35s ease',
@@ -80,40 +118,117 @@ const ProductCard = ({ title, price, backImage, frontImage, slug, priceINR, pric
         {backImage && (
           <img
             {...hoverImageProps}
-            /* Matched identical alignment properties here for the hover state */
-            className="absolute max-w-none w-[135%] -top-7 left-1/2 -translate-x-1/2 h-auto object-contain md:inset-0 md:w-full md:h-full md:object-cover md:translate-x-0 md:top-0 md:left-0 pointer-events-none"
-            draggable={false}
+            className="absolute inset-0 w-full h-full object-cover"
             style={{
               opacity: hovered ? 1 : 0,
               transition: 'opacity 0.35s ease',
             }}
           />
         )}
-
-        {/* Out of stock overlay */}
-        {inStock === false && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/30 rounded-[24px]">
-            <span className="text-white text-xs font-black tracking-widest uppercase bg-black/60 px-3 py-1.5 rounded-full">
-              Sold Out
-            </span>
-          </div>
-        )}
       </div>
 
       {/* Title + price */}
-      <div className="flex flex-col gap-1 w-full my-3">
+      <div className="flex flex-col gap-1 w-full mb-3">
         <h3 className="font-bold text-lg text-black leading-tight">{title}</h3>
         <p className="text-gray-700 font-semibold">{price}</p>
       </div>
 
-      {/* CTA */}
-      <button
-        className="w-full py-2.5 rounded-2xl bg-black text-white text-sm font-bold tracking-tight hover:bg-neutral-800 active:scale-95 transition-all duration-150 cursor-pointer"
-        onClick={(e) => { e.stopPropagation(); handleNavigate(); }}
-        aria-label={`View ${title}`}
-      >
-        View Product
-      </button>
+      {/* CTA - fixed height container so card never resizes */}
+      <div className="w-full relative" style={{ height: '42px' }}>
+
+        {/* "View Product" button - fades out on hover (desktop only) */}
+        <button
+          className="absolute inset-0 w-full py-2.5 rounded-2xl bg-black text-white text-sm font-bold tracking-tight hover:bg-neutral-800 active:scale-95 cursor-pointer hidden md:block"
+          style={{
+            opacity: hovered ? 0 : 1,
+            transform: hovered ? 'translateY(-4px)' : 'translateY(0)',
+            transition: 'opacity 0.22s ease, transform 0.22s ease',
+            pointerEvents: hovered ? 'none' : 'auto',
+          }}
+          onClick={(e) => { e.stopPropagation(); handleNavigate(); }}
+          aria-label={`View ${title}`}
+        >
+          View Product
+        </button>
+
+        {/* Mobile: always show View Product normally */}
+        <button
+          className="absolute inset-0 w-full py-2.5 rounded-2xl bg-black text-white text-sm font-bold tracking-tight hover:bg-neutral-800 active:scale-95 cursor-pointer md:hidden"
+          onClick={(e) => { e.stopPropagation(); handleNavigate(); }}
+          aria-label={`View ${title}`}
+        >
+          View Product
+        </button>
+
+        {/* Quick-pick panel - fades in on hover, same fixed height */}
+        <div
+          className="absolute inset-0 hidden md:flex flex-col justify-between"
+          style={{
+            opacity: hovered ? 1 : 0,
+            transform: hovered ? 'translateY(0)' : 'translateY(4px)',
+            transition: 'opacity 0.22s ease, transform 0.22s ease',
+            pointerEvents: hovered ? 'auto' : 'none',
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Sizes row */}
+          <div className="flex items-center justify-between gap-1">
+            {QUICK_SIZES.map((size) => (
+              <button
+                key={`${slug || title}-size-${size}`}
+                type="button"
+                onClick={() => handleQuickPick(size, null)}
+                className="flex-1 h-[42px] rounded-xl text-[11px] font-bold cursor-pointer transition-colors duration-150"
+                style={{
+                  backgroundColor: selectedSize === size ? '#111' : 'rgba(0,0,0,0.1)',
+                  color: selectedSize === size ? '#fff' : '#111',
+                }}
+                aria-label={`Select size ${size}`}
+              >
+                {size}
+              </button>
+            ))}
+
+            {/* Color swatches inline on the right */}
+            <div className="flex items-center gap-1 ml-1">
+              {QUICK_COLORS.map((color) => (
+                <button
+                  key={`${slug || title}-color-${color}`}
+                  type="button"
+                  onClick={() => handleQuickPick(null, color)}
+                  className="rounded-full cursor-pointer transition-transform duration-150 hover:scale-110"
+                  style={{
+                    width: '18px',
+                    height: '18px',
+                    backgroundColor: color,
+                    border: selectedColor === color
+                      ? '2px solid #000'
+                      : '2px solid rgba(0,0,0,0.15)',
+                    boxShadow: selectedColor === color
+                      ? '0 0 0 2px #D9D9D9, 0 0 0 3.5px #000'
+                      : 'none',
+                    transition: 'box-shadow 0.15s ease, border-color 0.15s ease, transform 0.15s ease',
+                  }}
+                  aria-label={`Select color ${color}`}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Status hint */}
+          <div
+            className="text-[10px] font-bold tracking-widest uppercase text-center"
+            style={{
+              color: addedFlash ? '#15803d' : 'rgba(0,0,0,0.35)',
+              transition: 'color 0.2s ease',
+              lineHeight: 1,
+              marginTop: '3px',
+            }}
+          >
+            {addedFlash ? '✓ Added to Cart' : 'Pick size + color'}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

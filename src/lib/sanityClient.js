@@ -25,7 +25,7 @@ export { sanityClient };
  */
 export const getProductsByCategory = async (category) => {
   if (!sanityClient) return [];
-  const query = `*[_type == "product" && category == $category && inStock == true] | order(publishedAt desc) {
+  const query = `*[_type == "product" && category == $category && inStock == true && showOnWebsite != false] | order(publishedAt desc) {
     _id,
     title,
     slug,
@@ -80,7 +80,7 @@ export const getProductBySlug = async (slug) => {
     return productCache.get(slug);
   }
 
-  const query = `*[_type == "product" && slug.current == $slug][0] {
+  const query = `*[_type == "product" && slug.current == $slug && showOnWebsite != false][0] {
     _id,
     title,
     slug,
@@ -140,7 +140,7 @@ export const prefetchProductBySlug = (slug) => {
  */
 export const getFeaturedProducts = async () => {
   if (!sanityClient) return [];
-  const query = `*[_type == "product" && featured == true && inStock == true] | order(publishedAt desc)[0..5] {
+  const query = `*[_type == "product" && featured == true && inStock == true && showOnWebsite != false] | order(publishedAt desc)[0..5] {
     _id,
     title,
     slug,
@@ -173,7 +173,7 @@ export const getFeaturedProducts = async () => {
  */
 export const getCategories = async () => {
   if (!sanityClient) return [];
-  const query = `array::unique(*[_type == "product"].category) | sort()`;
+  const query = `array::unique(*[_type == "product" && showOnWebsite != false].category) | sort()`;
   try {
     const categories = await sanityClient.fetch(query);
     return categories;
@@ -189,7 +189,7 @@ export const getCategories = async () => {
  */
 export const subscribeToProducts = (category, callback) => {
   if (!sanityClient) return { unsubscribe: () => {} };
-  const query = `*[_type == "product" && category == $category && inStock == true] | order(publishedAt desc) {
+  const query = `*[_type == "product" && category == $category && inStock == true && showOnWebsite != false] | order(publishedAt desc) {
     _id,
     title,
     slug,

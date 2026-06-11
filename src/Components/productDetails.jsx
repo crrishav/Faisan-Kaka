@@ -15,6 +15,7 @@ const ProductDetails = ({
   slug = undefined,
   frontImage = null,
   backImage = null,
+  images: propImages = null,
   inStock = true
 }) => {
   const [quantity, setQuantity] = useState(1);
@@ -32,9 +33,12 @@ const ProductDetails = ({
   const displayPrice = isNepal ? `Rs. ${resolvedPriceNPR}` : `₹${resolvedPriceINR}`;
   
   const images = useMemo(() => {
+    if (propImages && propImages.length > 0) {
+      return [...new Set(propImages.filter(Boolean))];
+    }
     const unique = [frontImage, backImage].filter(Boolean);
     return [...new Set(unique)];
-  }, [frontImage, backImage]);
+  }, [frontImage, backImage, propImages]);
 
   const sizingGuideState = useMemo(() => {
     if (!slug) return undefined;
@@ -253,10 +257,10 @@ const ProductDetails = ({
           </div>
         )}
 
-        <div className="px-5 sm:px-6 md:px-0 pb-6 sm:pb-7 pt-1 md:pt-0 flex flex-col gap-5 md:gap-6">
-          <div className="flex items-start justify-between gap-4">
+        <div className="px-5 sm:px-6 md:px-0 pb-6 sm:pb-7 pt-1 md:pt-0 flex flex-col gap-5 md:gap-4">
+          <div className="flex flex-row md:flex-col items-start justify-between md:justify-start gap-4 md:gap-0.5">
             <h2 className="text-xl sm:text-2xl md:text-4xl font-black text-black leading-tight">{title}</h2>
-            <span className="text-lg sm:text-xl md:text-3xl font-black text-black whitespace-nowrap">{displayPrice}</span>
+            <span className="text-lg sm:text-xl md:text-xl font-bold text-black md:text-black/60 whitespace-nowrap md:mt-0">{displayPrice}</span>
           </div>
 
           <p className="text-sm md:text-[15px] text-black/70 leading-relaxed md:max-w-[420px]">

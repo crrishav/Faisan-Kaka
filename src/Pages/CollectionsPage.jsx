@@ -88,6 +88,7 @@ const CollectionsPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [sizeFilter, setSizeFilter] = useState('All');
+  const [colorFilter, setColorFilter] = useState('All');
   const [availabilityFilter, setAvailabilityFilter] = useState('all');
   const [sortBy, setSortBy] = useState('featured');
   const [minPriceInput, setMinPriceInput] = useState('');
@@ -126,7 +127,10 @@ const CollectionsPage = () => {
     return ['All', ...Array.from(new Set(sizes)).sort((a, b) => a.localeCompare(b))];
   }, [products]);
 
-  
+  const colorOptions = useMemo(() => {
+    const colors = products.flatMap((p) => (Array.isArray(p.colors) ? p.colors : [])).filter(Boolean);
+    return ['All', ...Array.from(new Set(colors)).sort((a, b) => a.localeCompare(b))];
+  }, [products]);
 
   const priceBounds = useMemo(() => {
     const prices = products
@@ -159,7 +163,9 @@ const CollectionsPage = () => {
       list = list.filter((p) => Array.isArray(p.sizes) && p.sizes.includes(sizeFilter));
     }
 
-    
+    if (colorFilter !== 'All') {
+      list = list.filter((p) => Array.isArray(p.colors) && p.colors.includes(colorFilter));
+    }
 
     if (availabilityFilter === 'in-stock') {
       list = list.filter((p) => p.inStock !== false);
@@ -214,6 +220,7 @@ const CollectionsPage = () => {
     products,
     categoryFilter,
     sizeFilter,
+    colorFilter,
     availabilityFilter,
     minPriceInput,
     maxPriceInput,
@@ -225,6 +232,7 @@ const CollectionsPage = () => {
   const resetFilters = () => {
     setCategoryFilter('All');
     setSizeFilter('All');
+    setColorFilter('All');
     setAvailabilityFilter('all');
     setSortBy('featured');
     setSearchQuery('');
@@ -330,7 +338,18 @@ const CollectionsPage = () => {
             </select>
           </label>
 
-          {/* Color filter removed (feature disabled) */}
+          <label className="flex flex-col gap-1">
+            <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-black/45">Color</span>
+            <select
+              value={colorFilter}
+              onChange={(e) => setColorFilter(e.target.value)}
+              className="h-11 rounded-xl border border-black/15 bg-white px-3 text-sm font-semibold text-black outline-none focus:border-black"
+            >
+              {colorOptions.map((option) => (
+                <option key={option} value={option}>{option}</option>
+              ))}
+            </select>
+          </label>
 
           <label className="flex flex-col gap-1">
             <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-black/45">Availability</span>
@@ -455,7 +474,6 @@ const CollectionsPage = () => {
                         backImage={product.backImage}
                         frontImage={product.frontImage}
                         slug={product.slug}
-                        inStock={product.inStock}
                       />
                     </div>
                   </motion.div>

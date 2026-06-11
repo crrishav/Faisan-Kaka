@@ -21,9 +21,6 @@ const ProductSection = ({ title }) => {
   const lastX = useRef(0);
   const lastTime = useRef(0);
   const animationFrameId = useRef(null);
-  const isTouchDragging = useRef(false);
-  const touchStartX = useRef(0);
-  const touchScrollStart = useRef(0);
 
   const checkScroll = () => {
     if (scrollContainerRef.current) {
@@ -146,34 +143,6 @@ const ProductSection = ({ title }) => {
     }
   };
 
-  const handleTouchStart = (e) => {
-    if (window.innerWidth >= 768 || !scrollContainerRef.current) return;
-    if (e.touches.length !== 1) return;
-
-    isTouchDragging.current = true;
-    hasMoved.current = false;
-    touchStartX.current = e.touches[0].clientX;
-    touchScrollStart.current = scrollContainerRef.current.scrollLeft;
-  };
-
-  const handleTouchMove = (e) => {
-    if (window.innerWidth >= 768 || !isTouchDragging.current || !scrollContainerRef.current) return;
-    if (e.touches.length !== 1) return;
-
-    const deltaX = e.touches[0].clientX - touchStartX.current;
-    const walk = deltaX * 0.65; // Mobile-only reduced swipe sensitivity.
-
-    if (Math.abs(walk) > 4) {
-      hasMoved.current = true;
-      e.preventDefault();
-    }
-
-    scrollContainerRef.current.scrollLeft = touchScrollStart.current - walk;
-  };
-
-  const handleTouchEnd = () => {
-    isTouchDragging.current = false;
-  };
 
   const renderHeader = () => (
     <div className="w-full px-4 md:px-32 flex flex-col items-center md:flex-row md:items-end md:justify-between gap-3 mb-4 md:mb-6">
@@ -272,17 +241,12 @@ const ProductSection = ({ title }) => {
           </div>
         )}
 
-        {/* Scrollable List */}
         <div 
           ref={scrollContainerRef}
           onMouseDown={handleMouseDown}
           onMouseLeave={handleMouseLeave}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          onTouchCancel={handleTouchEnd}
           className="w-full flex overflow-x-auto gap-4 md:gap-10 py-8 scroll-smooth no-scrollbar outline-none snap-x snap-mandatory md:snap-none px-[10vw] md:px-32 cursor-grab active:cursor-grabbing"
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', touchAction: 'pan-y' }}
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {sectionProducts.map((product) => (
             <div 

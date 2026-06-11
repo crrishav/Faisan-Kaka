@@ -281,11 +281,11 @@ const ProductDetailsPage = () => {
   const displayLoading = loading || !productData;
   const backImg = productData?.images?.[1] || productData?.images?.[0];
   const frontImg = productData?.images?.[0];
-  const desktopImages = productData ? [...new Set([backImg, frontImg, ...productData.images].filter(Boolean))] : [];
+  const desktopImages = productData ? [...new Set([frontImg, backImg, ...productData.images].filter(Boolean))] : [];
 
   return (
     <SmoothScroll>
-      <div className="min-h-screen flex flex-col bg-[#f5f5f5] overflow-x-hidden">
+      <div className="min-h-screen flex flex-col bg-[#f5f5f5]">
         
         {/* Error State */}
         {displayError && (
@@ -321,73 +321,52 @@ const ProductDetailsPage = () => {
         {/* Main Content */}
         {!displayError && !displayLoading && productData && (
           <>
-            <div className="flex-1 px-4 sm:px-8 pt-24 md:pt-28 overflow-x-hidden flex items-center justify-center">
-              <div className="max-w-7xl mx-auto flex flex-col items-center justify-center md:flex-row md:items-start gap-8 md:h-screen pt-4 md:pt-12">
-                {/* Desktop Images - Side by Side */}
-                <div className="hidden md:grid w-full md:w-[600px] grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="rounded-[35px] overflow-hidden shadow-xl bg-[#1f3c34]">
-                    <button
-                      type="button"
-                      className="block w-full h-full cursor-zoom-in"
-                      onClick={() => openDesktopViewer(desktopImages.indexOf(backImg))}
-                      aria-label="Open product image"
-                    >
-                      <img
-                        {...getResponsiveImageProps({
-                          src: backImg,
-                          alt: productData.title,
-                          widths: [360, 540, 720, 840, 1080],
-                          sizes: '(max-width: 768px) 100vw, 300px',
-                          fallbackWidth: 840,
-                          quality: 80,
-                          loading: 'eager',
-                          fetchPriority: 'high',
-                        })}
-                        className="w-full h-64 md:h-[420px] object-cover"
-                      />
-                    </button>
-                  </div>
-                  <div className="rounded-[35px] overflow-hidden shadow-xl bg-[#27443b]">
-                    <button
-                      type="button"
-                      className="block w-full h-full cursor-zoom-in"
-                      onClick={() => openDesktopViewer(desktopImages.indexOf(frontImg))}
-                      aria-label="Open product image"
-                    >
-                      <img
-                        {...getResponsiveImageProps({
-                          src: frontImg,
-                          alt: productData.title,
-                          widths: [360, 540, 720, 840, 1080],
-                          sizes: '(max-width: 768px) 100vw, 300px',
-                          fallbackWidth: 840,
-                          quality: 80,
-                          loading: 'eager',
-                          fetchPriority: 'high',
-                        })}
-                        className="w-full h-64 md:h-[420px] object-cover"
-                      />
-                    </button>
-                  </div>
-            </div>
+            <div className="flex-1 px-4 sm:px-8 pt-24 md:pt-28 pb-16 flex justify-center">
+              <div className="max-w-6xl w-full mx-auto flex flex-col md:flex-row items-start justify-center gap-12 pt-4 md:pt-12">
+                {/* Desktop Images - Vertical Stack */}
+                <div className="hidden md:flex flex-col w-full md:w-[500px] flex-shrink-0 gap-8">
+                  {desktopImages.map((image, idx) => (
+                    <div key={idx} className="rounded-[35px] overflow-hidden shadow-xl bg-neutral-200/50 aspect-[3/4] w-full">
+                      <button
+                        type="button"
+                        className="block w-full h-full cursor-zoom-in"
+                        onClick={() => openDesktopViewer(idx)}
+                        aria-label={`Open product image ${idx + 1}`}
+                      >
+                        <img
+                          {...getResponsiveImageProps({
+                            src: image,
+                            alt: `${productData.title} view ${idx + 1}`,
+                            widths: [640, 800, 1080, 1400],
+                            sizes: '(max-width: 1024px) 100vw, 700px',
+                            fallbackWidth: 1080,
+                            quality: 82,
+                            loading: idx === 0 ? 'eager' : 'lazy',
+                            fetchPriority: idx === 0 ? 'high' : 'low',
+                          })}
+                          className="w-full h-full object-cover"
+                        />
+                      </button>
+                    </div>
+                  ))}
+                </div>
 
-            {/* Product Details - Desktop & Mobile */}
-            <div className="w-full md:w-[440px] flex-shrink-0">
-              <ProductDetails 
-                title={productData.title}
-                priceINR={productData.priceINR}
-                priceNPR={productData.priceNPR}
-                description={productData.description}
-                sizes={productData.sizes}
-                slug={productData.slug}
-                frontImage={frontImg}
-                backImage={backImg}
-                inStock={productData.inStock}
-              />
-              
-              {/* Stock Status - Removed from here as it's now inside ProductDetails next to colors */}
-            </div>
-          </div>
+                {/* Product Details - Desktop & Mobile */}
+                <div className="w-full md:w-[440px] flex-shrink-0 md:sticky md:top-32">
+                  <ProductDetails 
+                    title={productData.title}
+                    priceINR={productData.priceINR}
+                    priceNPR={productData.priceNPR}
+                    description={productData.description}
+                    sizes={productData.sizes}
+                    slug={productData.slug}
+                    frontImage={frontImg}
+                    backImage={backImg}
+                    images={desktopImages}
+                    inStock={productData.inStock}
+                  />
+                </div>
+              </div>
             </div>
           </>
         )}

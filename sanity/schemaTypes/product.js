@@ -137,6 +137,14 @@ export const product = defineType({
     }),
 
     defineField({
+      name: 'showOnWebsite',
+      title: 'Show on Website',
+      type: 'boolean',
+      initialValue: true,
+      description: 'Hide this product from the storefront when turned off',
+    }),
+
+    defineField({
       name: 'publishedAt',
       title: 'Published Date',
       type: 'datetime',

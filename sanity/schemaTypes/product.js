@@ -112,6 +112,14 @@ export const product = defineType({
     }),
 
     defineField({
+      name: 'stock',
+      title: 'Stock Quantity',
+      type: 'number',
+      initialValue: 0,
+      description: 'Number of items in stock (optional)',
+    }),
+
+    defineField({
       name: 'inStock',
       title: 'In Stock',
       type: 'boolean',

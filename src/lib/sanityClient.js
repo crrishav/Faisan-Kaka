@@ -25,7 +25,7 @@ export { sanityClient };
  */
 export const getProductsByCategory = async (category) => {
   if (!sanityClient) return [];
-  const query = `*[_type == "product" && category == $category && inStock == true && showOnWebsite != false] | order(publishedAt desc) {
+  const query = `*[_type == "product" && category == $category && showOnWebsite != false] | order(publishedAt desc) {
     _id,
     title,
     slug,
@@ -57,6 +57,8 @@ export const getProductsByCategory = async (category) => {
     priceNPR,
     stock,
     sizes,
+    inStock,
+    showOnWebsite,
     featured,
     publishedAt
   }`;
@@ -112,6 +114,8 @@ export const getProductBySlug = async (slug) => {
     priceNPR,
     stock,
     sizes,
+    inStock,
+    showOnWebsite,
     featured,
     publishedAt
   }`;
@@ -140,7 +144,7 @@ export const prefetchProductBySlug = (slug) => {
  */
 export const getFeaturedProducts = async () => {
   if (!sanityClient) return [];
-  const query = `*[_type == "product" && featured == true && inStock == true && showOnWebsite != false] | order(publishedAt desc)[0..5] {
+  const query = `*[_type == "product" && featured == true && showOnWebsite != false] | order(publishedAt desc)[0..5] {
     _id,
     title,
     slug,
@@ -156,6 +160,8 @@ export const getFeaturedProducts = async () => {
     priceINR,
     priceNPR,
     stock,
+    inStock,
+    showOnWebsite,
     featured
   }`;
 
@@ -189,7 +195,7 @@ export const getCategories = async () => {
  */
 export const subscribeToProducts = (category, callback) => {
   if (!sanityClient) return { unsubscribe: () => {} };
-  const query = `*[_type == "product" && category == $category && inStock == true && showOnWebsite != false] | order(publishedAt desc) {
+  const query = `*[_type == "product" && category == $category && showOnWebsite != false] | order(publishedAt desc) {
     _id,
     title,
     slug,
@@ -205,7 +211,8 @@ export const subscribeToProducts = (category, callback) => {
     priceINR,
     priceNPR,
     stock,
-    inStock
+    inStock,
+    showOnWebsite
   }`;
   return sanityClient.listen(query, { category }).subscribe(callback);
 };

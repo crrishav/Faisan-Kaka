@@ -120,6 +120,7 @@ const ProductSection = ({ title }) => {
   const handleMouseUp = () => {
     if (!isDragging.current) return;
     isDragging.current = false;
+    hasMoved.current = false;
     
     if (scrollContainerRef.current) {
       scrollContainerRef.current.style.scrollBehavior = 'smooth';

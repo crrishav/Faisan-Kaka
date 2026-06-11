@@ -316,6 +316,7 @@ const ProductDetails = ({
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
                 className="w-8 h-8 rounded-full hover:bg-white/20 cursor-pointer"
                 aria-label="Decrease quantity"
+                disabled={!inStock}
               >
                 -
               </button>
@@ -325,6 +326,7 @@ const ProductDetails = ({
                 onClick={() => setQuantity(quantity + 1)}
                 className="w-8 h-8 rounded-full hover:bg-white/20 cursor-pointer"
                 aria-label="Increase quantity"
+                disabled={!inStock}
               >
                 +
               </button>
@@ -333,7 +335,12 @@ const ProductDetails = ({
             <button
               type="button"
               onClick={handleAddToCart}
-              className="h-11 px-5 rounded-full bg-black text-white font-bold hover:bg-black/85 transition-colors cursor-pointer"
+              disabled={!inStock}
+              className={`h-11 px-5 rounded-full font-bold transition-colors cursor-pointer ${
+                inStock
+                  ? 'bg-black text-white hover:bg-black/85'
+                  : 'bg-black/30 text-black/50 cursor-not-allowed'
+              }`}
             >
               Add To Cart
             </button>
@@ -342,7 +349,12 @@ const ProductDetails = ({
           <button
             type="button"
             onClick={handleBuyNow}
-            className="h-11 rounded-full border border-black/20 text-black font-bold hover:bg-black/5 transition-colors cursor-pointer"
+            disabled={!inStock}
+            className={`h-11 rounded-full font-bold transition-colors cursor-pointer ${
+              inStock
+                ? 'border border-black/20 text-black hover:bg-black/5'
+                : 'border border-black/10 text-black/50 cursor-not-allowed'
+            }`}
           >
             Buy Now
           </button>

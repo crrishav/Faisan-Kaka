@@ -26,24 +26,27 @@ const useProducts = () => {
         }
 
         // Transform Sanity data to match current component expectations
-        const transformedProducts = allProducts.map((product) => ({
-          _id: product._id,
-          name: product.title,
-          title: product.title, // Keep both for compatibility
-          category: product.category,
-          slug: product.slug?.current,
-          description: product.description,
-          priceINR: product.priceINR,
-          priceNPR: product.priceNPR,
-          // Use Sanity image URLs instead of local files
-          frontImage: product.mainImage?.asset?.url,
-          backImage: product.images?.[0]?.asset?.url || product.mainImage?.asset?.url,
-          images: product.images || [],
-          sizes: product.sizes || [],
-          inStock: product.inStock,
-          featured: product.featured,
-          publishedAt: product.publishedAt,
-        }));
+        const transformedProducts = allProducts
+          .filter((product) => product.showOnWebsite !== false) // Filter out hidden products
+          .map((product) => ({
+            _id: product._id,
+            name: product.title,
+            title: product.title, // Keep both for compatibility
+            category: product.category,
+            slug: product.slug?.current,
+            description: product.description,
+            priceINR: product.priceINR,
+            priceNPR: product.priceNPR,
+            // Use Sanity image URLs instead of local files
+            frontImage: product.mainImage?.asset?.url,
+            backImage: product.images?.[0]?.asset?.url || product.mainImage?.asset?.url,
+            images: product.images || [],
+            sizes: product.sizes || [],
+            inStock: product.inStock,
+            featured: product.featured,
+            showOnWebsite: product.showOnWebsite,
+            publishedAt: product.publishedAt,
+          }));
 
         setProducts(transformedProducts);
       } catch (err) {

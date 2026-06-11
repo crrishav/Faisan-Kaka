@@ -46,20 +46,15 @@ const ProductCard = ({ title, price, backImage, frontImage, slug, priceINR, pric
 
   return (
     <div
-      className={`w-[80vw] max-w-[280px] md:w-[280px] min-w-0 flex-shrink-0 mx-auto rounded-[32px] p-4 flex flex-col items-center text-center shadow-md hover:shadow-2xl transition-shadow duration-300 cursor-pointer ${!inStock ? 'bg-gray-300' : 'bg-[#D9D9D9]'}`}
-      onClick={inStock ? handleNavigate : undefined}
+      className={`w-[80vw] max-w-[280px] md:w-[280px] min-w-0 flex-shrink-0 mx-auto rounded-[32px] p-4 flex flex-col items-center text-center shadow-md hover:shadow-2xl transition-shadow duration-300 cursor-pointer bg-[#D9D9D9]`}
+      onClick={handleNavigate}
     >
       {/* Image */}
       <div className="relative w-full aspect-[3/4] mb-3 overflow-hidden rounded-[24px]">
         <img
           {...primaryImageProps}
-          className={`absolute inset-0 w-full h-full object-cover ${!inStock ? 'grayscale' : ''}`}
+          className="absolute inset-0 w-full h-full object-cover"
         />
-        {!inStock && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-[24px]">
-            <span className="text-white font-bold text-xl">Out of Stock</span>
-          </div>
-        )}
       </div>
 
       {/* Title + price */}
@@ -70,19 +65,14 @@ const ProductCard = ({ title, price, backImage, frontImage, slug, priceINR, pric
 
       {/* CTA */}
       <button
-        className={`w-full py-2.5 rounded-2xl text-white text-sm font-bold tracking-tight transition-all duration-200 active:scale-95 ${
-          inStock 
-            ? 'bg-black hover:bg-neutral-800 cursor-pointer' 
-            : 'bg-gray-500 cursor-not-allowed'
-        }`}
+        className="w-full py-2.5 rounded-2xl text-white text-sm font-bold tracking-tight transition-all duration-200 active:scale-95 bg-black hover:bg-neutral-800 cursor-pointer"
         onClick={(e) => { 
           e.stopPropagation(); 
-          if (inStock) handleNavigate(); 
+          handleNavigate(); 
         }}
-        aria-label={inStock ? `View ${title}` : `${title} is out of stock`}
-        disabled={!inStock}
+        aria-label={`View ${title}`}
       >
-        {inStock ? 'View Product' : 'Out of Stock'}
+        View Product
       </button>
     </div>
   );

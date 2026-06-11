@@ -175,7 +175,7 @@ const ProductDetailsPage = () => {
       backImage,
       images: [frontImage, backImage, ...additionalImages.slice(1)].filter(Boolean),
       category: product.category,
-      inStock: product.inStock !== false && (typeof product.stock !== 'number' || product.stock > 0),
+      inStock: product.inStock !== false,
     };
   }, [product, slug]);
 

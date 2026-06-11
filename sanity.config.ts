@@ -19,12 +19,4 @@ export default defineConfig({
   schema: {
     types: schemaTypes,
   },
-  document: {
-    actions: (prev) =>
-      prev.filter(
-        ({ action }) =>
-          action &&
-          !['unpublish'].includes(action)
-      ),
-  },
 });

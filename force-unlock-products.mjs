@@ -45,9 +45,9 @@ const client = createClient({
   useCdn: false,
 });
 
-async function unlockAllProducts() {
+async function forceUnlockProducts() {
+  console.log('=== FORCE UNLOCK ALL PRODUCTS ===');
   console.log('Fetching all products...');
-  // Fetch ALL fields including system fields
   const products = await client.fetch('*[_type == "product"]');
 
   if (products.length === 0) {
@@ -55,37 +55,43 @@ async function unlockAllProducts() {
     return;
   }
 
-  console.log(`Found ${products.length} products. Unlocking all fields...`);
+  console.log(`Found ${products.length} products.`);
+  console.log('Backing up all products to products-backup.json...');
+  fs.writeFileSync('products-backup.json', JSON.stringify(products, null, 2));
+  console.log('Backup created at products-backup.json');
 
-  for (const product of products) {
-    console.log(`Processing: ${product.title} (${product._id})`);
+  for (let i = 0; i < products.length; i++) {
+    const product = products[i];
+    console.log(`\n[${i + 1}/${products.length}] Processing: ${product.title} (${product._id})`);
 
     try {
-      // Step 1: Create a backup of the product data
-      const { _id, _rev, _type, _createdAt, _updatedAt, ...productData } = product;
-
-      // Step 2: Delete the old product
-      console.log(`  - Deleting old document...`);
-      await client.delete(_id);
-
-      // Step 3: Recreate the product with the same _id and all data
-      console.log(`  - Recreating document...`);
-      const newProduct = await client.createOrReplace({
+      const { _id, _rev, _type, ...productData } = product;
+      
+      console.log('  - Performing full replace...');
+      
+      const transaction = client.transaction();
+      transaction.delete(_id);
+      transaction.create({
         _id,
         _type: 'product',
         ...productData,
       });
-
-      console.log(`✓ Unlocked: ${newProduct.title}`);
+      
+      await transaction.commit();
+      
+      console.log(`✓ SUCCESS: ${product.title} is now unlocked!`);
     } catch (error) {
-      console.error(`✗ Failed to unlock ${product.title}:`, error.message);
+      console.error(`✗ FAILED: ${product.title}`);
+      console.error('  Error:', error.message);
+      console.error('  Full error:', JSON.stringify(error, null, 2));
     }
   }
 
-  console.log('\nAll products unlocked successfully!');
+  console.log('\n=== DONE ===');
 }
 
-unlockAllProducts().catch((error) => {
+forceUnlockProducts().catch((error) => {
+  console.error('\n=== FATAL ERROR ===');
   console.error(error);
   process.exitCode = 1;
 });

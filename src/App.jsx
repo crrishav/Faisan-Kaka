@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import HomePage from './homePage.jsx';
+import HomePage from './claude/homePageNEW.jsx';
 import ProductDetailsPage from './Pages/productDetailsPage.jsx';
 import CollectionsPage from './Components/CollectionsPage.jsx';
 import LoadingScreen from './Components/LoadingScreen.jsx';
@@ -8,7 +8,7 @@ import PageTransition from './Components/PageTransition.jsx';
 import NavBar from './Components/navBar.jsx';
 import CheckoutForm from './Components/CheckoutForm.jsx';
 import OrderTrackingPage from './Pages/OrderTrackingPage.jsx';
-import PrintStudioPage from './claude/PrintStudioPage.jsx';
+import PrintStudioPage from './claude/PrintStudioPageNEW.jsx';
 import AdminPage from './Pages/adminPage.jsx';
 import AdminLoginPage from './Pages/AdminLoginPage.jsx';
 import AdminGuard from './Components/AdminGuard.jsx';

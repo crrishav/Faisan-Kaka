@@ -1,12 +1,12 @@
 import React, { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { motion, useInView } from 'framer-motion';
-import ProductSection from './Components/productSection.jsx';
-import Footer from './Components/footer.jsx';
-import DeliverySection from './Components/DeliverySection.jsx';
-import PrintSection from './Components/PrintSection.jsx';
-import ReviewSection from './Components/ReviewSection.jsx';
-import heroVideo from './assets/videos/Hero_Keyframe_Scene_A_person_walks_through_a_bustling_marketplace_hRvmxVDL.mp4';
+import ProductSection from '../Components/productSection.jsx';
+import Footer from '../Components/footer.jsx';
+import DeliverySection from '../Components/DeliverySection.jsx';
+import PrintSection from './PrintSectionNEW.jsx';
+import ReviewSection from '../Components/ReviewSection.jsx';
+import heroVideo from '../assets/videos/Hero_Keyframe_Scene_A_person_walks_through_a_bustling_marketplace_hRvmxVDL.mp4';
 
 const sectionVariants = {
   hidden: { opacity: 0 },
@@ -88,22 +88,29 @@ const HomePage = ({ isLoaded }) => {
     if (!video) return;
 
     const attemptPlay = () => {
-      video.play().catch(error => {
-        // Only warn if it's not a deliberate pause
-        if (error.name !== 'AbortError') {
-          console.warn('Video play prevented:', error);
-        }
-      });
+      if (video.paused) {
+        video.play().catch(error => {
+          if (error.name !== 'AbortError') {
+            console.warn('Video play prevented:', error);
+          }
+        });
+      }
     };
 
-    // Try to play immediately
+    // Try immediately
     attemptPlay();
 
-    // Also try to play when video is ready
+    // Also retry on canplay and loadeddata events
     video.addEventListener('canplay', attemptPlay, { once: true });
+    video.addEventListener('loadeddata', attemptPlay, { once: true });
+
+    // Small fallback timeout for navigations where the video is already cached
+    const timer = setTimeout(attemptPlay, 100);
 
     return () => {
       video.removeEventListener('canplay', attemptPlay);
+      video.removeEventListener('loadeddata', attemptPlay);
+      clearTimeout(timer);
     };
   }, []);
 
@@ -182,6 +189,7 @@ const HomePage = ({ isLoaded }) => {
           playsInline
           autoPlay
           preload="auto"
+          onCanPlay={() => { if (videoRef.current?.paused) videoRef.current.play().catch(() => {}); }}
         />
         {/* Gradient overlay to blend with the white section below */}
         <div className="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
